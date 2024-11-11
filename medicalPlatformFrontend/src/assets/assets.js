@@ -297,3 +297,33 @@ export const doctors = [
         }
     },
 ]
+export const reports = [
+    {
+      id: 1,
+      date: '2024-11-01',
+      reportSummary: 'General checkup. All vital signs are normal.',
+      doctorName: 'Dr. Smith',
+      reportDetails: 'No serious conditions detected. Patient advised to maintain a healthy diet and exercise regularly.',
+    },
+    {
+      id: 2,
+      date: '2024-10-20',
+      reportSummary: 'Cardiac examination. Patient has high blood pressure.',
+      doctorName: 'Dr. Johnson',
+      reportDetails: 'Patient prescribed medication for hypertension. Follow-up appointment scheduled for one month.',
+    },
+    {
+      id: 3,
+      date: '2024-09-15',
+      reportSummary: 'MRI scan result. No major issues found.',
+      doctorName: 'Dr. Williams',
+      reportDetails: 'MRI results show minor degenerative changes in the lumbar spine, no need for immediate treatment.',
+    },
+    {
+      id: 4,
+      date: '2024-08-10',
+      reportSummary: 'Routine dental checkup. No cavities detected.',
+      doctorName: 'Dr. Clark',
+      reportDetails: 'Teeth and gums are healthy. Patient advised to continue regular brushing and flossing.',
+    },
+  ];  
