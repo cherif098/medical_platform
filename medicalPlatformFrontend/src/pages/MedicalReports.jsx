@@ -1,12 +1,11 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import {reports} from '../assets/assets'
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { reports } from "../assets/assets";
 
 const MedicalReports = () => {
   const navigate = useNavigate();
 
-  const report  = reports[0];
-
+  const report = reports[0];
 
   return (
     <div className="container mx-auto p-6">
@@ -15,12 +14,16 @@ const MedicalReports = () => {
         {reports.map((report, index) => (
           <div key={index} className="p-4 border rounded-lg shadow-md">
             <div className="flex justify-between">
-              <span className="text-lg font-medium">{report.reportSummary}</span>
-              <span className="text-sm text-gray-500">{new Date(report.date).toLocaleDateString()}</span>
+              <span className="text-lg font-medium">
+                {report.reportSummary}
+              </span>
+              <span className="text-sm text-gray-500">
+                {new Date(report.date).toLocaleDateString()}
+              </span>
             </div>
             <button
               onClick={() => navigate(`/report-details/${report.id}`)}
-              className="text-white bg-blue-500 hover:bg-blue-600 mt-2 px-4 py-2 rounded"
+              className="text-white bg-primary hover:bg-blue-600 transition-all duration-300 mt-2 px-4 py-2 rounded"
             >
               View Details
             </button>
