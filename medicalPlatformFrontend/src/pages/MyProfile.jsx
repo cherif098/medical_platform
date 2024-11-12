@@ -3,16 +3,16 @@ import { assets } from "../assets/assets";
 
 const MyProfile = () => {
   const [userData, setUserData] = useState({
-    name: "koceila djaballah",
+    name: "patient x",
     image: assets.profile_pic,
-    email: "koceila@gmail.com",
-    phone: "438-282-1633",
+    email: "patientx@gmail.com",
+    phone: "(438)-000-0000",
     adresse: {
-      line1: "7055 rue baunard, montreal ,qc",
-      line2: "app 304",
+      line1: "1 avenue ataky, montreal ,qc",
+      line2: "app 1",
     },
     gender: "Male",
-    dob: "2000-06-09",
+    dob: "1975-10-01",
   });
   const [isEdit, setIsEdit] = useState(true);
   return (
