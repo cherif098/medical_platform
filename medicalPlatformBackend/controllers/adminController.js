@@ -24,7 +24,6 @@ const addDoctor = async (req, res) => {
             return res.status(400).json({ error: 'Missing required fields' });
         }
       
-
         const licenceExists = await checkIfExists('DOCTOR_LICENCE', DOCTOR_LICENCE);
         const emailExists = await checkIfExists('EMAIL', EMAIL);
 
@@ -39,6 +38,7 @@ const addDoctor = async (req, res) => {
         if(!validator.isEmail(EMAIL)){
             return res.json({success:false,message:"enter a valid e-mail"})
         }
+
         // validating password 
         if(!validator.isStrongPassword(PASSWORD)){
             return res.json({success:false,message:" password must have : minLength: 8, minLowercase: 1, minUppercase: 1"})
@@ -51,8 +51,6 @@ const addDoctor = async (req, res) => {
         // upload image to cloudinary
         const imageUpload = await cloudinary.uploader.upload(imageFile.path, {resource_type:"image"})
         const imageUrl = imageUpload.secure_url;
-
-        const createdAt = new Date(Date.now()).toISOString();
         
         // Prépare les données dans un objet
         const doctorData = {
