@@ -1,78 +1,37 @@
-const snowflake = require('snowflake-sdk');
+// models/DoctorModel.js
+import { executeQuery } from '../config/snowflake.js';
 
-const connection = snowflake.createConnection({
-    account: 'your_account',
-    username: 'your_username',
-    password: 'your_password',
-    warehouse: 'your_warehouse',
-    database: 'your_database',
-    schema: 'your_schema'
-});
 
-async function insertDoctor(doctor) {
-    const {
-        name,
-        email,
-        password,
-        image,
-        speciality,
-        degree,
-        experience,
-        about,
-        available,
-        fees,
-        address,
-        date,
-        slots_booked,
-    } = doctor;
+
+export const insertDoctor = async (doctorData) => {
+    const {  DOCTOR_LICENCE, EMAIL, PASSWORD, NAME, SPECIALTY, IS_PASSWORD_TEMPORARY, STATUS, CREATED_AT, CREATED_BY, IMAGE } = doctorData;
+
+
 
     const query = `
-        INSERT INTO doctors (id, name, email, password, image, speciality, degree, experience, about, available, fees, address, date, slots_booked)
-        VALUES (UUID_STRING(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        INSERT INTO MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS 
+        ( DOCTOR_LICENCE, EMAIL, PASSWORD, NAME, SPECIALTY, IS_PASSWORD_TEMPORARY, STATUS, CREATED_AT, CREATED_BY, IMAGE)
+        VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
 
     const values = [
-        name,
-        email,
-        password,
-        image,
-        speciality,
-        degree,
-        experience,
-        about,
-        available,
-        fees,
-        JSON.stringify(address),
-        date,
-        JSON.stringify(slots_booked),
+        DOCTOR_LICENCE,
+        EMAIL,
+        PASSWORD,
+        NAME,
+        SPECIALTY,
+        IS_PASSWORD_TEMPORARY,
+        STATUS,
+        CREATED_AT,
+        CREATED_BY,
+        IMAGE
     ];
 
     try {
-        await connection.execute({
-            sqlText: query,
-            binds: values,
-        });
+        await executeQuery(query, values);
         console.log('Doctor added successfully');
     } catch (err) {
         console.error('Error inserting doctor:', err);
+        throw err;
     }
-}
-
-// Example usage:
-const newDoctor = {
-    name: 'Dr. Jane Doe',
-    email: 'jane.doe@example.com',
-    password: 'securepassword',
-    image: 'http://example.com/image.jpg',
-    speciality: 'Pediatrics',
-    degree: 'MD',
-    experience: '8 years',
-    about: 'Dedicated pediatrician...',
-    available: true,
-    fees: 120,
-    address: { street: '456 Elm St', city: 'Othertown', state: 'NY', zip: '67890' },
-    date: Date.now(),
-    slots_booked: {},
 };
-
-insertDoctor(newDoctor);

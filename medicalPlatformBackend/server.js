@@ -3,6 +3,9 @@ import cors from "cors";
 import 'dotenv/config'
 import { connectToSnowflake, executeQuery } from "./config/snowflake.js";
 import connectCloudinary from "./config/cloudinary.js";
+import { insertDoctor } from "./models/doctorModel.js"
+import { insertPatient } from "./models/patientModel.js"
+import adminRouter from "./routes/adminRoute.js";
 
 //App config
 const app = express();
@@ -36,21 +39,23 @@ app.get("/", (req, res) => {
     res.status(200).send("Hello Medical Platform API");
 });
 
-app.get("/test-connection", async (req, res) => {
+app.use('/api/admin', adminRouter)
+
+
+// Endpoint to add a doctor
+app.post("/doctors", async (req, res) => {
     try {
+        const doctor = req.body;
         if (!snowflakeConnected) {
             return res.status(503).json({ error: "Database connection not available" });
         }
-
-        // Test  avec CURRENT_TIMESTAMP
-        const results = await executeQuery("SELECT CURRENT_TIMESTAMP()");
-        res.status(200).json({ status: "success", data: results });
+        await insertDoctor(doctor);
+        res.status(201).json({ message: "Doctor added successfully" });
     } catch (error) {
-        console.error("Test connection error:", error);
-        res.status(500).json({ status: "error", message: error.message });
+        console.error("Error adding doctor:", error);
+        res.status(500).json({ error: "Failed to add doctor" });
     }
 });
-
 
 
 // Dmarrer le serveur

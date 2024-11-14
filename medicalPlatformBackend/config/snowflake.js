@@ -14,6 +14,7 @@ const requiredEnvVars = [
     'SNOWFLAKE_SCHEMA'
 ];
 
+
 try {
     for (const envVar of requiredEnvVars) {
         if (!process.env[envVar]) {
