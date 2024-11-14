@@ -4,6 +4,7 @@ import validator from 'validator';
 import bcrypt from 'bcrypt';
 import { v2 as cloudinary } from 'cloudinary';
 import { executeQuery } from '../config/snowflake.js';
+import jwt from 'jsonwebtoken'
 
 
 // Fonction pour vérifier si un champ existe déjà dans la base de données
@@ -76,5 +77,21 @@ const addDoctor = async (req, res) => {
         
     }
 };
+export const loginAdmin = async(req,res)=>{
+    try{
+        const {EMAIL, PASSWORD} = req.body
+        if(EMAIL === process.env.ADMIN_EMAIL && PASSWORD === process.env.ADMIN_PASSWORD){
+            const token = jwt.sign (EMAIL+PASSWORD, process.env.JWT_SECRET)
+            res.json({sucess: true, token})
+
+        }else{
+            res.json({success:false, message: "invalid credentials"})
+        }
+
+    }catch(error){
+        console.log(error)
+        res.json({success: false, message: error.message})
+    }
+}
 
 export { addDoctor };
