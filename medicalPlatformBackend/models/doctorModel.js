@@ -54,3 +54,54 @@ export const insertDoctor = async (doctorData) => {
     throw err;
   }
 };
+
+export const getDoctorsWithoutPassword = async () => {
+  const query = `
+        SELECT 
+        DOCTOR_LICENCE, EMAIL, NAME, SPECIALTY, IS_PASSWORD_TEMPORARY, 
+        STATUS, FEES, ADRESS_1, ADRESS_2, DEGREE, EXPERIENCE, ABOUT, 
+        CREATED_AT, CREATED_BY, IMAGE
+        FROM 
+          MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS;
+    `;
+
+  try {
+    const doctors = await executeQuery(query);
+    console.log("Doctors from Snowflake:", doctors);
+    return doctors;
+  } catch (err) {
+    console.error("Error retrieving doctors:", err);
+    throw err;
+  }
+};
+export const getDoctorStatus = async (DOCTOR_LICENCE) => {
+  const query = `
+    SELECT STATUS
+    FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
+    WHERE DOCTOR_LICENCE = ?;
+  `;
+
+  try {
+    const result = await executeQuery(query, [DOCTOR_LICENCE]);
+    return result;
+  } catch (error) {
+    console.error("Error retrieving doctor status:", error);
+    throw error;
+  }
+};
+
+// Mettre à jour le statut du médecin
+export const updateDoctorStatus = async (DOCTOR_LICENCE, newStatus) => {
+  const query = `
+    UPDATE MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
+    SET STATUS = ?
+    WHERE DOCTOR_LICENCE = ?;
+  `;
+
+  try {
+    await executeQuery(query, [newStatus, DOCTOR_LICENCE]);
+  } catch (error) {
+    console.error("Error updating doctor status:", error);
+    throw error;
+  }
+};

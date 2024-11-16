@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import { v2 as cloudinary } from "cloudinary";
 import { executeQuery } from "../config/snowflake.js";
 import jwt from "jsonwebtoken";
+import { getDoctorsWithoutPassword } from "../models/doctorModel.js";
 
 // Fonction pour vérifier si un champ existe déjà dans la base de données
 const checkIfExists = async (field, value) => {
@@ -141,6 +142,12 @@ const addDoctor = async (req, res) => {
         message: "Address 1 is required",
       });
     }
+    if (!ADRESS_2 || ADRESS_2.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Address 2 is required",
+      });
+    }
 
     // Hashage du mot de passe
     const salt = await bcrypt.genSalt(10);
@@ -250,4 +257,22 @@ const loginAdmin = async (req, res) => {
   }
 };
 
-export { addDoctor, loginAdmin };
+const allDoctors = async (req, res) => {
+  try {
+    const doctors = await getDoctorsWithoutPassword();
+    res.status(200).json({
+      success: true,
+      message: "Doctors retrieved successfully",
+      data: doctors,
+    });
+  } catch (error) {
+    console.error("Error retrieving doctors:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve doctors",
+      error: error.message,
+    });
+  }
+};
+
+export { addDoctor, loginAdmin, allDoctors };
