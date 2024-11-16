@@ -1,6 +1,5 @@
 import React, { useContext, useEffect } from "react";
 import { AdminContext } from "../../context/AdminContext";
-import { changeAvailability } from "../../../../medicalPlatformBackend/controllers/doctorControllers";
 
 const DoctorsList = () => {
   const { doctors, aToken, getAllDoctors, changeAvailability } =

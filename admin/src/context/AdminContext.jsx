@@ -20,8 +20,8 @@ const AdminContextProvider = (props) => {
         { headers: { aToken } }
       );
       console.log("API Response:", data);
-      if (data && data.success && data.data) {
-        setDoctors(data.data);
+      if (data) {
+        setDoctors(data);
       } else {
         toast.error(data.message || "Failed to fetch doctors");
       }
