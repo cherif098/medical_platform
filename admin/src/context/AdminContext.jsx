@@ -20,6 +20,7 @@ const AdminContextProvider = (props) => {
         { headers: { aToken } }
       );
       console.log("API Response:", data);
+
       if (data) {
         setDoctors(data);
       } else {

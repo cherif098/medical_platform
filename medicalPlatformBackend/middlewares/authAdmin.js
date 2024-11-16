@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken'
+import jwt from "jsonwebtoken";
 
 //admin authentification middelware
 const authAdmin = async (req,res,next) =>{
@@ -7,10 +7,15 @@ const authAdmin = async (req,res,next) =>{
         if(!atoken){
             return res.json({succes:false, message:'Not Authorized Login Again 1'})
         }
-        const token_decode = jwt.verify(atoken, process.env.JWT_SECRET)
+        const {role,email} = jwt.verify(atoken, process.env.JWT_SECRET)
 
-        if(token_decode !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASSWORD){
-            return res.json({succes:false, message: 'Not Authorized Login Again'})
+        // Imprimer le contenu du token décodé
+        console.log("Decoded token role:", role);
+        console.log("Type of role:", typeof role);
+        console.log("email + password", process.env.ADMIN_EMAIL + process.env.ADMIN_PASSWORD)
+
+        if(email !== process.env.ADMIN_EMAIL || role !== 'admin'){
+            return res.json({succes:false, message: 'Not Authorized Login Again 73847983467'})
         }
         next()
 

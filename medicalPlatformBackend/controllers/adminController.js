@@ -229,8 +229,8 @@ const loginAdmin = async (req, res) => {
       PASSWORD === process.env.ADMIN_PASSWORD
     ) {
       // Création du token JWT
-      const token = jwt.sign({ email: EMAIL }, process.env.JWT_SECRET, {
-        expiresIn: "24h",
+      const token = jwt.sign({ email: EMAIL ,role:'admin' }, process.env.JWT_SECRET, {
+        expiresIn: "1h",
       });
 
       res.status(200).json({
