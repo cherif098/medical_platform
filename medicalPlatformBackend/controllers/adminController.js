@@ -10,11 +10,13 @@ import { getDoctorsWithoutPassword } from "../models/doctorModel.js";
 const checkIfExists = async (field, value) => {
   const query = `SELECT COUNT(*) AS count FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS WHERE ${field} = ?`;
   const result = await executeQuery(query, [value]);
-  return result[0].COUNT > 0;
+  return result[0].COUNT > 0; // Retourne true si l'élément existe déjà
 };
 
+// Fonction pour ajouter un docteur dans la base de données
 const addDoctor = async (req, res) => {
   try {
+    // Récupération des données depuis le corps de la requête
     const {
       DOCTOR_LICENCE,
       EMAIL,
@@ -29,145 +31,55 @@ const addDoctor = async (req, res) => {
       DEGREE,
       EXPERIENCE,
       ABOUT,
-      CREATED_AT,
-      CREATED_BY,
     } = req.body;
 
-    // Logger les données reçues pour le débogage
-    console.log("Received data:", {
-      ...req.body,
-      PASSWORD: "***", // Masquer le mot de passe dans les logs
-    });
-    console.log("Received file:", req.file);
+    // Récupération du fichier image (si fourni)
+    const imageFile = req.file;
+    const IMAGE = imageFile ? imageFile.path : null; // Chemin local de l'image
 
-    // Vérification détaillée des champs manquants
-    const missingFields = [];
-    if (!DOCTOR_LICENCE) missingFields.push("DOCTOR_LICENCE");
-    if (!EMAIL) missingFields.push("EMAIL");
-    if (!PASSWORD) missingFields.push("PASSWORD");
-    if (!NAME) missingFields.push("NAME");
-    if (!SPECIALTY) missingFields.push("SPECIALTY");
-    if (!STATUS) missingFields.push("STATUS");
-    if (!CREATED_AT) missingFields.push("CREATED_AT");
-    if (!CREATED_BY) missingFields.push("CREATED_BY");
-    if (!EXPERIENCE) missingFields.push("EXPERIENCE");
-    if (!ABOUT) missingFields.push("ABOUT");
-    if (!DEGREE) missingFields.push("DEGREE");
-    if (!ADRESS_1) missingFields.push("ADRESS_1");
-    if (!ADRESS_2) missingFields.push("ADRESS_2");
-    if (!req.file) missingFields.push("image");
-
-    if (missingFields.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: "Missing required fields",
-        missingFields,
-        receivedFields: Object.keys(req.body),
-      });
+    // Vérification des champs obligatoires
+    if (
+      !DOCTOR_LICENCE ||
+      !EMAIL ||
+      !PASSWORD ||
+      !NAME ||
+      !SPECIALTY ||
+      !STATUS ||
+      !FEES ||
+      !ADRESS_1 ||
+      !ADRESS_2 ||
+      !DEGREE ||
+      !EXPERIENCE ||
+      !ABOUT ||
+      !imageFile
+    ) {
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Vérification de l'existence de la licence ou de l'email
-    const [licenceExists, emailExists] = await Promise.all([
-      checkIfExists("DOCTOR_LICENCE", DOCTOR_LICENCE),
-      checkIfExists("EMAIL", EMAIL),
-    ]);
+    // Vérification de l'existence du numéro de licence et de l'email
+    const licenceExists = await checkIfExists("DOCTOR_LICENCE", DOCTOR_LICENCE);
+    const emailExists = await checkIfExists("EMAIL", EMAIL);
 
     if (licenceExists) {
-      return res.status(400).json({
-        success: false,
-        message: `Doctor Licence ${DOCTOR_LICENCE} already exists.`,
-      });
+      throw new Error(`Doctor Licence ${DOCTOR_LICENCE} already exists.`);
     }
-
     if (emailExists) {
-      return res.status(400).json({
-        success: false,
-        message: `Email ${EMAIL} already exists.`,
-      });
-    }
-
-    // Validation du format de l'email
-    if (!validator.isEmail(EMAIL)) {
-      return res.status(400).json({
-        success: false,
-        message: "Please enter a valid email address.",
-      });
-    }
-
-    // Validation du mot de passe
-    if (
-      !validator.isStrongPassword(PASSWORD, {
-        minLength: 8,
-        minLowercase: 1,
-        minUppercase: 1,
-      })
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Password must have at least: 8 characters, 1 lowercase, 1 uppercase",
-      });
-    }
-
-    // Convertir et valider EXPERIENCE
-    const experienceNum = parseInt(EXPERIENCE);
-    if (isNaN(experienceNum) || experienceNum <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Experience must be a positive integer.",
-        received: EXPERIENCE,
-      });
-    }
-
-    // Validation des FEES si présents
-    if (FEES && (isNaN(parseFloat(FEES)) || parseFloat(FEES) < 0)) {
-      return res.status(400).json({
-        success: false,
-        message: "Fees must be a positive number",
-      });
-    }
-
-    // Validation de DEGREE
-    if (!DEGREE || DEGREE.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        message: "Degree is required",
-      });
-    }
-
-    // Validation des adresses
-    if (!ADRESS_1 || ADRESS_1.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        message: "Address 1 is required",
-      });
-    }
-    if (!ADRESS_2 || ADRESS_2.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        message: "Address 2 is required",
-      });
+      throw new Error(`Email ${EMAIL} already exists.`);
     }
 
     // Hashage du mot de passe
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(PASSWORD, salt);
 
-    // Upload de l'image vers Cloudinary
-    let imageUrl;
-    try {
-      const imageUpload = await cloudinary.uploader.upload(req.file.path, {
-        folder: "doctors",
-        resource_type: "image",
-      });
-      imageUrl = imageUpload.secure_url;
-    } catch (error) {
-      console.error("Cloudinary upload error:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to upload image",
-      });
-    }
+    // Téléchargement de l'image sur Cloudinary
+    const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+      resource_type: "image",
+    });
+    const imageUrl = imageUpload.secure_url;
+
+    // Définition des champs prédéfinis
+    const CREATED_AT = new Date().toISOString(); // Date actuelle
+    const CREATED_BY = "admin"; // Par défaut, créé par "admin"
 
     // Préparation des données pour l'insertion
     const doctorData = {
@@ -176,37 +88,31 @@ const addDoctor = async (req, res) => {
       PASSWORD: hashedPassword,
       NAME,
       SPECIALTY,
-      IS_PASSWORD_TEMPORARY: IS_PASSWORD_TEMPORARY === "true",
-      STATUS: STATUS === "true",
-      FEES: FEES ? parseFloat(FEES) : null,
+      IS_PASSWORD_TEMPORARY,
+      STATUS,
+      FEES,
       ADRESS_1,
       ADRESS_2,
       DEGREE,
-      EXPERIENCE: experienceNum,
+      EXPERIENCE,
       ABOUT,
       CREATED_AT,
       CREATED_BY,
       IMAGE: imageUrl,
     };
 
-    // Insertion du docteur dans la base de données
+    // Insertion des données dans la base
     await insertDoctor(doctorData);
 
-    res.status(201).json({
-      success: true,
-      message: "Doctor added successfully",
-    });
+    // Réponse en cas de succès
+    res.status(200).json({ message: "Doctor added successfully" });
   } catch (err) {
-    console.error("Server error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Failed to add doctor",
-      error:
-        process.env.NODE_ENV === "development"
-          ? err.message
-          : "Internal server error",
-      details: process.env.NODE_ENV === "development" ? err.stack : undefined,
-    });
+    console.error(err);
+
+    // Réponse en cas d'échec
+    res
+      .status(500)
+      .json({ error: "Failed to add doctor", details: err.message });
   }
 };
 
@@ -229,9 +135,13 @@ const loginAdmin = async (req, res) => {
       PASSWORD === process.env.ADMIN_PASSWORD
     ) {
       // Création du token JWT
-      const token = jwt.sign({ email: EMAIL ,role:'admin' }, process.env.JWT_SECRET, {
-        expiresIn: "1h",
-      });
+      const token = jwt.sign(
+        { email: EMAIL, role: "admin" },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "1h",
+        }
+      );
 
       res.status(200).json({
         success: true,
