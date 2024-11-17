@@ -8,17 +8,22 @@ const AdminContextProvider = (props) => {
   const [aToken, setAToken] = useState(
     localStorage.getItem("aToken") ? localStorage.getItem("aToken") : ""
   );
+  console.log("Token from localStorage:", aToken);
   const [doctors, setDoctors] = useState([]);
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const getAllDoctors = async () => {
     try {
-      console.log("Backend URL:", backendUrl);
+      console.log("Token from getAllDoctors:", aToken);
+
       const { data } = await axios.post(
         backendUrl + "/api/admin/all-doctors",
         {},
-        { headers: { aToken } }
+        {
+          headers: { aToken },
+        }
       );
+
       console.log("API Response:", data);
 
       if (data) {

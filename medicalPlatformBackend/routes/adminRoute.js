@@ -10,9 +10,9 @@ import { changeAvailability } from "../controllers/doctorControllers.js";
 
 const adminRouter = express.Router();
 
-adminRouter.post("/add-doctor", authAdmin, upload.single("IMAGE"), addDoctor);
+adminRouter.post("/add-doctor", upload.single("IMAGE"), addDoctor);
 adminRouter.post("/login", loginAdmin);
-adminRouter.post("/all-doctors", authAdmin, allDoctors);
-adminRouter.post("/change-availability", authAdmin, changeAvailability);
+adminRouter.post("/all-doctors", allDoctors);
+adminRouter.post("/change-availability", changeAvailability);
 
 export default adminRouter;
