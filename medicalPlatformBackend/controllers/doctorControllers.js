@@ -1,4 +1,6 @@
 import { getDoctorStatus, updateDoctorStatus } from "../models/doctorModel.js";
+import { getDoctorsWithoutPassword } from "../models/doctorModel.js";
+
 
 export const changeAvailability = async (req, res) => {
   const { DOCTOR_LICENCE } = req.body;
@@ -25,4 +27,14 @@ export const changeAvailability = async (req, res) => {
     console.error("Error changing availability:", error);
     res.status(500).json({ success: false, message: error.message });
   }
+};
+
+export const doctorList = async (req, res) => {
+    try {
+      const doctors = await getDoctorsWithoutPassword();
+      res.json({success:true,doctors})
+    } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: error.message });
+    }
 };

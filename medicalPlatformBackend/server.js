@@ -4,6 +4,7 @@ import "dotenv/config";
 import { connectToSnowflake, executeQuery } from "./config/snowflake.js";
 import connectCloudinary from "./config/cloudinary.js";
 import adminRouter from "./routes/adminRoute.js";
+import doctorRouter from "./routes/doctorRoute.js";
 
 //App config
 const app = express();
@@ -33,6 +34,7 @@ async function initializeSnowflake() {
 
 //api endpoints
 app.use("/api/admin", adminRouter);
+app.use("/api/doctor",doctorRouter)
 
 // Dmarrer le serveur
 const startServer = async () => {

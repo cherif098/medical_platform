@@ -58,7 +58,7 @@ export const insertDoctor = async (doctorData) => {
 export const getDoctorsWithoutPassword = async () => {
   const query = `
         SELECT 
-        DOCTOR_LICENCE, EMAIL, NAME, SPECIALTY, IS_PASSWORD_TEMPORARY, 
+        DOCTOR_ID,DOCTOR_LICENCE, EMAIL, NAME, SPECIALTY, IS_PASSWORD_TEMPORARY, 
         STATUS, FEES, ADRESS_1, ADRESS_2, DEGREE, EXPERIENCE, ABOUT, 
         CREATED_AT, CREATED_BY, IMAGE
         FROM 
