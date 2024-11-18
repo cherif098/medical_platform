@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 /* eslint-disable no-empty */
 import React from "react";
 import { assets } from "../assets/assets";
@@ -5,6 +6,15 @@ import { useState, useContext } from "react";
 import { AdminContext } from "../context/AdminContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+=======
+
+import React from 'react'
+import {assets} from '../assets/assets'
+import { useState, useContext } from 'react'
+import { AdminContext } from '../context/AdminContext';
+import axios from 'axios'
+import { toast } from 'react-toastify';
+>>>>>>> Stashed changes
 
 const Login = () => {
   const [state, setState] = useState("Admin");
@@ -12,6 +22,7 @@ const Login = () => {
   const [EMAIL, setEmail] = useState("");
   const [PASSWORD, setPassword] = useState("");
 
+<<<<<<< Updated upstream
   const { setAToken, backendUrl } = useContext(AdminContext);
 
   const onSubmitHandler = async (event) => {
@@ -28,6 +39,27 @@ const Login = () => {
           setAToken(data.token);
         } else {
           toast.error(data.message);
+=======
+    const {setAToken, backendUrl} = useContext(AdminContext);
+
+    const onSubmitHandler = async (event) => { 
+        event.preventDefault();
+        try {
+            if (state === "Admin") {
+                const { data } = await axios.post(backendUrl + '/api/admin/login', { EMAIL, PASSWORD });
+    
+                if (data.success) {
+                    localStorage.setItem('aToken',data.token);
+                    setAToken(data.token);
+                } else {
+                    toast.error(data.message)
+                }
+            }
+            
+        } catch (error) {
+            console.error("Erreur lors de la connexion :", error);
+            
+>>>>>>> Stashed changes
         }
       }
     } catch (error) {
