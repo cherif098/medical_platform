@@ -15,7 +15,7 @@ const Appointment = () => {
   const [slotTime, setSlotTime] = useState("");
 
   const fetchDocInfo = async () => {
-    const docInfo = doctors.find((doc) => doc.DOCTOR_ID ===Number(docId));
+    const docInfo = doctors.find((doc) => doc.DOCTOR_ID === Number(docId));
     setDocInfo(docInfo);
     console.log(doctors[0]);
   };
@@ -75,9 +75,7 @@ const Appointment = () => {
     getAvailableSlots();
   }, [docInfo]);
 
-  useEffect(() => {
-
-  }, [docSlots]);
+  useEffect(() => {}, [docSlots]);
 
   return (
     docInfo && (
@@ -104,7 +102,7 @@ const Appointment = () => {
                 {docInfo.DEGREE}-{docInfo.SPECIALTY}
               </p>
               <button className="py-0.5 px-2 border text-xs rounded-full">
-                {docInfo.EXPERIENCE} 
+                {docInfo.EXPERIENCE}
               </button>
               <p>years</p>
             </div>
@@ -126,7 +124,7 @@ const Appointment = () => {
         {/*----------------------------------------------booking-------------------------------------------------------- */}
         <div className="sm:ml-72 sm:pl-4 mt-4 font-medium text-gray-700 ">
           <p>Booking Slots</p>
-          <div className="flex gap-3 items-center w-full overflow-x-scoll mt-4">
+          <div className="flex gap-3 items-center w-full overflow-x-scroll mt-4">
             {docSlots.length &&
               docSlots.map((item, index) => (
                 <div
@@ -145,6 +143,7 @@ const Appointment = () => {
           </div>
           <div className="flex item-center gap-3 w-full overflow-x-scroll mt-4">
             {docSlots.length &&
+              docSlots[slotIndex] &&
               docSlots[slotIndex].map((item, index) => (
                 <p
                   onClick={() => setSlotTime(item.time)}
@@ -164,7 +163,8 @@ const Appointment = () => {
             Book an appointment
           </button>
         </div>
-        <RelatedDoctors docId={docId} speciality={docInfo.speciality} />
+
+        <RelatedDoctors docId={docId} speciality={docInfo.SPECIALTY} />
       </div>
     )
   );
