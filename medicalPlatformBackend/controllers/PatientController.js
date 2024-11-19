@@ -1,15 +1,15 @@
 import validator from "validator";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { insertPatient, loginPatient } from "../models/patientModel.js"; // Importe la fonction insertPatient
+import { insertPatient, loginPatient, findPatientByEmail } from "../models/patientModel.js"; // Importe la fonction insertPatient
 
 // API to register user
 export const registerPatient = async (req, res) => {
   try {
-    const { DOCTOR_ID, NAME, EMAIL, PASSWORD, CREATED_AT } = req.body;
+    const { NAME, EMAIL, PASSWORD, DATE_OF_BIRTH} = req.body;
 
     // Vérification des champs requis
-    if (!NAME || !EMAIL || !PASSWORD || CREATED_AT) {
+    if (!NAME || !EMAIL || !PASSWORD || !DATE_OF_BIRTH ) {
       return res.status(400).json({ message: "Please fill in all fields" });
     }
 
@@ -25,18 +25,22 @@ export const registerPatient = async (req, res) => {
         .json({ message: "Password must be at least 8 characters" });
     }
 
+    // Vérifier si l'email existe déjà
+    const existingPatient = await findPatientByEmail(EMAIL); // Utilisez une fonction appropriée pour interroger la base de données
+    if (existingPatient) {
+      return res.status(409).json({ message: "Email already in used" });
+    }
+
     // Hashage du mot de passe
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(PASSWORD, salt);
 
     // Création des données du patient
     const patientData = {
-      DOCTOR_ID,
       NAME,
       EMAIL,
       PASSWORD: hashedPassword,
-      DATE_OF_BIRTH: req.body.DATE_OF_BIRTH,
-      CREATED_AT: new Date().toISOString(),
+      DATE_OF_BIRTH,
     };
 
     // Insertion du patient dans la base de donne
@@ -44,7 +48,7 @@ export const registerPatient = async (req, res) => {
 
     // Création du token JWT
     const token = jwt.sign(
-      { id: patientData.DOCTOR_ID },
+      { id: patientData.PATIENT_ID },
       process.env.JWT_SECRET
     );
 
@@ -73,8 +77,7 @@ export const loginPatientController = async (req, res) => {
   
       // Appel à la fonction loginPatient du modèle
       const patient = await loginPatient(EMAIL, PASSWORD);
-      console.log(patient)    
-  
+
       if (!patient) {
         return res.status(404).json({ success: false, message: 'User does not exist' });
       }

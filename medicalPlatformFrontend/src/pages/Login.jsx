@@ -1,31 +1,98 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
-
-  const {backendUrl} = useContext(AppContext);
+  const { backendUrl, token, setToken } = useContext(AppContext);
+  const navigate = useNavigate();
 
   const [state, setState] = useState("Sign up");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [EMAIL, setEmail] = useState("");
+  const [PASSWORD, setPassword] = useState("");
+  const [NAME, setName] = useState("");
+  const [DATE_OF_BIRTH, setDOB] = useState("");
+
+  const validateForm = () => {
+    if (state === "Sign up") {
+      if (!NAME.trim()) {
+        toast.error("Please enter your full name");
+        return false;
+      }
+      if (!DATE_OF_BIRTH) {
+        toast.error("Please enter your date of birth");
+        return false;
+      }
+    }
+    if (!EMAIL.trim()) {
+      toast.error("Please enter your email");
+      return false;
+    }
+    if (!PASSWORD.trim()) {
+      toast.error("Please enter your password");
+      return false;
+    }
+    return true;
+  };
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
 
-   
-  //   try {
-  //     if (state === "Sign up") { 
-  //       const {data} = await axios.post(backendUrl + '/api/patient/register',{DOCTOR_ID,NAME,EMAIL,PASSWORD,DATE_OF_BIRTH});
-  //     } else{
-  //       const {data} = await axios.post(backendUrl + '/api/patient/login',{email,password});
+    try {
+      if (state === "Sign up") {
+        const { data } = await axios.post(backendUrl + "/api/patient/register", {
+          NAME,
+          EMAIL,
+          PASSWORD,
+          DATE_OF_BIRTH,
+        });
+        
+        if (data.success) {
+          localStorage.setItem("token", data.token);
+          setToken(data.token);
+          toast.success("Account created successfully!");
+        } else {
+          toast.error(data.message || "Registration failed");
+        }
+      } else {
+        const { data } = await axios.post(backendUrl + "/api/patient/login", {
+          EMAIL,
+          PASSWORD,
+        });
+        
+        if (data.success) {
+          localStorage.setItem("token", data.token);
+          setToken(data.token);
+          toast.success("Logged in successfully!");
+        } else {
+          toast.error(data.message || "Login failed");
+        }
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          "An error occurred. Please try again.";
+      toast.error(errorMessage);
+    }
+  };
 
-  //     }
-  //   } catch (error) {
-  //     toast.error(error.message)
-  //   }
+  useEffect(() => {
+    if (token) {
+      navigate("/");
+    }
+  }, [token, navigate]);
+
+  const switchState = () => {
+    setState(state === "Sign up" ? "login" : "Sign up");
+    setEmail("");
+    setPassword("");
+    setName("");
+    setDOB("");
   };
 
   return (
@@ -38,56 +105,74 @@ const Login = () => {
           Please {state === "Sign up" ? "Sign up" : "Login"} to book appointment
         </p>
         {state === "Sign up" && (
-          <div className="w-full">
-            <p>Full Name</p>
-            <input
-              className="border border-zinc-300 rounded w-full p-2 mt-1"
-              type="text"
-              onChange={(e) => setName(e.target.value)}
-              value={name}
-            />
-          </div>
+          <>
+            <div className="w-full">
+              <p>Full Name</p>
+              <input
+                className="border border-zinc-300 rounded w-full p-2 mt-1"
+                type="text"
+                onChange={(e) => setName(e.target.value)}
+                value={NAME}
+                placeholder="Enter your full name"
+              />
+            </div>
+
+            <div className="w-full">
+              <p>Date of Birth</p>
+              <input
+                className="border border-zinc-300 rounded w-full p-2 mt-1"
+                type="date"
+                onChange={(e) => setDOB(e.target.value)}
+                value={DATE_OF_BIRTH}
+              />
+            </div>
+          </>
         )}
 
         <div className="w-full">
           <p>Email</p>
           <input
             className="border border-zinc-300 rounded w-full p-2 mt-1"
-            type="text"
+            type="email"
             onChange={(e) => setEmail(e.target.value)}
-            value={email}
+            value={EMAIL}
+            placeholder="Enter your email"
           />
         </div>
         <div className="w-full">
           <p>Password</p>
           <input
             className="border border-zinc-300 rounded w-full p-2 mt-1"
-            type="text"
+            type="password"
             onChange={(e) => setPassword(e.target.value)}
-            value={password}
+            value={PASSWORD}
+            placeholder="Enter your password"
           />
         </div>
-        <button type="submit" className="bg-primary text-white w-full py-2 rounded-md text-base">
+        <button
+          type="submit"
+          className="bg-primary text-white w-full py-2 rounded-md text-base hover:opacity-90 transition-opacity"
+        >
           {state === "Sign up" ? "Create Account" : "Login"}
         </button>
         {state === "Sign up" ? (
           <p>
             Already have an account?{" "}
             <span
-              onClick={() => setState("login")}
-              className=" text-primary underline cursor-pointer"
+              onClick={switchState}
+              className="text-primary underline cursor-pointer hover:opacity-80"
             >
               Login here
             </span>
           </p>
         ) : (
           <p>
-            Create an new account?{" "}
+            Create a new account?{" "}
             <span
-              onClick={() => setState("Sign up")}
-              className=" text-primary underline cursor-pointer"
+              onClick={switchState}
+              className="text-primary underline cursor-pointer hover:opacity-80"
             >
-              click here
+              Click here
             </span>
           </p>
         )}

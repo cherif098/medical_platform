@@ -36,7 +36,7 @@ async function initializeSnowflake() {
 //api endpoints
 app.use("/api/admin", adminRouter);
 app.use("/api/doctor",doctorRouter);
-app.use('/api/Patient',patientRouter);
+app.use('/api/patient',patientRouter);
 
 // Dmarrer le serveur
 const startServer = async () => {
