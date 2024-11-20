@@ -14,23 +14,12 @@ import {v2 as cloudinary} from 'cloudinary'
 // API to register user
 export const registerPatient = async (req, res) => {
   try {
-    const { NAME, EMAIL, PASSWORD, DATE_OF_BIRTH } = req.body;
-
-    // Vérification des champs requis
-    if (!NAME || !EMAIL || !PASSWORD || !DATE_OF_BIRTH) {
+    const { NAME, EMAIL, PASSWORD, PHONE, ADRESSE, GENDER, DATE_OF_BIRTH } = req.body;
+    console.log("Received patient data:", req.body);
+    console.log(req.file)
+    //Vérification des champs requis
+    if (!NAME || !EMAIL || !PASSWORD || !PHONE || !ADRESSE || !GENDER || !DATE_OF_BIRTH) {
       return res.status(400).json({ message: "Please fill in all fields" });
-    }
-
-    // Validation de l'email
-    if (!validator.isEmail(EMAIL)) {
-      return res.status(400).json({ message: "Invalid email" });
-    }
-
-    // Validation du mot de passe
-    if (PASSWORD.length < 8) {
-      return res
-        .status(400)
-        .json({ message: "Password must be at least 8 characters" });
     }
 
     // Vérifier si l'email existe déjà
@@ -43,11 +32,15 @@ export const registerPatient = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(PASSWORD, salt);
 
+
     // Création des données du patient
     const patientData = {
       NAME,
       EMAIL,
       PASSWORD: hashedPassword,
+      PHONE,
+      ADRESSE,
+      GENDER,
       DATE_OF_BIRTH,
     };
 
@@ -119,8 +112,9 @@ export const loginPatientController = async (req, res) => {
 //API to get patient data
 export const getProfile = async (req, res) => {
   try {
-    const { PATIENT_ID } = req.body;
+    const { PATIENT_ID } = req.user;
     const patientData = await getPatientById(PATIENT_ID);
+    console.log("Patient ID received in getProfile:", PATIENT_ID);
 
     res.json({ success: true, data: patientData });
   } catch (error) {
@@ -129,10 +123,10 @@ export const getProfile = async (req, res) => {
   }
 };
 
-//API to upadate patient data
+// API to update patient data
 export const updatePatient = async (req, res) => {
   try {
-    const { EMAIL, NAME, DATE_OF_BIRTH } = req.body;
+    const { EMAIL, NAME, DATE_OF_BIRTH, PHONE, ADRESSE, GENDER } = req.body;
     const IMAGE = req.file;
     const PATIENT_ID = req.user.PATIENT_ID;
 
@@ -146,15 +140,23 @@ export const updatePatient = async (req, res) => {
       });
     }
 
-    if (!EMAIL || !NAME || !DATE_OF_BIRTH) {
+    // Validation des champs requis
+    if (!EMAIL || !NAME || !DATE_OF_BIRTH || !PHONE || !ADRESSE || !GENDER) {
       return res.status(400).json({
         success: false,
         message: "Please provide all required fields.",
       });
     }
 
-    await updatePatientData(PATIENT_ID, EMAIL, NAME, DATE_OF_BIRTH);
+    // Validation de l'email
+    if (!validator.isEmail(EMAIL)) {
+      return res.status(400).json({ success: false, message: "Invalid email format." });
+    }
 
+    // Mise à jour des données du patient
+    await updatePatientData(PATIENT_ID, EMAIL, NAME, DATE_OF_BIRTH, PHONE, ADRESSE, GENDER);
+
+    // Si une image a été envoyée, on la télécharge et met à jour l'image du patient
     if (IMAGE) {
       const imageUpload = await cloudinary.uploader.upload(IMAGE.path, {
         resource_type: "image",
@@ -170,3 +172,4 @@ export const updatePatient = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+

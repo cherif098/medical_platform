@@ -25,24 +25,32 @@ export const loginPatient = async (EMAIL, PASSWORD) => {
     }
 };
 
-export const insertPatient = async (patient) => {
-    const { EMAIL, NAME, PASSWORD, DATE_OF_BIRTH } = patient;
+export const insertPatient = async (patientData) => {
+  const query = `
+    INSERT INTO MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS (NAME, EMAIL,PASSWORD, PHONE, ADRESSE, GENDER, DATE_OF_BIRTH, IMAGE)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+  `;
+  const values = [
+    patientData.NAME,
+    patientData.EMAIL,
+    patientData.PASSWORD,
+    patientData.PHONE,
+    patientData.ADRESSE ,  
+    patientData.GENDER,
+    patientData.DATE_OF_BIRTH,
+    patientData.IMAGE || "", 
+  ];
 
-    const query = `
-        INSERT INTO MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
-        (EMAIL, NAME, PASSWORD, DATE_OF_BIRTH)
-        VALUES (?, ?, ?, ?);
-    `;
-
-    const values = [EMAIL, NAME, PASSWORD, DATE_OF_BIRTH];
-    try {
-        await executeQuery(query, values);
-        console.log('Patient added successfully');
-    } catch (err) {
-        console.error('Error inserting patient:', err);
-        throw new Error('Error inserting patient into the database');
-    }
+  try {
+    // Exécuter la requête d'insertion dans la base de données
+    const result = await executeQuery(query, values);
+    return result;
+  } catch (err) {
+    console.error('Error inserting patient into the database:', err);
+    throw new Error('Error inserting patient into the database');
+  }
 };
+
 
 export const findPatientByEmail = async (EMAIL) => {
     const query = `SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS WHERE EMAIL = ?;`;
@@ -84,20 +92,22 @@ export const getPatientById = async (PATIENT_ID) => {
     }
   };
 
-  export const updatePatientData = async (PATIENT_ID, EMAIL, NAME, DATE_OF_BIRTH) => {
+  export const updatePatientData = async (PATIENT_ID, EMAIL, NAME, DATE_OF_BIRTH, PHONE, ADRESSE, GENDER) => {
     const updateQuery = `
       UPDATE MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
-      SET EMAIL = ?,NAME = ?, DATE_OF_BIRTH = ?
+      SET EMAIL = ?, NAME = ?, DATE_OF_BIRTH = ?, PHONE = ?, ADRESSE = ?, GENDER = ?
       WHERE PATIENT_ID = ?;
     `;
-    const values = [EMAIL, NAME, DATE_OF_BIRTH, PATIENT_ID];
+    const values = [EMAIL, NAME, DATE_OF_BIRTH, PHONE, ADRESSE, GENDER, PATIENT_ID];
   
     try {
       await executeQuery(updateQuery, values);
+      console.log('Patient data updated successfully');
     } catch (error) {
       throw new Error('Error updating patient data: ' + error.message);
     }
   };
+  
   
   export const updatePatientImage = async (PATIENT_ID, IMAGE) => {
     const updateImageQuery = `
