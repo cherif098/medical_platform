@@ -54,3 +54,62 @@ export const findPatientByEmail = async (EMAIL) => {
         throw error;
     }
 };
+
+
+export const getPatientById = async (PATIENT_ID) => {
+    const query = `
+      SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
+      WHERE PATIENT_ID = ?;
+    `;
+  
+    const values = [PATIENT_ID];
+  
+    try {
+      // Exécutez la requête avec la fonction de connexion existante
+      const patientData = await executeQuery(query, values);
+      
+      // Vérifiez si un patient a été trouvé
+      if (patientData.length === 0) {
+        throw new Error('Aucun patient trouvé avec cet ID');
+      }
+  
+      // Supprimez le mot de passe si nécessaire
+      const patient = patientData[0];
+      delete patient.PASSWORD;
+  
+      return patient;
+    } catch (err) {
+      console.error('Error retrieving patient:', err);
+      throw new Error('Error retrieving patient from the database');
+    }
+  };
+
+  export const updatePatientData = async (PATIENT_ID, EMAIL, NAME, DATE_OF_BIRTH) => {
+    const updateQuery = `
+      UPDATE MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
+      SET EMAIL = ?,NAME = ?, DATE_OF_BIRTH = ?
+      WHERE PATIENT_ID = ?;
+    `;
+    const values = [EMAIL, NAME, DATE_OF_BIRTH, PATIENT_ID];
+  
+    try {
+      await executeQuery(updateQuery, values);
+    } catch (error) {
+      throw new Error('Error updating patient data: ' + error.message);
+    }
+  };
+  
+  export const updatePatientImage = async (PATIENT_ID, IMAGE) => {
+    const updateImageQuery = `
+      UPDATE MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
+      SET IMAGE = ?
+      WHERE PATIENT_ID = ?;
+    `;
+    const values = [IMAGE, PATIENT_ID];
+  
+    try {
+      await executeQuery(updateImageQuery, values);
+    } catch (error) {
+      throw new Error('Error updating patient image: ' + error.message);
+    }
+  };
