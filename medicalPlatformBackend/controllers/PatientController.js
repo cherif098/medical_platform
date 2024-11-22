@@ -20,8 +20,6 @@ export const registerPatient = async (req, res) => {
     console.log("Received patient data12:", req.body);
     console.log("Image file:", req.file);
     
-    
-
     //Vérification des champs requis
     if (
       !NAME || 
@@ -47,10 +45,10 @@ export const registerPatient = async (req, res) => {
 
     // Téléchargement de l'image sur Cloudinary
     const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
-      resource_type: "image-patient",
+      resource_type: "image",
     });
     const imageUrl = imageUpload.secure_url;
-    console.log(imageUrl)
+
 
     // Création des données du patient
     const patientData = {
@@ -64,6 +62,7 @@ export const registerPatient = async (req, res) => {
       IMAGE: imageUrl,
     };
     console.log(patientData)
+
 
     // Insertion du patient dans la base de donne
     await insertPatient(patientData); // Utilisation de la fonction insertPatient

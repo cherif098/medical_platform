@@ -19,6 +19,7 @@ const MyProfile = () => {
   return patientData && (
     <div className="max-w-lg flex flex-col gap-2 text-sm">
       <img className="w-36 rounded-full" src={patientData.IMAGE} alt="" />
+      {console.log(patientData.IMAGE)}
       {isEdit ? (
         <input
           className="bg-gray-50 text-3xl font-medium max-w-60 mt-4"

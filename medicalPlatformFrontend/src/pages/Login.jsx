@@ -18,8 +18,7 @@ const Login = () => {
   const [PHONE, setPhone] = useState("");
   const [ADRESSE, setAddress] = useState("");
   const [GENDER, setGender] = useState("");
-  const [IMAGE, setImage] = useState(null); // New state for image
-
+  const [IMAGE, setImage] = useState(false);
 
   // Error message states
   const [emailError, setEmailError] = useState("");
@@ -157,11 +156,7 @@ const Login = () => {
         const { data } = await axios.post(backendUrl + "/api/patient/login", {
           EMAIL,
           PASSWORD,
-        },{
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
+        },
       );
 
         if (data.success) {
