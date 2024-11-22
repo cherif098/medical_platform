@@ -28,6 +28,7 @@ const Login = () => {
   const [phoneError, setPhoneError] = useState("");
   const [addressError, setAddressError] = useState("");
   const [genderError, setGenderError] = useState("");
+  const [imageError, setImageError] = useState("");
 
   // Real-time password validations
   const passwordValidations = {
@@ -72,6 +73,7 @@ const Login = () => {
     setPhoneError("");
     setAddressError("");
     setGenderError("");
+    setImageError("");
 
     if (state === "Sign up") {
       if (!NAME.trim()) {
@@ -114,6 +116,10 @@ const Login = () => {
         setGenderError("Please select a valid gender");
         isValid = false;
       }
+      if (!IMAGE) {
+        setImageError("Please upload an image");
+        isValid = false;
+      }
     }
 
     return isValid;
@@ -142,13 +148,13 @@ const Login = () => {
       if (state === "Sign up") {
         const { data } = await axios.post(
           backendUrl + "/api/patient/register",
-          formData,
-          
+          formData,          
         )
         if (data.success) {
           localStorage.setItem("token", data.token);
           setToken(data.token);
           toast.success("Account created successfully!");
+          navigate("/login");
         } else {
           toast.error(data.message || "Registration failed");
         }
@@ -306,6 +312,7 @@ const Login = () => {
       Supprimer l'image
     </button>
   )}
+  {imageError && <p className="text-red-500 text-sm">{imageError}</p>}
 </div>
           </>
         )}

@@ -15,7 +15,7 @@ patientRouter.post('/login', loginPatientController);
 
 patientRouter.get('/get-profile',authPatient, getProfile);
 
-patientRouter.put('/update-profile',upload.single('IMAGE'), authPatient, updatePatient);
+patientRouter.post('/update-profile',upload.single('IMAGE'), authPatient, updatePatient);
 
 
 

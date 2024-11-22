@@ -1,25 +1,68 @@
 import React, { useState, useContext } from "react";
 import { AppContext } from "../context/AppContext";
+import { assets } from "../assets/assets";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const MyProfile = () => {
   const {patientData, setPatientData, token, backendUrl, loadPatientData} = useContext(AppContext);
 
   const [isEdit, setIsEdit] = useState(true);
-  const [image, setImage] = useState(false);
+  const [IMAGE, setImage] = useState(false);
 
   const updatePatientProfileData = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("NAME", patientData.NAME);
+      formData.append("DATE_OF_BIRTH", patientData.DATE_OF_BIRTH);
+      formData.append("PHONE", patientData.PHONE);
+      formData.append("ADRESSE", patientData.ADRESSE);
+      formData.append("GENDER", patientData.GENDER);
+      IMAGE && formData.append("IMAGE", IMAGE);
+      
+      const {data} = await axios.post(backendUrl + '/api/patient/update-profile', 
+        formData,
+        {
+          headers: {token}
+        })
+        if (data.success) {
+          toast.success(data.message);
+          await updatePatientProfileData();
+          setIsEdit(false);
+          setImage(false);
+        } else {
+          toast.error(data.message);
+        }
+      
+    } catch (error) {
+      console.log(error); 
+      toast.error(error.message); 
+    }
 
   }
 
   if (!patientData) {
-    // Optionnel : vous pouvez afficher un loader ici
     return <div>Loading profile...</div>;
   }
 
   return patientData && (
     <div className="max-w-lg flex flex-col gap-2 text-sm">
-      <img className="w-36 rounded-full" src={patientData.IMAGE} alt="" />
-      {console.log(patientData.IMAGE)}
+
+      {
+        isEdit
+        ? <label htmlFor="IMAGE">
+          <div className="inline-block relative cursor-pointer">
+            <img className="w-36 rounded opacity-75" src={IMAGE ? URL.createObjectURL(IMAGE) : patientData.IMAGE} alt="" />
+            <img className="w-10 absolute bottom-12 right-12" src={IMAGE ? "" : assets.upload_icon} alt="" />
+          </div>
+          <input onChange={(e) => setImage(e.target.files[0])} type="file"  id="IMAGE" hidden/>
+
+        </label>
+        :
+        <img className="w-36 rounded-full" src={patientData.IMAGE} alt="" />
+
+      }
+
       {isEdit ? (
         <input
           className="bg-gray-50 text-3xl font-medium max-w-60 mt-4"
@@ -107,7 +150,7 @@ const MyProfile = () => {
         {isEdit ? (
           <button
             className="border border-primary px-8 rounded-full hover:bg-primary hover:text-while transition-all "
-            onClick={() => setIsEdit(false)}
+            onClick={updatePatientProfileData}
           >
             Save information
           </button>

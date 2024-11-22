@@ -28,7 +28,9 @@ export const registerPatient = async (req, res) => {
       !PHONE || 
       !ADRESSE || 
       !GENDER || 
-      !DATE_OF_BIRTH 
+      !DATE_OF_BIRTH || 
+      !imageFile
+
     ) {
       return res.status(400).json({ message: "Please fill in all fields" });
     }
@@ -49,7 +51,6 @@ export const registerPatient = async (req, res) => {
     });
     const imageUrl = imageUpload.secure_url;
 
-
     // Création des données du patient
     const patientData = {
       NAME,
@@ -61,8 +62,6 @@ export const registerPatient = async (req, res) => {
       DATE_OF_BIRTH,
       IMAGE: imageUrl,
     };
-    console.log(patientData)
-
 
     // Insertion du patient dans la base de donne
     await insertPatient(patientData); // Utilisation de la fonction insertPatient
