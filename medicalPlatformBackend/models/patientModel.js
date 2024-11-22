@@ -26,25 +26,33 @@ export const loginPatient = async (EMAIL, PASSWORD) => {
 };
 
 export const insertPatient = async (patientData) => {
+  const { 
+    NAME, 
+    EMAIL, 
+    PASSWORD, 
+    PHONE, 
+    ADRESSE, 
+    GENDER, 
+    DATE_OF_BIRTH,
+    IMAGE,
+  } = patientData;
+
   const query = `
     INSERT INTO MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS (NAME, EMAIL,PASSWORD, PHONE, ADRESSE, GENDER, DATE_OF_BIRTH, IMAGE)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?);
   `;
   const values = [
-    patientData.NAME,
-    patientData.EMAIL,
-    patientData.PASSWORD,
-    patientData.PHONE,
-    patientData.ADRESSE ,  
-    patientData.GENDER,
-    patientData.DATE_OF_BIRTH,
-    patientData.IMAGE || "", 
+    NAME,
+    EMAIL,
+    PASSWORD,
+    PHONE,
+    ADRESSE ,  
+    GENDER,
+    DATE_OF_BIRTH,
+    IMAGE ?? null, 
   ];
-
   try {
-    // Exécuter la requête d'insertion dans la base de données
-    const result = await executeQuery(query, values);
-    return result;
+    await executeQuery(query, values);
   } catch (err) {
     console.error('Error inserting patient into the database:', err);
     throw new Error('Error inserting patient into the database');

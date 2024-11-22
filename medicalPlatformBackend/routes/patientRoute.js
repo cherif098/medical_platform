@@ -10,7 +10,7 @@ import upload from '../middlewares/multer.js';
 
 const patientRouter = express.Router();
 
-patientRouter.post('/register', registerPatient);
+patientRouter.post('/register',upload.single('IMAGE'), registerPatient);
 patientRouter.post('/login', loginPatientController);
 
 patientRouter.get('/get-profile',authPatient, getProfile);

@@ -4,6 +4,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { Check, X } from "lucide-react";
+import { assets } from "../assets/assets";
 
 const Login = () => {
   const { backendUrl, token, setToken } = useContext(AppContext);
@@ -17,6 +18,8 @@ const Login = () => {
   const [PHONE, setPhone] = useState("");
   const [ADRESSE, setAddress] = useState("");
   const [GENDER, setGender] = useState("");
+  const [IMAGE, setImage] = useState(null); // New state for image
+
 
   // Error message states
   const [emailError, setEmailError] = useState("");
@@ -125,17 +128,24 @@ const Login = () => {
     }
 
     try {
-      if (state === "Sign up") {
-        const { data } = await axios.post(backendUrl + "/api/patient/register", {
-          NAME,
-          EMAIL,
-          PASSWORD,
-          DATE_OF_BIRTH,
-          PHONE,
-          ADRESSE,
-          GENDER,
-        });
+      const formData = new FormData();
+        formData.append("NAME", NAME.trim());
+        formData.append("EMAIL", EMAIL.trim().toLowerCase());
+        formData.append("PASSWORD", PASSWORD);
+        formData.append("DATE_OF_BIRTH", DATE_OF_BIRTH);
+        formData.append("PHONE", PHONE.replace(/\D/g, '')); // Enlève tous les caractères non-numériques
+        formData.append("ADRESSE", ADRESSE.trim());
+        formData.append("GENDER", GENDER);
+        if (IMAGE) {
+          formData.append("IMAGE", IMAGE);
+        }
 
+      if (state === "Sign up") {
+        const { data } = await axios.post(
+          backendUrl + "/api/patient/register",
+          formData,
+          
+        )
         if (data.success) {
           localStorage.setItem("token", data.token);
           setToken(data.token);
@@ -147,7 +157,12 @@ const Login = () => {
         const { data } = await axios.post(backendUrl + "/api/patient/login", {
           EMAIL,
           PASSWORD,
-        });
+        },{
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
 
         if (data.success) {
           localStorage.setItem("token", data.token);
@@ -180,6 +195,8 @@ const Login = () => {
     setPhone("");
     setAddress("");
     setGender("");
+    setImage(false);
+
   };
 
   return (
@@ -255,6 +272,46 @@ const Login = () => {
               </select>
               {genderError && <p className="text-red-500 text-sm">{genderError}</p>}
             </div>
+            <div className="w-full">
+  <p>Upload Profile Picture</p>
+  <label htmlFor="profile-image" className="cursor-pointer">
+    <img
+      className="w-16 h-16 bg-gray-100 rounded-full object-cover border-2 border-gray-200 hover:border-blue-500 transition-colors"
+      src={IMAGE ? URL.createObjectURL(IMAGE) : assets.upload_area}
+      alt="Profile preview"
+      onError={(e) => {
+        e.target.src = assets.upload_area;
+      }}
+    />
+  </label>
+  <input
+    onChange={(e) => {
+      const file = e.target.files[0];
+      if (file && file.type.startsWith('image/')) {
+        setImage(file);
+      } else {
+        toast.error("Veuillez sélectionner une image valide");
+        e.target.value = '';
+      }
+    }}
+    type="file"
+    name="profile-image"
+    id="profile-image"
+    accept="image/*"
+    className="hidden"
+  />
+  {IMAGE && (
+    <button
+      type="button"
+      onClick={() => {
+        setImage(null);
+      }}
+      className="text-red-500 text-sm mt-1 hover:text-red-600"
+    >
+      Supprimer l'image
+    </button>
+  )}
+</div>
           </>
         )}
 

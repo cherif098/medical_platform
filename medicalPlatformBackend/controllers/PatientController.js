@@ -15,10 +15,23 @@ import {v2 as cloudinary} from 'cloudinary'
 export const registerPatient = async (req, res) => {
   try {
     const { NAME, EMAIL, PASSWORD, PHONE, ADRESSE, GENDER, DATE_OF_BIRTH } = req.body;
-    console.log("Received patient data:", req.body);
-    console.log(req.file)
+    const imageFile = req.file;
+    const IMAGE = imageFile ? imageFile.path : null;
+    console.log("Received patient data12:", req.body);
+    console.log("Image file:", req.file);
+    
+    
+
     //Vérification des champs requis
-    if (!NAME || !EMAIL || !PASSWORD || !PHONE || !ADRESSE || !GENDER || !DATE_OF_BIRTH) {
+    if (
+      !NAME || 
+      !EMAIL || 
+      !PASSWORD || 
+      !PHONE || 
+      !ADRESSE || 
+      !GENDER || 
+      !DATE_OF_BIRTH 
+    ) {
       return res.status(400).json({ message: "Please fill in all fields" });
     }
 
@@ -32,6 +45,12 @@ export const registerPatient = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(PASSWORD, salt);
 
+    // Téléchargement de l'image sur Cloudinary
+    const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+      resource_type: "image-patient",
+    });
+    const imageUrl = imageUpload.secure_url;
+    console.log(imageUrl)
 
     // Création des données du patient
     const patientData = {
@@ -42,11 +61,13 @@ export const registerPatient = async (req, res) => {
       ADRESSE,
       GENDER,
       DATE_OF_BIRTH,
+      IMAGE: imageUrl,
     };
+    console.log(patientData)
 
     // Insertion du patient dans la base de donne
     await insertPatient(patientData); // Utilisation de la fonction insertPatient
-
+    console.log(patientData)
     // Création du token JWT
     const token = jwt.sign(
       { id: patientData.PATIENT_ID },

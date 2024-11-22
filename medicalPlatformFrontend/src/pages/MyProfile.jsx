@@ -2,10 +2,19 @@ import React, { useState, useContext } from "react";
 import { AppContext } from "../context/AppContext";
 
 const MyProfile = () => {
-  const {patientData, setPatientData} = useContext(AppContext);
-  console.log(patientData);
+  const {patientData, setPatientData, token, backendUrl, loadPatientData} = useContext(AppContext);
 
   const [isEdit, setIsEdit] = useState(true);
+  const [image, setImage] = useState(false);
+
+  const updatePatientProfileData = async () => {
+
+  }
+
+  if (!patientData) {
+    // Optionnel : vous pouvez afficher un loader ici
+    return <div>Loading profile...</div>;
+  }
 
   return patientData && (
     <div className="max-w-lg flex flex-col gap-2 text-sm">

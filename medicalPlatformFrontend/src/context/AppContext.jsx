@@ -33,9 +33,11 @@ const AppContextProvider = (props) => {
         try {
             const { data } = await axios.get(backendUrl + '/api/patient/get-profile', { headers: { token } });
             console.log(data);
-            
-            setPatientData(data.patientData);
-            console.log(patientData);
+            if (data.success) {
+                setPatientData(data.data); 
+              } else {
+                toast.error(data.message);
+              }
            
         } catch (error) {
             console.log(error);
