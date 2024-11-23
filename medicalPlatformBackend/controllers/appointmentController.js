@@ -87,63 +87,127 @@ export const getAvailableSlots = async (req, res) => {
   }
 };
 
+// 
 export const bookAppointment = async (req, res) => {
-  const { userId, DOCTOR_ID, slotDate, slotTime } = req.body;
-
   try {
-    // Commencer une transaction
-    await executeQuery({ sqlText: "BEGIN TRANSACTION" });
+    const { docId, slotDate, slotTime } = req.body;
+    const userId = req.user.PATIENT_ID;
 
-    // Vérifier si le docteur est disponible
-    const doctor = await findAvailableDoctor(DOCTOR_ID);
+    // Vérifie le docteur
+    const doctor = await doctorModel.findAvailableDoctor(docId);
     if (!doctor) {
-      await executeQuery({ sqlText: "ROLLBACK" });
       return res.status(400).json({
         success: false,
-        message: "Doctor not available",
+        message: "Doctor not available"
       });
     }
 
-    // Vérifier si le créneau n'est pas déjà réservé
-    const existingSlot = await slotModel.findSlot(
-      DOCTOR_ID,
-      slotDate,
-      slotTime
+    // Parse et formate la date
+    const [day, month, year] = slotDate.split('-');
+    const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+    // Formate l'heure
+    const timeFormat = new Date(`2000-01-01 ${slotTime}`);
+    const formattedTime = timeFormat.toLocaleTimeString('en-US', { 
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+
+    // Vérifie si le créneau est déjà réservé
+    const checkQuery = `
+      SELECT COUNT(*) as count 
+      FROM MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS 
+      WHERE DOCTOR_ID = ? 
+      AND SLOT_DATE = ? 
+      AND SLOT_TIME = ?
+      AND STATUS != 'CANCELLED'
+    `;
+
+    const existingAppointments = await executeQuery(
+      checkQuery, 
+      [parseInt(docId), formattedDate, formattedTime]
     );
-    if (existingSlot && existingSlot.IS_BOOKED) {
-      await executeQuery({ sqlText: "ROLLBACK" });
+
+    if (existingAppointments[0].COUNT > 0) {
       return res.status(400).json({
         success: false,
-        message: "This slot is already booked",
+        message: "This slot is already booked. Please select another time."
       });
     }
 
-    // Créer ou mettre à jour le créneau
-    await slotModel.updateOrCreateSlot(DOCTOR_ID, slotDate, slotTime);
+    // Si le créneau est libre, procède à la réservation
+    const insertQuery = "INSERT INTO MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS (DOCTOR_ID, USER_ID, SLOT_DATE, SLOT_TIME, FEES) VALUES (?, ?, ?, ?, ?)";
 
-    // Créer le rendez-vous
-    await appointmentModel.createAppointment(
-      DOCTOR_ID,
-      userId,
-      slotDate,
-      slotTime,
-      doctor.FEES
+    await executeQuery(
+      insertQuery, 
+      [
+        parseInt(docId), 
+        userId, 
+        formattedDate,
+        formattedTime,
+        parseFloat(doctor.FEES)
+      ]
     );
-
-    // Valider la transaction
-    await executeQuery({ sqlText: "COMMIT" });
 
     res.json({
       success: true,
-      message: "Appointment booked successfully",
+      message: "Appointment booked successfully"
     });
+
   } catch (error) {
-    // Annuler la transaction en cas d'erreur
-    await executeQuery({ sqlText: "ROLLBACK" });
-    console.error("Error in bookAppointment:", error);
+    console.error("Error booking appointment:", error);
     res.status(500).json({
       success: false,
-      message: "Error booking appointment",
+      message: error.message || "Error booking appointment"
+    });
+  }
+};
+
+
+export const cancelAppointment = async (req, res) => {
+  try {
+    const { appointmentId } = req.body;
+    const patientId = req.user.PATIENT_ID;
+
+    // Vérifier si le rendez-vous existe et appartient au patient
+    const [appointment] = await executeQuery(
+      'SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS WHERE APPOINTMENT_ID = ? AND USER_ID = ?',
+      [appointmentId, patientId]
+    );
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Rendez-vous non trouvé'
+      });
+    }
+
+    // Vérifier que le rendez-vous n'a pas déjà été annulé
+    if (appointment.STATUS === 'Cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Le rendez-vous a déjà été annulé'
+      });
+    }
+
+    // Mettre à jour le statut du rendez-vous sur "Annulé"
+    await executeQuery(
+      'UPDATE MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS SET STATUS = "Cancelled" WHERE APPOINTMENT_ID = ?',
+      [appointmentId]
+    );
+
+    return res.json({
+      success: true,
+      message: 'Rendez-vous annulé avec succès'
+    });
+  } catch (error) {
+    console.error('Error cancelling appointment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Une erreur est survenue lors de l\'annulation du rendez-vous',
+      error: error.message
     });
   }
 };

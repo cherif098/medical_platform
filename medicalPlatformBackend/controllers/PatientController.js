@@ -10,6 +10,7 @@ import {
   updatePatientImage,
 } from "../models/patientModel.js";
 import { v2 as cloudinary } from "cloudinary";
+import { executeQuery } from "../config/snowflake.js";
 
 // API to register user
 export const registerPatient = async (req, res) => {
@@ -195,3 +196,71 @@ export const updatePatient = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
+// Fonction pour récupérer les rendez-vous d'un patient
+export const listAppointment = async (req, res) => {
+  try {
+    const patientId = req.user.PATIENT_ID;
+
+    // Requête SQL pour récupérer les rendez-vous avec les informations du docteur
+    const query = `
+      SELECT 
+        A.APPOINTMENT_ID,
+        A.DOCTOR_ID,
+        A.SLOT_DATE,
+        A.SLOT_TIME,
+        A.FEES,
+        A.STATUS,
+        D.NAME as DOCTOR_NAME,
+        D.SPECIALTY,
+        D.IMAGE as DOCTOR_IMAGE,
+        D.ADRESS_1,
+        D.ADRESS_2,
+        D.DEGREE
+      FROM MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS A
+      JOIN MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS D ON A.DOCTOR_ID = D.DOCTOR_ID
+      WHERE A.USER_ID = ?
+      ORDER BY A.SLOT_DATE DESC, A.SLOT_TIME DESC
+    `;
+
+    // Exécution de la requête
+    const appointments = await executeQuery(query, [patientId]);
+
+    // Si aucun rendez-vous n'est trouvé
+    if (!appointments || appointments.length === 0) {
+      return res.json({
+        success: true,
+        message: "No appointments found",
+        appointments: []
+      });
+    }
+
+    // Formater les dates et heures pour l'affichage
+    const formattedAppointments = appointments.map(appointment => ({
+      ...appointment,
+      SLOT_DATE: new Date(appointment.SLOT_DATE).toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      SLOT_TIME: appointment.SLOT_TIME.slice(0, 5) // Format HH:mm
+    }));
+
+    res.json({
+      success: true,
+      message: "Appointments retrieved successfully",
+      appointments: formattedAppointments
+    });
+
+  } catch (error) {
+    console.error("Error retrieving appointments:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error retrieving appointments",
+      error: error.message
+    });
+  }
+};
+
+

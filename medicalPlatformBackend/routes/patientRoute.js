@@ -4,9 +4,12 @@ import {
   loginPatientController,
   getProfile,
   updatePatient,
-} from "../controllers/PatientController.js";
+  listAppointment
+}
+from "../controllers/PatientController.js";
 import authPatient from "../middlewares/authPatient.js";
 import upload from "../middlewares/multer.js";
+import { bookAppointment } from "../controllers/appointmentController.js";
 
 const patientRouter = express.Router();
 
@@ -14,6 +17,8 @@ patientRouter.post("/register", upload.single("IMAGE"), registerPatient);
 patientRouter.post("/login", loginPatientController);
 
 patientRouter.get("/get-profile", authPatient, getProfile);
+patientRouter.post('/book',authPatient,bookAppointment);
+patientRouter.get('/appointments',authPatient,listAppointment)
 
 patientRouter.post(
   "/update-profile",
