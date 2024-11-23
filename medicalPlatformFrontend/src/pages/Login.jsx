@@ -34,7 +34,7 @@ const Login = () => {
   const passwordValidations = {
     hasUpperCase: /[A-Z]/.test(PASSWORD),
     hasNumber: /\d/.test(PASSWORD),
-    hasMinLength: PASSWORD.length >= 8
+    hasMinLength: PASSWORD.length >= 8,
   };
 
   // Email validation
@@ -45,9 +45,11 @@ const Login = () => {
 
   // Password validation
   const validatePassword = (password) => {
-    return passwordValidations.hasUpperCase && 
-           passwordValidations.hasNumber && 
-           passwordValidations.hasMinLength;
+    return (
+      passwordValidations.hasUpperCase &&
+      passwordValidations.hasNumber &&
+      passwordValidations.hasMinLength
+    );
   };
 
   // Phone validation
@@ -95,7 +97,9 @@ const Login = () => {
         setPasswordError("Please enter your password");
         isValid = false;
       } else if (!validatePassword(PASSWORD)) {
-        setPasswordError("Password must have at least 8 characters, one uppercase letter and one number");
+        setPasswordError(
+          "Password must have at least 8 characters, one uppercase letter and one number"
+        );
         isValid = false;
       }
       if (!PHONE.trim()) {
@@ -108,7 +112,7 @@ const Login = () => {
       if (!ADRESSE.trim()) {
         setAddressError("Please enter your address");
         isValid = false;
-      } 
+      }
       if (!GENDER) {
         setGenderError("Please select your gender");
         isValid = false;
@@ -134,27 +138,26 @@ const Login = () => {
 
     try {
       const formData = new FormData();
-        formData.append("NAME", NAME.trim());
-        formData.append("EMAIL", EMAIL.trim().toLowerCase());
-        formData.append("PASSWORD", PASSWORD);
-        formData.append("DATE_OF_BIRTH", DATE_OF_BIRTH);
-        formData.append("PHONE", PHONE.replace(/\D/g, '')); // Enlève tous les caractères non-numériques
-        formData.append("ADRESSE", ADRESSE.trim());
-        formData.append("GENDER", GENDER);
-        if (IMAGE) {
-          formData.append("IMAGE", IMAGE);
-        }
+      formData.append("NAME", NAME.trim());
+      formData.append("EMAIL", EMAIL.trim().toLowerCase());
+      formData.append("PASSWORD", PASSWORD);
+      formData.append("DATE_OF_BIRTH", DATE_OF_BIRTH);
+      formData.append("PHONE", PHONE.replace(/\D/g, "")); // Enlève tous les caractères non-numériques
+      formData.append("ADRESSE", ADRESSE.trim());
+      formData.append("GENDER", GENDER);
+      if (IMAGE) {
+        formData.append("IMAGE", IMAGE);
+      }
 
       if (state === "Sign up") {
         const { data } = await axios.post(
           backendUrl + "/api/patient/register",
-          formData,          
-        )
+          formData
+        );
         if (data.success) {
-          localStorage.setItem("token", data.token);
-          setToken(data.token);
-          toast.success("Account created successfully!");
-          navigate("/login");
+          switchState();
+
+          toast.success("Account created successfully! Please log in.");
         } else {
           toast.error(data.message || "Registration failed");
         }
@@ -162,30 +165,25 @@ const Login = () => {
         const { data } = await axios.post(backendUrl + "/api/patient/login", {
           EMAIL,
           PASSWORD,
-        },
-      );
+        });
 
         if (data.success) {
           localStorage.setItem("token", data.token);
           setToken(data.token);
+          navigate("/");
           toast.success("Logged in successfully!");
         } else {
           toast.error(data.message || "Login failed");
         }
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message ||
-                          error.message ||
-                          "An error occurred. Please try again.";
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "An error occurred. Please try again.";
       toast.error(errorMessage);
     }
   };
-
-  useEffect(() => {
-    if (token) {
-      navigate("/");
-    }
-  }, [token, navigate]);
 
   const switchState = () => {
     setState(state === "Sign up" ? "login" : "Sign up");
@@ -197,7 +195,6 @@ const Login = () => {
     setAddress("");
     setGender("");
     setImage(false);
-
   };
 
   return (
@@ -209,7 +206,7 @@ const Login = () => {
         <p>
           Please {state === "Sign up" ? "sign up" : "login"} to book appointment
         </p>
-        
+
         {state === "Sign up" && (
           <>
             <div className="w-full">
@@ -244,7 +241,9 @@ const Login = () => {
                 value={PHONE}
                 placeholder="Enter your phone number"
               />
-              {phoneError && <p className="text-red-500 text-sm">{phoneError}</p>}
+              {phoneError && (
+                <p className="text-red-500 text-sm">{phoneError}</p>
+              )}
             </div>
 
             <div className="w-full">
@@ -256,7 +255,9 @@ const Login = () => {
                 value={ADRESSE}
                 placeholder="Enter your address"
               />
-              {addressError && <p className="text-red-500 text-sm">{addressError}</p>}
+              {addressError && (
+                <p className="text-red-500 text-sm">{addressError}</p>
+              )}
             </div>
 
             <div className="w-full">
@@ -271,49 +272,53 @@ const Login = () => {
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
               </select>
-              {genderError && <p className="text-red-500 text-sm">{genderError}</p>}
+              {genderError && (
+                <p className="text-red-500 text-sm">{genderError}</p>
+              )}
             </div>
             <div className="w-full">
-  <p>Upload Profile Picture</p>
-  <label htmlFor="profile-image" className="cursor-pointer">
-    <img
-      className="w-16 h-16 bg-gray-100 rounded-full object-cover border-2 border-gray-200 hover:border-blue-500 transition-colors"
-      src={IMAGE ? URL.createObjectURL(IMAGE) : assets.upload_area}
-      alt="Profile preview"
-      onError={(e) => {
-        e.target.src = assets.upload_area;
-      }}
-    />
-  </label>
-  <input
-    onChange={(e) => {
-      const file = e.target.files[0];
-      if (file && file.type.startsWith('image/')) {
-        setImage(file);
-      } else {
-        toast.error("Veuillez sélectionner une image valide");
-        e.target.value = '';
-      }
-    }}
-    type="file"
-    name="profile-image"
-    id="profile-image"
-    accept="image/*"
-    className="hidden"
-  />
-  {IMAGE && (
-    <button
-      type="button"
-      onClick={() => {
-        setImage(null);
-      }}
-      className="text-red-500 text-sm mt-1 hover:text-red-600"
-    >
-      Supprimer l'image
-    </button>
-  )}
-  {imageError && <p className="text-red-500 text-sm">{imageError}</p>}
-</div>
+              <p>Upload Profile Picture</p>
+              <label htmlFor="profile-image" className="cursor-pointer">
+                <img
+                  className="w-16 h-16 bg-gray-100 rounded-full object-cover border-2 border-gray-200 hover:border-blue-500 transition-colors"
+                  src={IMAGE ? URL.createObjectURL(IMAGE) : assets.upload_area}
+                  alt="Profile preview"
+                  onError={(e) => {
+                    e.target.src = assets.upload_area;
+                  }}
+                />
+              </label>
+              <input
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file && file.type.startsWith("image/")) {
+                    setImage(file);
+                  } else {
+                    toast.error("Veuillez sélectionner une image valide");
+                    e.target.value = "";
+                  }
+                }}
+                type="file"
+                name="profile-image"
+                id="profile-image"
+                accept="image/*"
+                className="hidden"
+              />
+              {IMAGE && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImage(null);
+                  }}
+                  className="text-red-500 text-sm mt-1 hover:text-red-600"
+                >
+                  Supprimer l'image
+                </button>
+              )}
+              {imageError && (
+                <p className="text-red-500 text-sm">{imageError}</p>
+              )}
+            </div>
           </>
         )}
 
@@ -338,8 +343,10 @@ const Login = () => {
             value={PASSWORD}
             placeholder="Enter your password"
           />
-          {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
-          
+          {passwordError && (
+            <p className="text-red-500 text-sm">{passwordError}</p>
+          )}
+
           {/* Password validation indicators */}
           {state === "Sign up" && (
             <div className="mt-2 space-y-1">
@@ -349,29 +356,47 @@ const Login = () => {
                 ) : (
                   <X className="w-4 h-4 text-red-500" />
                 )}
-                <span className={`${passwordValidations.hasUpperCase ? 'text-green-500' : 'text-red-500'}`}>
+                <span
+                  className={`${
+                    passwordValidations.hasUpperCase
+                      ? "text-green-500"
+                      : "text-red-500"
+                  }`}
+                >
                   At least one uppercase letter
                 </span>
               </div>
-              
+
               <div className="flex items-center gap-2 text-sm">
                 {passwordValidations.hasNumber ? (
                   <Check className="w-4 h-4 text-green-500" />
                 ) : (
                   <X className="w-4 h-4 text-red-500" />
                 )}
-                <span className={`${passwordValidations.hasNumber ? 'text-green-500' : 'text-red-500'}`}>
+                <span
+                  className={`${
+                    passwordValidations.hasNumber
+                      ? "text-green-500"
+                      : "text-red-500"
+                  }`}
+                >
                   At least one number
                 </span>
               </div>
-              
+
               <div className="flex items-center gap-2 text-sm">
                 {passwordValidations.hasMinLength ? (
                   <Check className="w-4 h-4 text-green-500" />
                 ) : (
                   <X className="w-4 h-4 text-red-500" />
                 )}
-                <span className={`${passwordValidations.hasMinLength ? 'text-green-500' : 'text-red-500'}`}>
+                <span
+                  className={`${
+                    passwordValidations.hasMinLength
+                      ? "text-green-500"
+                      : "text-red-500"
+                  }`}
+                >
                   At least 8 characters
                 </span>
               </div>
@@ -379,8 +404,8 @@ const Login = () => {
           )}
         </div>
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className="w-full py-2 bg-blue-500 text-white rounded mt-4 hover:bg-blue-600 transition-colors"
         >
           {state === "Sign up" ? "Sign up" : "Login"}

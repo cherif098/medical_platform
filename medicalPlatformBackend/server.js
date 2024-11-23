@@ -6,6 +6,7 @@ import connectCloudinary from "./config/cloudinary.js";
 import adminRouter from "./routes/adminRoute.js";
 import doctorRouter from "./routes/doctorRoute.js";
 import patientRouter from "./routes/patientRoute.js";
+import appointmentRouter from "./routes/appointmentRoute.js";
 
 //App config
 const app = express();
@@ -35,8 +36,9 @@ async function initializeSnowflake() {
 
 //api endpoints
 app.use("/api/admin", adminRouter);
-app.use("/api/doctor",doctorRouter);
-app.use('/api/patient',patientRouter);
+app.use("/api/doctor", doctorRouter);
+app.use("/api/patient", patientRouter);
+app.use("/api/appointment", appointmentRouter);
 
 // Dmarrer le serveur
 const startServer = async () => {

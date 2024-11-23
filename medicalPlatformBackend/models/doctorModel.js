@@ -104,3 +104,23 @@ export const updateDoctorStatus = async (DOCTOR_LICENCE, newStatus) => {
     throw error;
   }
 };
+export const findAvailableDoctor = async (DOCTOR_ID) => {
+  const query = `
+    SELECT 
+      DOCTOR_ID,
+      NAME,
+      SPECIALTY,
+      STATUS,
+      FEES
+    FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
+    WHERE DOCTOR_ID = ? AND STATUS = TRUE;
+  `;
+
+  try {
+    const result = await executeQuery(query, [DOCTOR_ID]);
+    return result[0] || null; // Retourne le premier médecin trouvé ou null si non trouvé
+  } catch (error) {
+    console.error("Error in findAvailableDoctor:", error);
+    throw error;
+  }
+};

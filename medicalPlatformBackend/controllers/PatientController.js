@@ -61,18 +61,14 @@ export const registerPatient = async (req, res) => {
       IMAGE: imageUrl,
     };
 
-    // Insertion du patient et récupération de l'ID
-    const patientId = await insertPatient(patientData);
-    console.log("Patient ID:", patientId);
+    // Insertion du patient
+    await insertPatient(patientData);
 
-    // Création du token JWT avec l'ID récupéré
-    const token = jwt.sign({ id: patientId }, process.env.JWT_SECRET);
-
-    // Envoi de la réponse avec le message de succès et le token
+    // Réponse : succès sans génération de token (redirige au front-end vers login)
     res.status(201).json({
       message: "Patient registered successfully",
       success: true,
-      token: token,
+      redirectToLogin: true,
     });
   } catch (error) {
     console.error(error);
