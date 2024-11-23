@@ -67,7 +67,6 @@ export const getDoctorsWithoutPassword = async () => {
 
   try {
     const doctors = await executeQuery(query);
-    console.log("Doctors from Snowflake:", doctors);
     return doctors;
   } catch (err) {
     console.error("Error retrieving doctors:", err);

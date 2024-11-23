@@ -7,38 +7,36 @@ import {
   findPatientByEmail,
   getPatientById,
   updatePatientData,
-  updatePatientImage
+  updatePatientImage,
 } from "../models/patientModel.js";
-import {v2 as cloudinary} from 'cloudinary'
+import { v2 as cloudinary } from "cloudinary";
 
 // API to register user
 export const registerPatient = async (req, res) => {
   try {
-    const { NAME, EMAIL, PASSWORD, PHONE, ADRESSE, GENDER, DATE_OF_BIRTH } = req.body;
+    const { NAME, EMAIL, PASSWORD, PHONE, ADRESSE, GENDER, DATE_OF_BIRTH } =
+      req.body;
     const imageFile = req.file;
     const IMAGE = imageFile ? imageFile.path : null;
-    console.log("Received patient data12:", req.body);
-    console.log("Image file:", req.file);
-    
-    //Vérification des champs requis
-    if (
-      !NAME || 
-      !EMAIL || 
-      !PASSWORD || 
-      !PHONE || 
-      !ADRESSE || 
-      !GENDER || 
-      !DATE_OF_BIRTH || 
-      !imageFile
 
+    // Vérification des champs requis
+    if (
+      !NAME ||
+      !EMAIL ||
+      !PASSWORD ||
+      !PHONE ||
+      !ADRESSE ||
+      !GENDER ||
+      !DATE_OF_BIRTH ||
+      !imageFile
     ) {
       return res.status(400).json({ message: "Please fill in all fields" });
     }
 
     // Vérifier si l'email existe déjà
-    const existingPatient = await findPatientByEmail(EMAIL); // Utilisez une fonction appropriée pour interroger la base de données
+    const existingPatient = await findPatientByEmail(EMAIL);
     if (existingPatient) {
-      return res.status(409).json({ message: "Email already in used" });
+      return res.status(409).json({ message: "Email already in use" });
     }
 
     // Hashage du mot de passe
@@ -63,14 +61,12 @@ export const registerPatient = async (req, res) => {
       IMAGE: imageUrl,
     };
 
-    // Insertion du patient dans la base de donne
-    await insertPatient(patientData); // Utilisation de la fonction insertPatient
-    console.log(patientData)
-    // Création du token JWT
-    const token = jwt.sign(
-      { id: patientData.PATIENT_ID },
-      process.env.JWT_SECRET
-    );
+    // Insertion du patient et récupération de l'ID
+    const patientId = await insertPatient(patientData);
+    console.log("Patient ID:", patientId);
+
+    // Création du token JWT avec l'ID récupéré
+    const token = jwt.sign({ id: patientId }, process.env.JWT_SECRET);
 
     // Envoi de la réponse avec le message de succès et le token
     res.status(201).json({
@@ -91,12 +87,10 @@ export const loginPatientController = async (req, res) => {
 
     // Vérification des champs requis
     if (!EMAIL || !PASSWORD) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Please provide both email and password",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Please provide both email and password",
+      });
     }
 
     // Appel à la fonction loginPatient du modèle
@@ -134,6 +128,7 @@ export const getProfile = async (req, res) => {
     const { PATIENT_ID } = req.user;
     const patientData = await getPatientById(PATIENT_ID);
     console.log("Patient ID received in getProfile:", PATIENT_ID);
+    console.log(patientData);
 
     res.json({ success: true, data: patientData });
   } catch (error) {
@@ -151,6 +146,7 @@ export const updatePatient = async (req, res) => {
 
     console.log("Received patient data:", req.body);
     console.log("Patient ID from middleware:", PATIENT_ID);
+    console.log("Validation ID reussi");
 
     if (!PATIENT_ID) {
       return res.status(400).json({
@@ -158,6 +154,7 @@ export const updatePatient = async (req, res) => {
         message: "Patient ID is missing. Please log in again.",
       });
     }
+    console.log("Validation ID reussi");
 
     // Validation des champs requis
     if (!EMAIL || !NAME || !DATE_OF_BIRTH || !PHONE || !ADRESSE || !GENDER) {
@@ -169,11 +166,22 @@ export const updatePatient = async (req, res) => {
 
     // Validation de l'email
     if (!validator.isEmail(EMAIL)) {
-      return res.status(400).json({ success: false, message: "Invalid email format." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid email format." });
     }
+    console.log("Validation EMAIL reussi");
 
     // Mise à jour des données du patient
-    await updatePatientData(PATIENT_ID, EMAIL, NAME, DATE_OF_BIRTH, PHONE, ADRESSE, GENDER);
+    await updatePatientData(
+      PATIENT_ID,
+      EMAIL,
+      NAME,
+      DATE_OF_BIRTH,
+      PHONE,
+      ADRESSE,
+      GENDER
+    );
 
     // Si une image a été envoyée, on la télécharge et met à jour l'image du patient
     if (IMAGE) {
@@ -191,4 +199,3 @@ export const updatePatient = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-

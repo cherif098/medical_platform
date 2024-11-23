@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 const authPatient = async (req, res, next) => {
   try {
-    const { token } = req.headers; // Vérifiez si le token est bien transmis
+    const { token } = req.headers;
     console.log("Token received in middleware:", token);
 
     if (!token) {
@@ -11,7 +11,7 @@ const authPatient = async (req, res, next) => {
       });
     }
 
-    const token_decode = jwt.verify(token, process.env.JWT_SECRET); // Assurez-vous que JWT_SECRET est défini
+    const token_decode = jwt.verify(token, process.env.JWT_SECRET);
     console.log("Decoded token:", token_decode);
 
     // Vérifiez si "id" est bien présent dans le token décodé
