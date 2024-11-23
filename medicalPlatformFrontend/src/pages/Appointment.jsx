@@ -1,18 +1,25 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import RelatedDoctors from "../components/RelatedDoctors";
+import { toast } from "react-toastify";
+import axios from "axios";
 
 const Appointment = () => {
   const { docId } = useParams();
-  const { doctors, currencySymbol } = useContext(AppContext);
+  const { doctors, currencySymbol, backendUrl, token, getDoctorsData } =
+    useContext(AppContext);
   const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+  // function to navigate user to login
+  const navigate = useNavigate();
 
   const [docInfo, setDocInfo] = useState(null);
   const [docSlots, setDocSlots] = useState([]);
   const [slotIndex, setSlotIndex] = useState(0);
   const [slotTime, setSlotTime] = useState("");
+  const [isBooking, setIsBooking] = useState(false);
 
   const fetchDocInfo = async () => {
     const docInfo = doctors.find((doc) => doc.DOCTOR_ID === Number(docId));
@@ -64,6 +71,54 @@ const Appointment = () => {
         currentDate.setMinutes(currentDate.getMinutes() + 30);
       }
       setDocSlots((prev) => [...prev, timeSlots]);
+    }
+  };
+
+  const bookAppointment = async () => {
+    if (!token) {
+      toast.warn("Login to book an appointment");
+      return navigate("/login");
+    }
+
+    if (!slotTime) {
+      toast.warn("Please select an appointment time");
+      return;
+    }
+
+    try {
+      setIsBooking(true); // Active l'état de chargement
+
+      if (!docSlots[slotIndex] || !docSlots[slotIndex][0]) {
+        toast.error("No slots available for selected date");
+        return;
+      }
+
+      const date = docSlots[slotIndex][0].dateTime;
+      // Ajoute le padding pour avoir toujours 2 chiffres
+      let day = date.getDate().toString().padStart(2, "0");
+      let month = (date.getMonth() + 1).toString().padStart(2, "0");
+      let year = date.getFullYear();
+
+      const slotDate = `${day}-${month}-${year}`;
+
+      const { data } = await axios.post(
+        `${backendUrl}/api/patient/book`,
+        { docId, slotDate, slotTime },
+        { headers: { token } }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        await getDoctorsData(); // Attend que les données soient mises à jour
+        navigate("/my-appointments");
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || "Error booking appointment");
+    } finally {
+      setIsBooking(false); // Désactive l'état de chargement
     }
   };
 
@@ -159,8 +214,12 @@ const Appointment = () => {
               ))}
           </div>
           <br />
-          <button className="bg-primary text-white text-sm font-light px-14 py-3 rounded-full">
-            Book an appointment
+          <button
+            onClick={bookAppointment}
+            disabled={isBooking}
+            className="bg-primary text-white text-sm font-light px-14 py-3 rounded-full disabled:opacity-50"
+          >
+            {isBooking ? "Booking..." : "Book an appointment"}
           </button>
         </div>
 

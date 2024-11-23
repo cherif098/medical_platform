@@ -5,6 +5,7 @@ import { AppContext } from "../context/AppContext";
 
 const Navbar = () => {
   const navigate = useNavigate();
+
   const { token, setToken, patientData } = useContext(AppContext);
   console.log(patientData);
 
@@ -13,6 +14,7 @@ const Navbar = () => {
   const logout = () => {
     setToken(false);
     localStorage.removeItem("token");
+    return navigate("/login");
   };
 
   return (
