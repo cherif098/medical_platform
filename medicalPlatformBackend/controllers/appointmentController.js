@@ -119,9 +119,42 @@ export const bookAppointment = async (req, res) => {
     }
 
     // Format the time
-    const formattedTime = slotTime.length === 5 
-      ? `${slotTime}:00`  
-      : slotTime;
+    // const formattedTime = slotTime.length === 5 
+    //   ? `${slotTime}:00`  
+    //   : slotTime;
+
+     // Format the time
+     let formattedTime;
+     try {
+       // Convert "11:00 a.m." format to "11:00:00"
+       const timeMatch = slotTime.match(/(\d{1,2}):(\d{2})\s*(a\.m\.|p\.m\.)/i);
+       if (timeMatch) {
+         let [_, hours, minutes, period] = timeMatch;
+         hours = parseInt(hours);
+         
+         // Convert to 24-hour format
+         if (period.toLowerCase().includes('p') && hours !== 12) {
+           hours += 12;
+         } else if (period.toLowerCase().includes('a') && hours === 12) {
+           hours = 0;
+         }
+         
+         formattedTime = `${hours.toString().padStart(2, '0')}:${minutes}:00`;
+       } else {
+         // If time is already in 24-hour format
+         formattedTime = slotTime.length === 5 ? `${slotTime}:00` : slotTime;
+       }
+ 
+       if (!formattedTime.match(/^\d{2}:\d{2}:\d{2}$/)) {
+         throw new Error('Invalid time format');
+       }
+     } catch (error) {
+       console.error('Time parsing error:', error);
+       return res.status(400).json({
+         success: false,
+         message: "Invalid time format. Please use HH:MM AM/PM format."
+       });
+     }
 
     console.log('Formatted values:', {
       formattedDate,
