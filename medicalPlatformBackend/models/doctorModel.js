@@ -135,3 +135,17 @@ export const getAllDoctors = async () => {
     throw error;
   }
 };
+
+export const getDoctorByEmail = async (EMAIL) => {
+  const query = `
+    SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
+      WHERE EMAIL = ?
+    `;
+    try {
+      const result = await executeQuery(query, [EMAIL]);
+      return result[0]; 
+    } catch (error) {
+      console.error("Error fetching doctor by email:", error);
+      throw error;
+    }
+  }

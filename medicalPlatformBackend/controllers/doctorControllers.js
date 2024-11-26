@@ -1,5 +1,9 @@
 import { getDoctorStatus, updateDoctorStatus } from "../models/doctorModel.js";
-import { getDoctorsWithoutPassword } from "../models/doctorModel.js";
+import { getDoctorsWithoutPassword, getDoctorByEmail } from "../models/doctorModel.js";
+import bcrypt from 'bcrypt';
+import jwt from "jsonwebtoken";
+
+
 
 export const changeAvailability = async (req, res) => {
   const { DOCTOR_LICENCE } = req.body;
@@ -49,3 +53,44 @@ export const findAvailableDoctor = async (doctorId) => {
   });
   return doctor;
 };
+
+export const doctorLogin = async (req, res) => {
+  try {
+    const { EMAIL, PASSWORD } = req.body;
+    if (!EMAIL || !PASSWORD ) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+    const doctor = await getDoctorByEmail(EMAIL);
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor not found",
+      });
+    }
+    const isPasswordValid = await bcrypt.compare(PASSWORD, doctor.PASSWORD); // Comparaison du mot de passe hashé
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    // Création du token JWT
+    const token = jwt.sign(
+      { doctorId: doctor.DOCTOR_ID, email: EMAIL },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1h",
+      }
+    );
+
+    res.status(200).json({ success: true, message: "Login successful", token });
+  }catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+
+}
