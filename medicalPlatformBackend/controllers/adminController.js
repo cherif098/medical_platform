@@ -4,8 +4,13 @@ import bcrypt from "bcrypt";
 import { v2 as cloudinary } from "cloudinary";
 import { executeQuery } from "../config/snowflake.js";
 import jwt from "jsonwebtoken";
-import { getDoctorsWithoutPassword } from "../models/doctorModel.js";
-import { getAllAppointments,deleteAppointmentByAdmin } from "../models/appointmentModel.js";
+import { getDoctorsWithoutPassword, getAllDoctors } from "../models/doctorModel.js";
+import { 
+  getAllAppointmentsForAdmin,
+  deleteAppointmentByAdmin,
+  getAllAppointments,
+ } from "../models/appointmentModel.js";
+import { getAllPatients } from "../models/patientModel.js";
 
 // Fonction pour vérifier si un champ existe déjà dans la base de données
 export const checkIfExists = async (field, value) => {
@@ -185,7 +190,7 @@ export const allDoctors = async (req, res) => {
 //API to get all appointments list
 export const getAllAppointmentsAdmin = async (req, res) => {
   try {
-    const appointments = await getAllAppointments();
+    const appointments = await getAllAppointmentsForAdmin();
     res.status(200).json({
       success: true,
       message: "Appointments retrieved successfully",
@@ -207,6 +212,8 @@ export const AppointmentCancel = async (req, res) => {
 
 
     await deleteAppointmentByAdmin (APPOINTMENT_ID);
+    console.log('Request Params1:', req.params); // Logs route parameters
+
 
     return res.json({
       success: true,
@@ -221,3 +228,29 @@ export const AppointmentCancel = async (req, res) => {
   }
 };
 
+//API to get dashbord data for admin panel
+export const AdminDashboard = async (req, res) => {
+  try {
+    const doctors = await getAllDoctors();
+    const appointments = await getAllAppointments();
+    const patient = await getAllPatients(); 
+
+    const dashData = {
+      doctors: doctors.length,
+      appointments: appointments.length,
+      patients: patient.length,
+      latestAppointments: appointments.reverse().slice(0, 5),
+      doctorName: appointments.doctorName,
+      doctorImage: appointments.doctorImage
+    }
+    res.status(200).json({
+      success: true,
+      message: "Dashboard data retrieved successfully",
+      data: dashData,
+    });
+    
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message:error.message });
+  }
+}

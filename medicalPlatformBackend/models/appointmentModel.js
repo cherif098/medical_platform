@@ -61,7 +61,7 @@ export const deleteAppointment = async (appointmentId, patientId) => {
   await executeQuery(deleteQuery, [appointmentId, patientId]);
 };
 
-export const getAllAppointments = async () => {
+export const getAllAppointmentsForAdmin = async () => {
   const query = `
     SELECT 
       a.APPOINTMENT_ID, a.CREATED_AT, a.SLOT_DATE, a.SLOT_TIME, a.USER_ID, a.DOCTOR_ID, a.STATUS,
@@ -144,3 +144,29 @@ export const deleteAppointmentByAdmin  = async (APPOINTMENT_ID) => {
     throw new Error(error.message || 'Error deleting appointment.');
   }
 };
+
+export const getAllAppointments = async () => {
+  const query = `
+  SELECT 
+    a.APPOINTMENT_ID,
+    a.SLOT_DATE,
+    a.SLOT_TIME,
+    a.STATUS,
+    a.USER_ID,
+    d.NAME as doctorName,
+    d.IMAGE as doctorImage
+  FROM 
+    MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS a
+  JOIN 
+    MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS d ON a.DOCTOR_ID = d.DOCTOR_ID
+`;
+
+
+  try {
+    const result = await executeQuery(query);
+    return result;
+  } catch (error) {
+    console.error("Error fetching all appointments:", error);
+    throw error;
+  }
+}

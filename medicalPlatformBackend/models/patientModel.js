@@ -160,3 +160,14 @@ export const updatePatientImage = async (PATIENT_ID, IMAGE) => {
     throw new Error("Error updating patient image: " + error.message);
   }
 };
+
+export const getAllPatients = async () => {
+  const query = `SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS;`;
+  try {
+    const result = await executeQuery(query);
+    return result;
+  } catch (error) {
+    console.error("Error retrieving all patients:", error);
+    throw error;
+  }
+};

@@ -124,3 +124,14 @@ export const findAvailableDoctor = async (DOCTOR_ID) => {
     throw error;
   }
 };
+
+export const getAllDoctors = async () => {
+  const query = `SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS;`;
+  try {
+    const result = await executeQuery(query);
+    return result;
+  } catch (error) {
+    console.error("Error retrieving all doctors:", error);
+    throw error;
+  }
+};
