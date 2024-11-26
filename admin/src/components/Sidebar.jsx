@@ -34,7 +34,7 @@ const Sidebar = () => {
             to={"/all-apointments"}
           >
             <img src={assets.appointment_icon} alt="" />
-            <p>Apppointements</p>
+            <p>Appointements</p>
           </NavLink>
 
           <NavLink

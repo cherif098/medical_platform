@@ -5,18 +5,17 @@ import { v2 as cloudinary } from "cloudinary";
 import { executeQuery } from "../config/snowflake.js";
 import jwt from "jsonwebtoken";
 import { getDoctorsWithoutPassword } from "../models/doctorModel.js";
+import { getAllAppointments,deleteAppointmentByAdmin } from "../models/appointmentModel.js";
 
 // Fonction pour vérifier si un champ existe déjà dans la base de données
-const checkIfExists = async (field, value) => {
+export const checkIfExists = async (field, value) => {
   const query = `SELECT COUNT(*) AS count FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS WHERE ${field} = ?`;
   const result = await executeQuery(query, [value]);
   return result[0].COUNT > 0; // Retourne true si l'élément existe déjà
 };
 
-// Fonction pour ajouter un docteur dans la base de données
-const addDoctor = async (req, res) => {
+export const addDoctor = async (req, res) => {
   try {
-    // Récupération des données depuis le corps de la requête
     const {
       DOCTOR_LICENCE,
       EMAIL,
@@ -37,7 +36,6 @@ const addDoctor = async (req, res) => {
     const imageFile = req.file;
     const IMAGE = imageFile ? imageFile.path : null; // Chemin local de l'image
 
-    // Vérification des champs obligatoires
     if (
       !DOCTOR_LICENCE ||
       !EMAIL ||
@@ -56,7 +54,6 @@ const addDoctor = async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Vérification de l'existence du numéro de licence et de l'email
     const licenceExists = await checkIfExists("DOCTOR_LICENCE", DOCTOR_LICENCE);
     const emailExists = await checkIfExists("EMAIL", EMAIL);
 
@@ -117,7 +114,7 @@ const addDoctor = async (req, res) => {
 };
 
 // Fonction pour gérer l'authentification de l'admin
-const loginAdmin = async (req, res) => {
+export const loginAdmin = async (req, res) => {
   try {
     const { EMAIL, PASSWORD } = req.body;
 
@@ -167,7 +164,7 @@ const loginAdmin = async (req, res) => {
   }
 };
 
-const allDoctors = async (req, res) => {
+export const allDoctors = async (req, res) => {
   try {
     const doctors = await getDoctorsWithoutPassword();
     res.status(200).json({
@@ -185,4 +182,42 @@ const allDoctors = async (req, res) => {
   }
 };
 
-export { addDoctor, loginAdmin, allDoctors };
+//API to get all appointments list
+export const getAllAppointmentsAdmin = async (req, res) => {
+  try {
+    const appointments = await getAllAppointments();
+    res.status(200).json({
+      success: true,
+      message: "Appointments retrieved successfully",
+      data: appointments,
+    });
+  }
+  catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Failed to retrieve appointments" });
+
+  }
+}
+
+//API to cancel an appointment from admin panel
+export const AppointmentCancel = async (req, res) => {
+  try {
+    const { APPOINTMENT_ID } = req.params;
+    console.log('Request Params:', req.params); // Logs route parameters
+
+
+    await deleteAppointmentByAdmin (APPOINTMENT_ID);
+
+    return res.json({
+      success: true,
+      message: 'Appointment cancelled successfully'
+    });
+  } catch (error) {
+    console.error('Error cancelling appointment:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error cancelling appointment'
+    });
+  }
+};
+
