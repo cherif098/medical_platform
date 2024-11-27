@@ -1,0 +1,46 @@
+import jwt from "jsonwebtoken";
+const authDoctor = async (req, res, next) => {
+  try {
+    const dToken = req.headers["dtoken"] || req.headers["dToken"];
+    console.log("Token received in middleware:", dToken);
+
+    // if (!dToken) {
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: "Token is missing. Please log in again.",
+    //   });
+    // }
+    console.log("je suis la ")
+
+    const token_decode = jwt.verify(dToken, process.env.JWT_SECRET);
+    console.log("Decoded token:", token_decode);
+    console.log("je suis la 1")
+
+
+    // Vérifiez si "id" est bien présent dans le token décodé
+    if (!token_decode || !token_decode.doctorId) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token structure. Please log in again.",
+      });
+    }
+    console.log("je suis la 2")
+
+
+    // Placez le PATIENT_ID dans req.user
+    req.user = { DOCTOR_ID: token_decode.doctorId };
+    console.log("Extracted PATIENT_ID:", req.user.DOCTOR_ID);
+    console.log("je suis la3 ")
+
+
+    next();
+  } catch (error) {
+    console.error("JWT Verification error:", error.message);
+    res.status(401).json({
+      success: false,
+      message: error.message || "Token validation failed.",
+    });
+  }
+};
+
+export default authDoctor;

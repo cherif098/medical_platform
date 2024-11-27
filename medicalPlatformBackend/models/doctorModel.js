@@ -149,3 +149,37 @@ export const getDoctorByEmail = async (EMAIL) => {
       throw error;
     }
   }
+
+  export const getDoctorAppointmentsById = async (DOCTOR_ID) => {
+    const query = `
+      SELECT 
+        a.APPOINTMENT_ID,
+        a.DOCTOR_ID,
+        a.USER_ID,
+        a.SLOT_DATE,
+        a.SLOT_TIME,
+        a.FEES,
+        a.STATUS,
+        a.CREATED_AT,
+        d.NAME AS DOCTOR_NAME,
+        d.SPECIALITY AS DOCTOR_SPECIALITY
+      FROM 
+        MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS a
+      WHERE 
+        a.DOCTOR_ID = (
+          SELECT DOCTOR_ID 
+          FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS 
+          WHERE DOCTOR_ID = a.DOCTOR_ID
+        )
+        AND a.STATUS = 'SCHEDULED';
+ 
+    `;
+    const values = [DOCTOR_ID];
+    console.log("values",values);
+    try {
+      const result = await executeQuery(query, values);
+      return result; 
+    } catch (error) {
+      throw new Error(`Error fetching appointments: ${error.message}`); // Renvoyer une erreur plus détaillée
+    }
+  };

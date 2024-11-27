@@ -19,7 +19,7 @@ adminRouter.post("/all-doctors", allDoctors);
 adminRouter.post("/change-availability", changeAvailability);
 adminRouter.post('/appointments', getAllAppointmentsAdmin);
 adminRouter.delete('/cancel-appointment/:APPOINTMENT_ID', AppointmentCancel);
-adminRouter.get('/dashboard', AdminDashboard)
+adminRouter.get('/dashboard', AdminDashboard );
 
 
 export default adminRouter;

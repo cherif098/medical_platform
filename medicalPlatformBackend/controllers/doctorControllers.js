@@ -1,5 +1,8 @@
 import { getDoctorStatus, updateDoctorStatus } from "../models/doctorModel.js";
-import { getDoctorsWithoutPassword, getDoctorByEmail } from "../models/doctorModel.js";
+import { 
+  getDoctorsWithoutPassword, 
+  getDoctorByEmail, 
+  getDoctorAppointmentsById } from "../models/doctorModel.js";
 import bcrypt from 'bcrypt';
 import jwt from "jsonwebtoken";
 
@@ -94,3 +97,35 @@ export const doctorLogin = async (req, res) => {
   }
 
 }
+
+//APi to get doctor appointments from doctor panel
+export const getDoctorAppointments = async (req, res) => {
+  try {
+    // Récupérer l'ID du médecin à partir de req.body (décodé par le middleware)
+    const DOCTOR_ID = req.user;
+    console.log(DOCTOR_ID);
+
+    // Récupérer les rendez-vous en utilisant l'ID du médecin
+    const appointments = await getDoctorAppointmentsById(DOCTOR_ID);
+    console.log(appointments);
+
+    if (!appointments || appointments.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No appointments found for the doctor.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Appointments retrieved successfully",
+      data: appointments,
+    });
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching appointments",
+    });
+  }
+};
