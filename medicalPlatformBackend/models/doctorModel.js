@@ -141,45 +141,64 @@ export const getDoctorByEmail = async (EMAIL) => {
     SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
       WHERE EMAIL = ?
     `;
-    try {
-      const result = await executeQuery(query, [EMAIL]);
-      return result[0]; 
-    } catch (error) {
-      console.error("Error fetching doctor by email:", error);
-      throw error;
-    }
+  try {
+    const result = await executeQuery(query, [EMAIL]);
+    return result[0];
+  } catch (error) {
+    console.error("Error fetching doctor by email:", error);
+    throw error;
   }
+};
 
-  export const getDoctorAppointmentsById = async (DOCTOR_ID) => {
+export const getDoctorAppointmentsQuery = async (req, res) => {
+  try {
+    const doctorId = req.user;
+
+    // Utiliser la même structure de requête qui fonctionne
     const query = `
       SELECT 
-        a.APPOINTMENT_ID,
-        a.DOCTOR_ID,
-        a.USER_ID,
-        a.SLOT_DATE,
-        a.SLOT_TIME,
-        a.FEES,
-        a.STATUS,
-        a.CREATED_AT,
-        d.NAME AS DOCTOR_NAME,
-        d.SPECIALITY AS DOCTOR_SPECIALITY
-      FROM 
-        MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS a
-      WHERE 
-        a.DOCTOR_ID = (
-          SELECT DOCTOR_ID 
-          FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS 
-          WHERE DOCTOR_ID = a.DOCTOR_ID
-        )
-        AND a.STATUS = 'SCHEDULED';
- 
+        A.APPOINTMENT_ID,
+        A.DOCTOR_ID,
+        A.USER_ID,
+        A.SLOT_DATE,
+        A.SLOT_TIME,
+        A.FEES,
+        A.STATUS,
+        D.NAME as DOCTOR_NAME,
+        D.SPECIALTY,
+        D.IMAGE as DOCTOR_IMAGE,
+        D.ADRESS_1,
+        D.ADRESS_2,
+        D.DEGREE
+      FROM MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS A
+      JOIN MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS D ON A.DOCTOR_ID = D.DOCTOR_ID
+      WHERE A.DOCTOR_ID = ?
+      AND A.STATUS = 'SCHEDULED'
+      ORDER BY A.SLOT_DATE DESC, A.SLOT_TIME DESC
     `;
-    const values = [DOCTOR_ID];
-    console.log("values",values);
-    try {
-      const result = await executeQuery(query, values);
-      return result; 
-    } catch (error) {
-      throw new Error(`Error fetching appointments: ${error.message}`); // Renvoyer une erreur plus détaillée
+
+    const appointments = await executeQuery(query, [doctorId]);
+
+    // Si aucun rendez-vous n'est trouvé
+    if (!appointments || appointments.length === 0) {
+      return res.json({
+        success: true,
+        message: "No appointments found",
+        appointments: [],
+      });
     }
-  };
+
+    // Si des rendez-vous sont trouvés
+    res.json({
+      success: true,
+      message: "Appointments retrieved successfully",
+      appointments: appointments,
+    });
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching appointments",
+    });
+  }
+};

@@ -1,12 +1,12 @@
 import { getDoctorStatus, updateDoctorStatus } from "../models/doctorModel.js";
-import { 
-  getDoctorsWithoutPassword, 
-  getDoctorByEmail, 
-  getDoctorAppointmentsById } from "../models/doctorModel.js";
-import bcrypt from 'bcrypt';
+import {
+  getDoctorsWithoutPassword,
+  getDoctorByEmail,
+  getDoctorAppointmentsQuery,
+} from "../models/doctorModel.js";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-
-
+import { executeQuery } from "../config/snowflake.js";
 
 export const changeAvailability = async (req, res) => {
   const { DOCTOR_LICENCE } = req.body;
@@ -60,7 +60,7 @@ export const findAvailableDoctor = async (doctorId) => {
 export const doctorLogin = async (req, res) => {
   try {
     const { EMAIL, PASSWORD } = req.body;
-    if (!EMAIL || !PASSWORD ) {
+    if (!EMAIL || !PASSWORD) {
       return res.status(400).json({
         success: false,
         message: "Email and password are required",
@@ -91,41 +91,70 @@ export const doctorLogin = async (req, res) => {
     );
 
     res.status(200).json({ success: true, message: "Login successful", token });
-  }catch (error) {
+  } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: error.message });
   }
-
-}
+};
 
 //APi to get doctor appointments from doctor panel
 export const getDoctorAppointments = async (req, res) => {
   try {
-    // Récupérer l'ID du médecin à partir de req.body (décodé par le middleware)
-    const DOCTOR_ID = req.user;
-    console.log(DOCTOR_ID);
+    const doctorId = req.user.DOCTOR_ID;
 
-    // Récupérer les rendez-vous en utilisant l'ID du médecin
-    const appointments = await getDoctorAppointmentsById(DOCTOR_ID);
-    console.log(appointments);
+    // Requête SQL pour récupérer les rendez-vous avec les informations du patient
+    const query = `
+      SELECT 
+        A.APPOINTMENT_ID,
+        A.USER_ID,
+        A.SLOT_DATE,
+        A.SLOT_TIME,
+        A.FEES,
+        A.STATUS,
+        P.NAME as PATIENT_NAME,
+        P.EMAIL as PATIENT_EMAIL,
+        P.PHONE as PATIENT_PHONE,
+        P.GENDER as PATIENT_GENDER
+      FROM MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS A
+      JOIN MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS P ON A.USER_ID = P.PATIENT_ID
+      WHERE A.DOCTOR_ID = ?
+      ORDER BY A.SLOT_DATE DESC, A.SLOT_TIME DESC
+    `;
 
+    // Exécution de la requête
+    const appointments = await executeQuery(query, [doctorId]);
+
+    // Si aucun rendez-vous n'est trouvé
     if (!appointments || appointments.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No appointments found for the doctor.",
+      return res.json({
+        success: true,
+        message: "No appointments found",
+        appointments: [],
       });
     }
 
-    res.status(200).json({
+    // Formater les dates et heures pour l'affichage
+    const formattedAppointments = appointments.map((appointment) => ({
+      ...appointment,
+      SLOT_DATE: new Date(appointment.SLOT_DATE).toLocaleDateString("fr-FR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      SLOT_TIME: appointment.SLOT_TIME.slice(0, 5), // Format HH:mm
+    }));
+
+    res.json({
       success: true,
       message: "Appointments retrieved successfully",
-      data: appointments,
+      appointments: formattedAppointments,
     });
   } catch (error) {
-    console.error("Error fetching appointments:", error);
+    console.error("Error retrieving appointments:", error);
     res.status(500).json({
       success: false,
-      message: "An error occurred while fetching appointments",
+      message: "Error retrieving appointments",
+      error: error.message,
     });
   }
 };
