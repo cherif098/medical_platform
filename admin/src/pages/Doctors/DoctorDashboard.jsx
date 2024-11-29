@@ -73,7 +73,7 @@ const DoctorDashboard = () => {
                       Completed
                     </span>
                   ) : (
-                    <span className="text-primary font-medium">SCHEDULED</span>
+                    <span className="text-primary font-medium">Scheduled</span>
                   )}
                 </div>
               </div>
