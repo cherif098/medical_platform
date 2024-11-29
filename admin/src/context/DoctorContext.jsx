@@ -13,6 +13,8 @@ const DoctorContextProvider = (props) => {
   const [appointments, setAppointments] = useState([]);
   const [dashData, setDashData] = useState(false);
 
+  const[profileData,setProfileData] = useState(false)
+
   // Configuration commune pour axios
   const getHeaders = () => ({
     headers: {
@@ -111,6 +113,28 @@ const DoctorContextProvider = (props) => {
     }
   };
 
+  const getProfileData = async () => {
+    try {
+        const { data } = await axios.get(
+            `${backendUrl}/api/doctor/profile`,
+            getHeaders()  // Using the existing getHeaders function which already includes dToken
+        );
+        
+        if (data.success) {
+            setProfileData(data.data);
+            console.log("Profile Data:", data.data);
+        } else {
+            toast.error(data.message);
+        }
+    } catch (error) {
+        console.error("Error fetching profile:", error);
+        toast.error(
+            error.response?.data?.message || 
+            "Erreur lors de la récupération du profil"
+        );
+    }
+};
+
   const value = {
     dToken,
     setDToken,
@@ -123,6 +147,7 @@ const DoctorContextProvider = (props) => {
     getDashData,
     setDashData,
     dashData,
+    profileData,setProfileData,getProfileData,
   };
   return (
     <DoctorContext.Provider value={value}>

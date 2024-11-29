@@ -296,3 +296,59 @@ export const updateAppointmentById = async (APPOINTMENT_ID, newStatus) => {
     throw error;
   }
 };
+
+export const getDoctorById = async (DOCTOR_ID) => {
+  const query = `
+    SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
+    WHERE DOCTOR_ID = ?
+  `;
+  try {
+    const result = await executeQuery(query, [DOCTOR_ID]);
+    return result[0];
+  } catch (error) {
+    console.error("Error fetching doctor by ID:", error);
+    throw error;
+  }
+};
+
+export const updateDoctorProfileModel = async (DOCTOR_ID, updatedData) => {
+  const allowedFields = [
+    'NAME',
+    'SPECIALTY',
+    'FEES',
+    'ADRESS_1',
+    'ADRESS_2',
+    'DEGREE',
+    'EXPERIENCE',
+    'ABOUT',
+    'IMAGE'
+  ];
+
+  const updates = Object.entries(updatedData)
+    .filter(([key]) => allowedFields.includes(key))
+    .map(([key, value]) => `${key} = ?`)
+    .join(', ');
+
+  const values = Object.entries(updatedData)
+    .filter(([key]) => allowedFields.includes(key))
+    .map(([_, value]) => value);
+
+  const query = `
+    UPDATE MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
+    SET ${updates}
+    WHERE DOCTOR_ID = ?;
+  `;
+
+  try {
+    const result = await executeQuery(query, [...values, DOCTOR_ID]);
+    
+    if (result.affectedRows === 0) {
+      throw new Error('Doctor not found or no changes made');
+    }
+    
+    return result;
+  } catch (error) {
+    console.error("Error updating doctor profile:", error);
+    throw error;
+  }
+};
