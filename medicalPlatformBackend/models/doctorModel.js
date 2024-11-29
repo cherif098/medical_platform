@@ -321,7 +321,8 @@ export const updateDoctorProfileModel = async (DOCTOR_ID, updatedData) => {
     'DEGREE',
     'EXPERIENCE',
     'ABOUT',
-    'IMAGE'
+    'IMAGE',
+    'STATUS'  
   ];
 
   const updates = Object.entries(updatedData)

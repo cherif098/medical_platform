@@ -134,7 +134,18 @@ const DoctorContextProvider = (props) => {
         );
     }
 };
-
+const refreshDoctorData = async () => {
+  try {
+      await Promise.all([
+          getAppointments(),
+          getDashData(),
+          getProfileData()
+      ]);
+  } catch (error) {
+      console.error("Error refreshing doctor data:", error);
+      toast.error("Error updating some information");
+  }
+};
   const value = {
     dToken,
     setDToken,
@@ -147,7 +158,7 @@ const DoctorContextProvider = (props) => {
     getDashData,
     setDashData,
     dashData,
-    profileData,setProfileData,getProfileData,
+    profileData,setProfileData,getProfileData,getHeaders,refreshDoctorData
   };
   return (
     <DoctorContext.Provider value={value}>

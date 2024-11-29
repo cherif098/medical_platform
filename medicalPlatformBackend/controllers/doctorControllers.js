@@ -346,38 +346,42 @@ export const doctorProfile = async (req, res) => {
 
 export const updateDoctorProfile = async (req, res) => {
   try {
-      const { DOCTOR_ID } = req.params;
-      const updateData = req.body;
+      const DOCTOR_ID = req.user.DOCTOR_ID;  
+      
+      if (!DOCTOR_ID) {
+          return res.status(400).json({
+              success: false,
+              message: "Doctor ID is required"
+          });
+      }
 
-      // Vérifier si le docteur existe avant la mise à jour
+      // Verify doctor exists before attempting update
       const existingDoctor = await getDoctorById(DOCTOR_ID);
       if (!existingDoctor) {
           return res.status(404).json({
               success: false,
-              message: "Docteur non trouvé"
+              message: "Doctor not found"
           });
       }
 
-      // Effectuer la mise à jour
-      await updateDoctorProfileModel(DOCTOR_ID, updateData);
+      // Attempt to update the profile
+      await updateDoctorProfileModel(DOCTOR_ID, req.body);
 
-      // Récupérer le profil mis à jour
+      // Fetch and return updated profile
       const updatedDoctor = await getDoctorById(DOCTOR_ID);
       const { PASSWORD, ...safeProfile } = updatedDoctor;
 
       return res.status(200).json({
           success: true,
-          message: "Profil mis à jour avec succès",
+          message: "Profile updated successfully",
           data: safeProfile
       });
 
   } catch (error) {
-      console.error("Erreur lors de la mise à jour du profil:", error);
-      
+      console.error("Error updating doctor profile:", error);
       return res.status(500).json({
           success: false,
-          message: "Erreur lors de la mise à jour du profil",
-          error: error.message
+          message: error.message || "Error updating profile"
       });
   }
 };
