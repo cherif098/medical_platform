@@ -2,8 +2,10 @@ import { getDoctorStatus, updateDoctorStatus } from "../models/doctorModel.js";
 import {
   getDoctorsWithoutPassword,
   getDoctorByEmail,
-  getDoctorAppointmentsQuery,
+  getAppointmentById,
+  updateAppointmentById,
 } from "../models/doctorModel.js";
+import { deleteAppointmentDoctor } from "../models/appointmentModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { executeQuery } from "../config/snowflake.js";
@@ -34,7 +36,46 @@ export const changeAvailability = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+// doctorControllers.js
+export const completeAppointment = async (req, res) => {
+  try {
+    const { APPOINTMENT_ID } = req.body;
+    console.log("DEUXIEME FOIS:", APPOINTMENT_ID);
+    const DOCTOR_ID = req.user.DOCTOR_ID; // From authDoctor middleware
+    console.log("deuxieme fois :", DOCTOR_ID);
 
+    // Vérifier si le rendez-vous existe et appartient au docteur
+    const appointment = await getAppointmentById(APPOINTMENT_ID);
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: "Appointment not found",
+      });
+    }
+
+    // Mettre à jour le statut
+    const result = await updateAppointmentById(APPOINTMENT_ID, "COMPLETED");
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: "Appointment marked as completed successfully",
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Failed to update appointment status",
+      });
+    }
+  } catch (error) {
+    console.error("Error completing appointment:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
 export const doctorList = async (req, res) => {
   try {
     const doctors = await getDoctorsWithoutPassword();
@@ -155,6 +196,58 @@ export const getDoctorAppointments = async (req, res) => {
       success: false,
       message: "Error retrieving appointments",
       error: error.message,
+    });
+  }
+};
+//API TO MARK APPOINTMENT COMPLETED FOR DOCTOR PANEL
+
+export const appointmentComplete = async (req, res) => {
+  try {
+    const { DOCTOR_ID, APPOINTMENT_ID } = req.body;
+
+    console.log("Completing appointment:", { DOCTOR_ID, APPOINTMENT_ID });
+
+    const appointmentData = await getAppointmentById(APPOINTMENT_ID);
+    if (appointmentData && appointmentData.DOCTOR_ID === DOCTOR_ID) {
+      const updateResult = await updateAppointmentById(
+        APPOINTMENT_ID,
+        "COMPLETED"
+      );
+      if (updateResult.success) {
+        return res.json({ success: true, message: "Appointment completed" });
+      } else {
+        return res.json({ success: false, message: updateResult.message });
+      }
+    } else {
+      return res.json({
+        success: false,
+        message: "Unauthorized or invalid appointment",
+      });
+    }
+  } catch (error) {
+    console.error("Error in appointmentComplete:", error.message);
+    res.json({
+      success: false,
+      message: "Failed to complete the appointment.",
+    });
+  }
+};
+export const cancelAppointment = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    const doctorId = req.user.DOCTOR_ID;
+
+    await deleteAppointmentDoctor(appointmentId, doctorId);
+
+    return res.json({
+      success: true,
+      message: "Appointment cancelled successfully",
+    });
+  } catch (error) {
+    console.error("Error cancelling appointment:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Error cancelling appointment",
     });
   }
 };

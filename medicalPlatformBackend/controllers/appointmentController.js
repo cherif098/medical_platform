@@ -86,79 +86,89 @@ export const getAvailableSlots = async (req, res) => {
   }
 };
 
-
-// fun to book an appointment : 
+// fun to book an appointment :
 export const bookAppointment = async (req, res) => {
   try {
     const { docId, slotDate, slotTime } = req.body;
     const userId = req.user.PATIENT_ID;
 
-    console.log('Received booking data:', { docId, slotDate, slotTime, userId });
+    console.log("Received booking data:", {
+      docId,
+      slotDate,
+      slotTime,
+      userId,
+    });
 
     // Format the date
     let formattedDate;
     try {
-      if (slotDate.includes('-')) {
+      if (slotDate.includes("-")) {
         // If date is in DD-MM-YYYY format
-        const [day, month, year] = slotDate.split('-');
-        formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-      } else if (slotDate.includes('/')) {
+        const [day, month, year] = slotDate.split("-");
+        formattedDate = `${year}-${month.padStart(2, "0")}-${day.padStart(
+          2,
+          "0"
+        )}`;
+      } else if (slotDate.includes("/")) {
         // If date is in DD/MM/YYYY format
-        const [day, month, year] = slotDate.split('/');
-        formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        const [day, month, year] = slotDate.split("/");
+        formattedDate = `${year}-${month.padStart(2, "0")}-${day.padStart(
+          2,
+          "0"
+        )}`;
       } else {
         // If date is already in YYYY-MM-DD format
         formattedDate = slotDate;
       }
     } catch (error) {
-      console.error('Date parsing error:', error);
+      console.error("Date parsing error:", error);
       return res.status(400).json({
         success: false,
-        message: "Invalid date format. Please use DD-MM-YYYY format."
+        message: "Invalid date format. Please use DD-MM-YYYY format.",
       });
     }
 
     // Format the time
-    // const formattedTime = slotTime.length === 5 
-    //   ? `${slotTime}:00`  
+    // const formattedTime = slotTime.length === 5
+    //   ? `${slotTime}:00`
     //   : slotTime;
 
-     // Format the time
-     let formattedTime;
-     try {
-       // Convert "11:00 a.m." format to "11:00:00"
-       const timeMatch = slotTime.match(/(\d{1,2}):(\d{2})\s*(a\.m\.|p\.m\.)/i);
-       if (timeMatch) {
-         let [_, hours, minutes, period] = timeMatch;
-         hours = parseInt(hours);
-         
-         // Convert to 24-hour format
-         if (period.toLowerCase().includes('p') && hours !== 12) {
-           hours += 12;
-         } else if (period.toLowerCase().includes('a') && hours === 12) {
-           hours = 0;
-         }
-         
-         formattedTime = `${hours.toString().padStart(2, '0')}:${minutes}:00`;
-       } else {
-         // If time is already in 24-hour format
-         formattedTime = slotTime.length === 5 ? `${slotTime}:00` : slotTime;
-       }
- 
-       if (!formattedTime.match(/^\d{2}:\d{2}:\d{2}$/)) {
-         throw new Error('Invalid time format');
-       }
-     } catch (error) {
-       console.error('Time parsing error:', error);
-       return res.status(400).json({
-         success: false,
-         message: "Invalid time format. Please use HH:MM AM/PM format."
-       });
-     }
+    // Format the time
+    let formattedTime;
+    try {
+      // Convert "11:00 a.m." format to "11:00:00"
+      const timeMatch = slotTime.match(/(\d{1,2}):(\d{2})\s*(a\.m\.|p\.m\.)/i);
+      if (timeMatch) {
+        let [_, hours, minutes, period] = timeMatch;
+        hours = parseInt(hours);
 
-    console.log('Formatted values:', {
+        // Convert to 24-hour format
+        if (period.toLowerCase().includes("p") && hours !== 12) {
+          hours += 12;
+        } else if (period.toLowerCase().includes("a") && hours === 12) {
+          hours = 0;
+        }
+
+        formattedTime = `${hours.toString().padStart(2, "0")}:${minutes}:00`;
+      } else {
+        // If time is already in 24-hour format
+        formattedTime = slotTime.length === 5 ? `${slotTime}:00` : slotTime;
+      }
+
+      if (!formattedTime.match(/^\d{2}:\d{2}:\d{2}$/)) {
+        throw new Error("Invalid time format");
+      }
+    } catch (error) {
+      console.error("Time parsing error:", error);
+      return res.status(400).json({
+        success: false,
+        message: "Invalid time format. Please use HH:MM AM/PM format.",
+      });
+    }
+
+    console.log("Formatted values:", {
       formattedDate,
-      formattedTime
+      formattedTime,
     });
 
     // Verify doctor availability
@@ -166,7 +176,7 @@ export const bookAppointment = async (req, res) => {
     if (!doctor) {
       return res.status(400).json({
         success: false,
-        message: "Doctor not available"
+        message: "Doctor not available",
       });
     }
 
@@ -180,15 +190,16 @@ export const bookAppointment = async (req, res) => {
       AND STATUS != 'CANCELLED'
     `;
 
-    const existingAppointments = await executeQuery(
-      checkQuery, 
-      [parseInt(docId), formattedDate, formattedTime]
-    );
+    const existingAppointments = await executeQuery(checkQuery, [
+      parseInt(docId),
+      formattedDate,
+      formattedTime,
+    ]);
 
     if (existingAppointments[0].COUNT > 0) {
       return res.status(400).json({
         success: false,
-        message: "This slot is already booked. Please select another time."
+        message: "This slot is already booked. Please select another time.",
       });
     }
 
@@ -206,27 +217,23 @@ export const bookAppointment = async (req, res) => {
       )
     `;
 
-    await executeQuery(
-      insertQuery, 
-      [
-        parseInt(docId), 
-        userId, 
-        formattedDate,
-        formattedTime,
-        parseFloat(doctor.FEES)
-      ]
-    );
+    await executeQuery(insertQuery, [
+      parseInt(docId),
+      userId,
+      formattedDate,
+      formattedTime,
+      parseFloat(doctor.FEES),
+    ]);
 
     res.json({
       success: true,
-      message: "Appointment booked successfully"
+      message: "Appointment booked successfully",
     });
-
   } catch (error) {
     console.error("Error booking appointment:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Error booking appointment"
+      message: error.message || "Error booking appointment",
     });
   }
 };
@@ -258,14 +265,14 @@ export const getPatientAppointments = async (req, res) => {
 
     res.json({
       success: true,
-      appointments
+      appointments,
     });
   } catch (error) {
-    console.error('Error fetching appointments:', error);
+    console.error("Error fetching appointments:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching appointments',
-      error: error.message
+      message: "Error fetching appointments",
+      error: error.message,
     });
   }
 };
@@ -280,13 +287,13 @@ export const cancelAppointment = async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'Appointment cancelled successfully'
+      message: "Appointment cancelled successfully",
     });
   } catch (error) {
-    console.error('Error cancelling appointment:', error);
+    console.error("Error cancelling appointment:", error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Error cancelling appointment'
+      message: error.message || "Error cancelling appointment",
     });
   }
 };

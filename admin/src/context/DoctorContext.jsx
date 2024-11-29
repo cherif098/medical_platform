@@ -11,11 +11,20 @@ const DoctorContextProvider = (props) => {
     localStorage.getItem("dToken") ? localStorage.getItem("dToken") : ""
   );
   const [appointments, setAppointments] = useState([]);
+
+  // Configuration commune pour axios
+  const getHeaders = () => ({
+    headers: {
+      dToken: dToken,
+      "Content-Type": "application/json",
+    },
+  });
+
   const getAppointments = async () => {
     try {
       const { data } = await axios.get(
-        backendUrl + "/api/doctor/appointments",
-        { headers: { dToken } }
+        `${backendUrl}/api/doctor/appointments`,
+        getHeaders()
       );
       if (data.success) {
         setAppointments(data.appointments.reverse());
@@ -24,9 +33,67 @@ const DoctorContextProvider = (props) => {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error);
+      toast.error(
+        error.response?.data?.message || "Error fetching appointments"
+      );
     }
   };
+
+  const completeAppointment = async (APPOINTMENT_ID) => {
+    try {
+      console.log("premier fois :", APPOINTMENT_ID);
+      const { data } = await axios.post(
+        `${backendUrl}/api/doctor/complete-appointment`,
+        { APPOINTMENT_ID },
+        getHeaders()
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        await getAppointments();
+        return true;
+      } else {
+        toast.error(data.message);
+        return false;
+      }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Error completing appointment"
+      );
+      return false;
+    }
+  };
+
+  const cancelAppointment = async (APPOINTMENT_ID) => {
+    console.log("Context - Starting cancellation with token:", dToken);
+    console.log("Context - Full headers:", getHeaders());
+    console.log(
+      "Context - URL:",
+      `${backendUrl}/api/doctor/cancel/${APPOINTMENT_ID}`
+    );
+    try {
+      const { data } = await axios.delete(
+        `${backendUrl}/api/doctor/cancel/${APPOINTMENT_ID}`,
+        getHeaders()
+      );
+
+      if (data.success) {
+        toast.success("Appointment canceled successfully.");
+        await getAppointments();
+        return true;
+      } else {
+        toast.error(data.message || "Failed to cancel appointment.");
+        return false;
+      }
+    } catch (error) {
+      console.error("Cancel appointment error:", error.response);
+      toast.error(
+        error.response?.data?.message || "Error canceling appointment."
+      );
+      return false;
+    }
+  };
+
   const value = {
     dToken,
     setDToken,
@@ -34,6 +101,8 @@ const DoctorContextProvider = (props) => {
     getAppointments,
     appointments,
     setAppointments,
+    completeAppointment,
+    cancelAppointment,
   };
   return (
     <DoctorContext.Provider value={value}>

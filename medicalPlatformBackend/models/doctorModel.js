@@ -202,3 +202,79 @@ export const getDoctorAppointmentsQuery = async (req, res) => {
     });
   }
 };
+// Fonction pour récupérer un rendez-vous spécifique par APPOINTMENT_ID
+export const getAppointmentById = async (APPOINTMENT_ID) => {
+  try {
+    // Requête SQL pour récupérer les informations du rendez-vous
+    const query = `
+      SELECT 
+        A.APPOINTMENT_ID,
+        A.USER_ID,
+        A.SLOT_DATE,
+        A.SLOT_TIME,
+        A.FEES,
+        A.STATUS,
+        P.NAME as PATIENT_NAME,
+        P.EMAIL as PATIENT_EMAIL,
+        P.PHONE as PATIENT_PHONE,
+        P.GENDER as PATIENT_GENDER
+      FROM MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS A
+      JOIN MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS P ON A.USER_ID = P.PATIENT_ID
+      WHERE A.APPOINTMENT_ID = ?
+    `;
+
+    // Exécution de la requête SQL avec l'ID fourni
+    const appointment = await executeQuery(query, [APPOINTMENT_ID]);
+
+    // Si aucun rendez-vous n'est trouvé
+    if (!appointment || appointment.length === 0) {
+      return null; // Retourne null si le rendez-vous n'existe pas
+    }
+
+    // Formater la date et l'heure pour un affichage cohérent
+    const formattedAppointment = {
+      ...appointment[0],
+      SLOT_DATE: new Date(appointment[0].SLOT_DATE).toLocaleDateString(
+        "fr-FR",
+        {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }
+      ),
+      SLOT_TIME: appointment[0].SLOT_TIME.slice(0, 5), // Format HH:mm
+    };
+
+    return formattedAppointment;
+  } catch (error) {
+    console.error("Error retrieving appointmen by ID:", error);
+    throw new Error("Unable to retrieve the appointment.");
+  }
+};
+
+// Fonction pour mettre à jour le statut d'un rendez-vous
+// doctorModel.js
+export const updateAppointmentById = async (APPOINTMENT_ID, newStatus) => {
+  try {
+    if (!APPOINTMENT_ID || !newStatus) {
+      throw new Error("APPOINTMENT_ID and status are required");
+    }
+
+    const query = `
+      UPDATE MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS
+      SET STATUS = ?
+      WHERE APPOINTMENT_ID = ?
+    `;
+
+    const result = await executeQuery(query, [newStatus, APPOINTMENT_ID]);
+
+    return {
+      success: true,
+      message: "Appointment status updated successfully",
+      affectedRows: result.affectedRows,
+    };
+  } catch (error) {
+    console.error("Error updating appointment status:", error);
+    throw error;
+  }
+};

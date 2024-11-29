@@ -1,16 +1,28 @@
 import { executeQuery } from "../config/snowflake.js";
 
-export const createAppointment = async (doctorId, userId, slotDate, slotTime, fees) => {
+export const createAppointment = async (
+  doctorId,
+  userId,
+  slotDate,
+  slotTime,
+  fees
+) => {
   const appointmentQuery = `
     INSERT INTO MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS (
       DOCTOR_ID, USER_ID, SLOT_DATE, SLOT_TIME, FEES, STATUS
     ) VALUES (?, ?, ?, ?, ?, 'SCHEDULED')
   `;
-  
-  await executeQuery(appointmentQuery, [doctorId, userId, slotDate, slotTime, fees]);
+
+  await executeQuery(appointmentQuery, [
+    doctorId,
+    userId,
+    slotDate,
+    slotTime,
+    fees,
+  ]);
 };
 
-// getting appointments by user id 
+// getting appointments by user id
 export const getPatientAppointmentsByUserId = async (patientId) => {
   const query = `
     SELECT 
@@ -34,7 +46,6 @@ export const getPatientAppointmentsByUserId = async (patientId) => {
   return executeQuery(query, [patientId]);
 };
 
-
 // fun to delete an appointment:
 export const deleteAppointment = async (appointmentId, patientId) => {
   // First check if appointment exists and belongs to patient
@@ -45,10 +56,13 @@ export const deleteAppointment = async (appointmentId, patientId) => {
     AND USER_ID = ?
   `;
 
-  const appointments = await executeQuery(checkQuery, [appointmentId, patientId]);
+  const appointments = await executeQuery(checkQuery, [
+    appointmentId,
+    patientId,
+  ]);
 
   if (appointments.length === 0) {
-    throw new Error('Appointment not found or does not belong to this patient');
+    throw new Error("Appointment not found or does not belong to this patient");
   }
 
   // Delete the appointment
@@ -59,6 +73,34 @@ export const deleteAppointment = async (appointmentId, patientId) => {
   `;
 
   await executeQuery(deleteQuery, [appointmentId, patientId]);
+};
+
+// fun to delete an appointment:
+export const deleteAppointmentDoctor = async (appointmentId, doctorId) => {
+  const checkQuery = `
+    SELECT *
+    FROM MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS
+    WHERE APPOINTMENT_ID = ?
+    AND DOCTOR_ID = ?
+  `;
+
+  const appointments = await executeQuery(checkQuery, [
+    appointmentId,
+    doctorId,
+  ]);
+
+  if (appointments.length === 0) {
+    throw new Error("Appointment not found or does not belong to this patient");
+  }
+
+  // Delete the appointment
+  const deleteQuery = `
+    DELETE FROM MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS
+    WHERE APPOINTMENT_ID = ?
+    AND DOCTOR_ID  = ?
+  `;
+
+  await executeQuery(deleteQuery, [appointmentId, doctorId]);
 };
 
 export const getAllAppointmentsForAdmin = async () => {
@@ -79,15 +121,15 @@ export const getAllAppointmentsForAdmin = async () => {
 
   try {
     const appointments = await executeQuery(query);
-    
+
     // Organiser les données en un objet par table
-    const result = appointments.map(appointment => ({
+    const result = appointments.map((appointment) => ({
       APPOINTMENT: {
         APPOINTMENT_ID: appointment.APPOINTMENT_ID,
         CREATED_AT: appointment.CREATED_AT,
         SLOT_DATE: appointment.SLOT_DATE,
         SLOT_TIME: appointment.SLOT_TIME,
-        STATUS: appointment.STATUS
+        STATUS: appointment.STATUS,
       },
       DOCTOR: {
         NAME: appointment.DOCTOR_NAME,
@@ -95,7 +137,7 @@ export const getAllAppointmentsForAdmin = async () => {
         EXPERIENCE: appointment.DOCTOR_EXPERIENCE,
         IMAGE: appointment.DOCTOR_IMAGE,
         SPECIALTY: appointment.DOCTOR_SPECIALTY,
-        FEES: appointment.DOCTOR_FEES
+        FEES: appointment.DOCTOR_FEES,
       },
       PATIENT: {
         NAME: appointment.PATIENT_NAME,
@@ -103,8 +145,8 @@ export const getAllAppointmentsForAdmin = async () => {
         PHONE: appointment.PATIENT_PHONE,
         DATE_OF_BIRTH: appointment.PATIENT_DATE_OF_BIRTH,
         ADRESSE: appointment.PATIENT_ADRESS,
-        IMAGE: appointment.PATIENT_IMAGE
-      }
+        IMAGE: appointment.PATIENT_IMAGE,
+      },
     }));
 
     return result;
@@ -115,7 +157,7 @@ export const getAllAppointmentsForAdmin = async () => {
 };
 
 // fun to delete an appointment:
-export const deleteAppointmentByAdmin  = async (APPOINTMENT_ID) => {
+export const deleteAppointmentByAdmin = async (APPOINTMENT_ID) => {
   try {
     // Ensure the appointment exists before attempting to delete
     const checkQuery = `
@@ -127,7 +169,7 @@ export const deleteAppointmentByAdmin  = async (APPOINTMENT_ID) => {
     const appointments = await executeQuery(checkQuery, [APPOINTMENT_ID]);
 
     if (appointments.length === 0) {
-      throw new Error('Appointment not found.');
+      throw new Error("Appointment not found.");
     }
 
     // Delete the appointment
@@ -138,10 +180,10 @@ export const deleteAppointmentByAdmin  = async (APPOINTMENT_ID) => {
 
     await executeQuery(deleteQuery, [APPOINTMENT_ID]);
 
-    return { success: true, message: 'Appointment deleted successfully.' };
+    return { success: true, message: "Appointment deleted successfully." };
   } catch (error) {
-    console.error('Error deleting appointment:', error);
-    throw new Error(error.message || 'Error deleting appointment.');
+    console.error("Error deleting appointment:", error);
+    throw new Error(error.message || "Error deleting appointment.");
   }
 };
 
@@ -161,7 +203,6 @@ export const getAllAppointments = async () => {
     MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS d ON a.DOCTOR_ID = d.DOCTOR_ID
 `;
 
-
   try {
     const result = await executeQuery(query);
     return result;
@@ -169,4 +210,4 @@ export const getAllAppointments = async () => {
     console.error("Error fetching all appointments:", error);
     throw error;
   }
-}
+};
