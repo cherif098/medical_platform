@@ -101,7 +101,7 @@ const DoctorAppointments = () => {
             <p className="max-sm:hidden">{index + 1}</p>
             <div className="flex items-center gap-2">
               <img
-                src={assets.patients_icon}
+                src={item.PATIENT_IMAGE}
                 alt="Patient Icon"
                 className="w-8 rounded-full"
               />

@@ -4,6 +4,7 @@ import {
   getDoctorByEmail,
   getAppointmentById,
   updateAppointmentById,
+  getDoctorAppointmentsQuery,
 } from "../models/doctorModel.js";
 import { deleteAppointmentDoctor } from "../models/appointmentModel.js";
 import bcrypt from "bcrypt";
@@ -155,7 +156,8 @@ export const getDoctorAppointments = async (req, res) => {
         P.NAME as PATIENT_NAME,
         P.EMAIL as PATIENT_EMAIL,
         P.PHONE as PATIENT_PHONE,
-        P.GENDER as PATIENT_GENDER
+        P.GENDER as PATIENT_GENDER,
+        P.IMAGE as PATIENT_IMAGE
       FROM MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS A
       JOIN MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS P ON A.USER_ID = P.PATIENT_ID
       WHERE A.DOCTOR_ID = ?
@@ -248,6 +250,57 @@ export const cancelAppointment = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || "Error cancelling appointment",
+    });
+  }
+};
+
+// doctorControllers.js
+export const doctorDashboard = async (req, res) => {
+  try {
+    if (!req.user || !req.user.DOCTOR_ID) {
+      return res.status(401).json({
+        success: false,
+        message: "Doctor ID not found in request",
+      });
+    }
+
+    const doctorId = req.user.DOCTOR_ID;
+    console.log("Processing dashboard for doctor:", doctorId); // Debug log
+
+    const appointments = await getDoctorAppointmentsQuery(doctorId);
+    console.log("Retrieved appointments for dashboard:", appointments); // Debug log
+
+    let earnings = 0;
+    let patients = new Set();
+
+    appointments.forEach((item) => {
+      if (item && item.STATUS === "COMPLETED") {
+        earnings += Number(item.FEES) || 0;
+      }
+      if (item && item.USER_ID) {
+        patients.add(item.USER_ID);
+      }
+    });
+
+    const dashData = {
+      earnings,
+      appointments: appointments.length,
+      patients: patients.size,
+      latestAppointments: appointments.slice(0, 5),
+    };
+
+    console.log("Final dashboard data:", dashData); // Debug log
+
+    return res.json({
+      success: true,
+      dashData,
+    });
+  } catch (error) {
+    console.error("Error in doctorDashboard:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error retrieving dashboard data",
+      error: error.message,
     });
   }
 };

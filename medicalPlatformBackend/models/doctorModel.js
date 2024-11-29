@@ -150,56 +150,74 @@ export const getDoctorByEmail = async (EMAIL) => {
   }
 };
 
-export const getDoctorAppointmentsQuery = async (req, res) => {
+export const getDoctorAppointmentsQuery = async (DOCTOR_ID) => {
   try {
-    const doctorId = req.user;
+    if (!DOCTOR_ID) {
+      console.error("DOCTOR_ID is undefined");
+      return [];
+    }
 
-    // Utiliser la même structure de requête qui fonctionne
     const query = `
       SELECT 
         A.APPOINTMENT_ID,
-        A.DOCTOR_ID,
         A.USER_ID,
+        A.DOCTOR_ID,
         A.SLOT_DATE,
         A.SLOT_TIME,
         A.FEES,
         A.STATUS,
-        D.NAME as DOCTOR_NAME,
-        D.SPECIALTY,
-        D.IMAGE as DOCTOR_IMAGE,
-        D.ADRESS_1,
-        D.ADRESS_2,
-        D.DEGREE
+        P.NAME as PATIENT_NAME,
+        P.EMAIL as PATIENT_EMAIL,
+        P.PHONE as PATIENT_PHONE,
+        P.GENDER as PATIENT_GENDER,
+        P.IMAGE as PATIENT_IMAGE
       FROM MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS A
-      JOIN MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS D ON A.DOCTOR_ID = D.DOCTOR_ID
+      JOIN MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS P ON A.USER_ID = P.PATIENT_ID
       WHERE A.DOCTOR_ID = ?
-      AND A.STATUS = 'SCHEDULED'
       ORDER BY A.SLOT_DATE DESC, A.SLOT_TIME DESC
     `;
 
-    const appointments = await executeQuery(query, [doctorId]);
+    console.log("Executing query with DOCTOR_ID:", DOCTOR_ID); // Debug log
 
-    // Si aucun rendez-vous n'est trouvé
+    const appointments = await executeQuery(query, [DOCTOR_ID]);
+
+    console.log("Raw appointments data:", appointments); // Debug log
+
     if (!appointments || appointments.length === 0) {
-      return res.json({
-        success: true,
-        message: "No appointments found",
-        appointments: [],
-      });
+      console.log("No appointments found for doctor:", DOCTOR_ID); // Debug log
+      return [];
     }
 
-    // Si des rendez-vous sont trouvés
-    res.json({
-      success: true,
-      message: "Appointments retrieved successfully",
-      appointments: appointments,
-    });
+    // Formater les dates et heures avec vérification des valeurs nulles
+    const formattedAppointments = appointments
+      .map((appointment) => {
+        if (!appointment) return null;
+
+        const formattedDate = appointment.SLOT_DATE
+          ? new Date(appointment.SLOT_DATE).toLocaleDateString("fr-FR", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+          : "Date non définie";
+
+        const formattedTime = appointment.SLOT_TIME
+          ? appointment.SLOT_TIME.slice(0, 5)
+          : "Heure non définie";
+
+        return {
+          ...appointment,
+          SLOT_DATE: formattedDate,
+          SLOT_TIME: formattedTime,
+        };
+      })
+      .filter(Boolean); // Enlever les éléments null
+
+    console.log("Formatted appointments:", formattedAppointments); // Debug log
+    return formattedAppointments;
   } catch (error) {
-    console.error("Error fetching appointments:", error);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while fetching appointments",
-    });
+    console.error("Error in getDoctorAppointmentsQuery:", error);
+    throw error;
   }
 };
 // Fonction pour récupérer un rendez-vous spécifique par APPOINTMENT_ID

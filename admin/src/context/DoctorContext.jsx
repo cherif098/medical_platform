@@ -11,6 +11,7 @@ const DoctorContextProvider = (props) => {
     localStorage.getItem("dToken") ? localStorage.getItem("dToken") : ""
   );
   const [appointments, setAppointments] = useState([]);
+  const [dashData, setDashData] = useState(false);
 
   // Configuration commune pour axios
   const getHeaders = () => ({
@@ -93,6 +94,22 @@ const DoctorContextProvider = (props) => {
       return false;
     }
   };
+  const getDashData = async () => {
+    try {
+      const { data } = await axios.get(
+        backendUrl + "/api/doctor/dashboard",
+        getHeaders()
+      );
+      if (data.success) {
+        setDashData(data.dashData);
+        console.log(data.dashData);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Error dashboard");
+    }
+  };
 
   const value = {
     dToken,
@@ -103,6 +120,9 @@ const DoctorContextProvider = (props) => {
     setAppointments,
     completeAppointment,
     cancelAppointment,
+    getDashData,
+    setDashData,
+    dashData,
   };
   return (
     <DoctorContext.Provider value={value}>
