@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+pydantic
+python-dotenv
+langchain-core
+langchain-community
+langchain-ollama
+python-multipart
+typing-extensions
+python-jose
+passlib
+bcrypt
+jinja2
+httpx
+requests
+aiohttp
+websockets
