@@ -129,3 +129,16 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Environnements virtuels Python
+venv/
+env/
+.venv/
+.env/
+*.venv
+*.env
+
+# Répertoires de cache Python
+__pycache__/
+*.py[cod]
+*$py.class

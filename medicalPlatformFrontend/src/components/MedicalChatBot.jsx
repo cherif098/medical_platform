@@ -83,21 +83,25 @@ const MedicalChatbot = ({ userId }) => {
   };
 
   // Bouton flottant avec robot quand le chat est fermé
-  if (!isOpen) {
-    return (
-      <div className="fixed bottom-4 right-4 flex flex-col items-end space-y-2">
-        <div className="bg-white p-3 rounded-lg shadow-lg mb-2 transform transition-all duration-300 hover:scale-105">
-          <span className="text-blue-600 font-semibold">Besoin d'aide ?</span>
-        </div>
-        <button
-          onClick={() => setIsOpen(true)}
-          className="bg-blue-500 p-4 rounded-full shadow-lg hover:bg-blue-600 transition-colors duration-300 group relative"
-        >
-          <Bot className="w-6 h-6 text-white" />
-        </button>
+if (!isOpen) {
+  return (
+    <div className="fixed bottom-4 right-4 flex items-center space-x-4">
+      {/* Message "Besoin d'aide ?" */}
+      <div className="bg-white p-3 rounded-lg shadow-lg transform transition-all duration-300 hover:scale-105">
+        <span className="text-blue-600 font-semibold">Besoin d'aide ?</span>
       </div>
-    );
-  }
+
+      {/* Bouton robot */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className="bg-blue-500 p-4 rounded-full shadow-lg hover:bg-blue-600 transition-colors duration-300 group relative"
+      >
+        <Bot className="w-10 h-10 text-white" />
+      </button>
+    </div>
+  );
+}
+
 
   return (
     <div className="fixed bottom-4 right-4 w-96 h-[600px] bg-white rounded-lg shadow-xl flex flex-col">
