@@ -7,6 +7,7 @@ import adminRouter from "./routes/adminRoute.js";
 import doctorRouter from "./routes/doctorRoute.js";
 import patientRouter from "./routes/patientRoute.js";
 import appointmentRouter from "./routes/appointmentRoute.js";
+import reportRouter from "./routes/reportRoute.js"; // Nouvelle importation
 
 //App config
 const app = express();
@@ -39,8 +40,9 @@ app.use("/api/admin", adminRouter);
 app.use("/api/doctor", doctorRouter);
 app.use("/api/patient", patientRouter);
 app.use("/api/appointment", appointmentRouter);
+app.use("/api/reports", reportRouter);
 
-// Dmarrer le serveur
+// Démarrer le serveur
 const startServer = async () => {
   try {
     await initializeSnowflake();
