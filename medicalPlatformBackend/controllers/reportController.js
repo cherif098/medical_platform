@@ -5,8 +5,28 @@ import {
   getReportById,
   updateReport,
   deleteReport,
+  getDoctorPatientsList,
 } from "../models/reportModel.js";
 import PDFDocument from "pdfkit";
+
+export const getDoctorPatients = async (req, res) => {
+  try {
+    const doctorId = req.user.DOCTOR_ID;
+    const patients = await getDoctorPatientsList(doctorId);
+
+    res.json({
+      success: true,
+      patients: patients,
+    });
+  } catch (error) {
+    console.error("Error in getDoctorPatients:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch patients list",
+      error: error.message,
+    });
+  }
+};
 
 export const createMedicalReport = async (req, res) => {
   try {
@@ -87,7 +107,47 @@ export const updateMedicalReport = async (req, res) => {
   try {
     const { reportId } = req.params;
     const doctorId = req.user.DOCTOR_ID;
-    const updateData = req.body;
+
+    // Filtrer les données reçues pour ne garder que les champs de la table REPORTS
+    const updateData = {
+      CONSULTATION_DATE: req.body.CONSULTATION_DATE,
+      CONSULTATION_DURATION: req.body.CONSULTATION_DURATION,
+      CONSULTATION_REASON: req.body.CONSULTATION_REASON,
+      MAIN_COMPLAINT: req.body.MAIN_COMPLAINT,
+      CURRENT_ILLNESS_HISTORY: req.body.CURRENT_ILLNESS_HISTORY,
+      TEMPERATURE: req.body.TEMPERATURE,
+      BLOOD_PRESSURE: req.body.BLOOD_PRESSURE,
+      HEART_RATE: req.body.HEART_RATE,
+      RESPIRATORY_RATE: req.body.RESPIRATORY_RATE,
+      OXYGEN_SATURATION: req.body.OXYGEN_SATURATION,
+      WEIGHT: req.body.WEIGHT,
+      HEIGHT: req.body.HEIGHT,
+      BMI: req.body.BMI,
+      PERSONAL_HISTORY: req.body.PERSONAL_HISTORY,
+      FAMILY_HISTORY: req.body.FAMILY_HISTORY,
+      LIFESTYLE_HABITS: req.body.LIFESTYLE_HABITS,
+      PHYSICAL_EXAMINATION: req.body.PHYSICAL_EXAMINATION,
+      TESTS_PERFORMED: req.body.TESTS_PERFORMED,
+      TEST_RESULTS: req.body.TEST_RESULTS,
+      PRIMARY_DIAGNOSIS: req.body.PRIMARY_DIAGNOSIS,
+      DIFFERENTIAL_DIAGNOSIS: req.body.DIFFERENTIAL_DIAGNOSIS,
+      EVOLUTION_NOTES: req.body.EVOLUTION_NOTES,
+      PRESCRIPTIONS: req.body.PRESCRIPTIONS,
+      OTHER_TREATMENTS: req.body.OTHER_TREATMENTS,
+      RECOMMENDATIONS: req.body.RECOMMENDATIONS,
+      NEXT_APPOINTMENT: req.body.NEXT_APPOINTMENT,
+      DISABILITY_EVALUATION: req.body.DISABILITY_EVALUATION,
+      DISABILITY_DURATION: req.body.DISABILITY_DURATION,
+      WORK_RETURN_RECOMMENDATIONS: req.body.WORK_RETURN_RECOMMENDATIONS,
+      STATUS: req.body.STATUS,
+    };
+
+    // Supprimer les champs undefined ou null
+    Object.keys(updateData).forEach((key) => {
+      if (updateData[key] === undefined || updateData[key] === null) {
+        delete updateData[key];
+      }
+    });
 
     const success = await updateReport(reportId, doctorId, updateData);
 
@@ -113,7 +173,6 @@ export const updateMedicalReport = async (req, res) => {
     });
   }
 };
-
 export const deleteMedicalReport = async (req, res) => {
   try {
     const { reportId } = req.params;

@@ -7,6 +7,7 @@ import {
   updateMedicalReport,
   deleteMedicalReport,
   generateReportPDF,
+  getDoctorPatients,
 } from "../controllers/reportController.js";
 import authDoctor from "../middlewares/authDoctor.js";
 
@@ -14,6 +15,8 @@ const reportRouter = express.Router();
 
 // Routes protégées par l'authentification du médecin
 reportRouter.use(authDoctor);
+
+reportRouter.get("/patients", getDoctorPatients);
 
 // Route pour créer un nouveau rapport médical
 reportRouter.post("/", createMedicalReport);
