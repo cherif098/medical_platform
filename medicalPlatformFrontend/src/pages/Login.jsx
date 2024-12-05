@@ -3,7 +3,7 @@ import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { Check, X } from "lucide-react";
+import { Check, X, Upload } from "lucide-react";
 import { assets } from "../assets/assets";
 
 const Login = () => {
@@ -20,7 +20,7 @@ const Login = () => {
   const [GENDER, setGender] = useState("");
   const [IMAGE, setImage] = useState(false);
 
-  // Error message states
+  // Error states and validations remain the same
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [nameError, setNameError] = useState("");
@@ -30,20 +30,19 @@ const Login = () => {
   const [genderError, setGenderError] = useState("");
   const [imageError, setImageError] = useState("");
 
-  // Real-time password validations
+  // All validation functions remain the same
   const passwordValidations = {
     hasUpperCase: /[A-Z]/.test(PASSWORD),
     hasNumber: /\d/.test(PASSWORD),
     hasMinLength: PASSWORD.length >= 8,
   };
 
-  // Email validation
+  // Keeping all the validation functions and form handling logic the same
   const validateEmail = (email) => {
     const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return regex.test(email);
   };
 
-  // Password validation
   const validatePassword = (password) => {
     return (
       passwordValidations.hasUpperCase &&
@@ -52,22 +51,18 @@ const Login = () => {
     );
   };
 
-  // Phone validation
   const validatePhone = (phone) => {
     const regex = /^[0-9]{10}$/;
     return regex.test(phone);
   };
 
-  // Gender validation
   const validateGender = (gender) => {
     return gender === "Male" || gender === "Female" || gender === "Other";
   };
 
-  // Form validation
   const validateForm = () => {
     let isValid = true;
 
-    // Reset error messages
     setEmailError("");
     setPasswordError("");
     setNameError("");
@@ -142,7 +137,7 @@ const Login = () => {
       formData.append("EMAIL", EMAIL.trim().toLowerCase());
       formData.append("PASSWORD", PASSWORD);
       formData.append("DATE_OF_BIRTH", DATE_OF_BIRTH);
-      formData.append("PHONE", PHONE.replace(/\D/g, "")); // Enlève tous les caractères non-numériques
+      formData.append("PHONE", PHONE.replace(/\D/g, ""));
       formData.append("ADRESSE", ADRESSE.trim());
       formData.append("GENDER", GENDER);
       if (IMAGE) {
@@ -156,7 +151,6 @@ const Login = () => {
         );
         if (data.success) {
           switchState();
-
           toast.success("Account created successfully! Please log in.");
         } else {
           toast.error(data.message || "Registration failed");
@@ -197,245 +191,180 @@ const Login = () => {
     setImage(false);
   };
 
+  const InputField = ({ label, error, ...props }) => (
+    <div className="w-full space-y-1">
+      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <input
+        {...props}
+        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
+      />
+      {error && <p className="text-sm text-red-500">{error}</p>}
+    </div>
+  );
+
   return (
-    <form onSubmit={onSubmitHandler} className="min-h-[80vh] flex items-center">
-      <div className="flex flex-col gap-3 m-auto items-start p-8 min-w-[340px] sm:min-w-96 border rounded-xl text-zinc-600 text-sm shadow-lg">
-        <p className="text-2xl font-semibold">
-          {state === "Sign up" ? "Create Account" : "Login"}
-        </p>
-        <p>
-          Please {state === "Sign up" ? "sign up" : "login"} to book appointment
-        </p>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 text-center">
+            {state === "Sign up" ? "Create Account" : "Welcome Back"}
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Please {state === "Sign up" ? "sign up" : "login"} to book an appointment
+          </p>
+        </div>
 
-        {state === "Sign up" && (
-          <>
-            <div className="w-full">
-              <p>Full Name</p>
-              <input
-                className="border border-zinc-300 rounded w-full p-2 mt-1"
-                type="text"
-                onChange={(e) => setName(e.target.value)}
-                value={NAME}
-                placeholder="Enter your full name"
-              />
-              {nameError && <p className="text-red-500 text-sm">{nameError}</p>}
-            </div>
-
-            <div className="w-full">
-              <p>Date of Birth</p>
-              <input
-                className="border border-zinc-300 rounded w-full p-2 mt-1"
-                type="date"
-                onChange={(e) => setDOB(e.target.value)}
-                value={DATE_OF_BIRTH}
-              />
-              {dobError && <p className="text-red-500 text-sm">{dobError}</p>}
-            </div>
-
-            <div className="w-full">
-              <p>Phone Number</p>
-              <input
-                className="border border-zinc-300 rounded w-full p-2 mt-1"
-                type="text"
-                onChange={(e) => setPhone(e.target.value)}
-                value={PHONE}
-                placeholder="Enter your phone number"
-              />
-              {phoneError && (
-                <p className="text-red-500 text-sm">{phoneError}</p>
-              )}
-            </div>
-
-            <div className="w-full">
-              <p>Address</p>
-              <input
-                className="border border-zinc-300 rounded w-full p-2 mt-1"
-                type="text"
-                onChange={(e) => setAddress(e.target.value)}
-                value={ADRESSE}
-                placeholder="Enter your address"
-              />
-              {addressError && (
-                <p className="text-red-500 text-sm">{addressError}</p>
-              )}
-            </div>
-
-            <div className="w-full">
-              <p>Gender</p>
-              <select
-                className="border border-zinc-300 rounded w-full p-2 mt-1"
-                value={GENDER}
-                onChange={(e) => setGender(e.target.value)}
-              >
-                <option value="">Select your gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-              {genderError && (
-                <p className="text-red-500 text-sm">{genderError}</p>
-              )}
-            </div>
-            <div className="w-full">
-              <p>Upload Profile Picture</p>
-              <label htmlFor="profile-image" className="cursor-pointer">
-                <img
-                  className="w-16 h-16 bg-gray-100 rounded-full object-cover border-2 border-gray-200 hover:border-blue-500 transition-colors"
-                  src={IMAGE ? URL.createObjectURL(IMAGE) : assets.upload_area}
-                  alt="Profile preview"
-                  onError={(e) => {
-                    e.target.src = assets.upload_area;
-                  }}
+        <form onSubmit={onSubmitHandler} className="mt-8 space-y-6">
+          <div className="space-y-4">
+            {state === "Sign up" && (
+              <>
+                <InputField
+                  label="Full Name"
+                  type="text"
+                  value={NAME}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="John Doe"
+                  error={nameError}
                 />
-              </label>
-              <input
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file && file.type.startsWith("image/")) {
-                    setImage(file);
-                  } else {
-                    toast.error("Veuillez sélectionner une image valide");
-                    e.target.value = "";
-                  }
-                }}
-                type="file"
-                name="profile-image"
-                id="profile-image"
-                accept="image/*"
-                className="hidden"
+
+                <InputField
+                  label="Date of Birth"
+                  type="date"
+                  value={DATE_OF_BIRTH}
+                  onChange={(e) => setDOB(e.target.value)}
+                  error={dobError}
+                />
+
+                <InputField
+                  label="Phone Number"
+                  type="tel"
+                  value={PHONE}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="1234567890"
+                  error={phoneError}
+                />
+
+                <InputField
+                  label="Address"
+                  type="text"
+                  value={ADRESSE}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="123 Main St"
+                  error={addressError}
+                />
+
+                <div className="w-full space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Gender</label>
+                  <select
+                    value={GENDER}
+                    onChange={(e) => setGender(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Select your gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  {genderError && <p className="text-sm text-red-500">{genderError}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Profile Picture</label>
+                  <div className="flex items-center justify-center">
+                    <label className="relative cursor-pointer group">
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-gray-200 group-hover:border-blue-500 transition duration-200">
+                        {IMAGE ? (
+                          <img
+                            src={URL.createObjectURL(IMAGE)}
+                            alt="Profile preview"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Upload className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition duration-200" />
+                        )}
+                      </div>
+                      <input
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file && file.type.startsWith("image/")) {
+                            setImage(file);
+                          } else {
+                            toast.error("Please select a valid image");
+                          }
+                        }}
+                        accept="image/*"
+                      />
+                    </label>
+                  </div>
+                  {imageError && <p className="text-sm text-red-500 text-center">{imageError}</p>}
+                </div>
+              </>
+            )}
+
+            <InputField
+              label="Email"
+              type="email"
+              value={EMAIL}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="email@example.com"
+              error={emailError}
+            />
+
+            <div className="space-y-1">
+              <InputField
+                label="Password"
+                type="password"
+                value={PASSWORD}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                error={passwordError}
               />
-              {IMAGE && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setImage(null);
-                  }}
-                  className="text-red-500 text-sm mt-1 hover:text-red-600"
-                >
-                  Supprimer l'image
-                </button>
-              )}
-              {imageError && (
-                <p className="text-red-500 text-sm">{imageError}</p>
+
+              {state === "Sign up" && (
+                <div className="mt-2 space-y-2">
+                  {Object.entries({
+                    "At least one uppercase letter": passwordValidations.hasUpperCase,
+                    "At least one number": passwordValidations.hasNumber,
+                    "At least 8 characters": passwordValidations.hasMinLength,
+                  }).map(([text, isValid]) => (
+                    <div key={text} className="flex items-center space-x-2">
+                      {isValid ? (
+                        <Check className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <X className="w-4 h-4 text-red-500" />
+                      )}
+                      <span className={`text-sm ${isValid ? "text-green-500" : "text-red-500"}`}>
+                        {text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
-          </>
-        )}
+          </div>
 
-        <div className="w-full">
-          <p>Email</p>
-          <input
-            className="border border-zinc-300 rounded w-full p-2 mt-1"
-            type="text"
-            onChange={(e) => setEmail(e.target.value)}
-            value={EMAIL}
-            placeholder="Enter your email"
-          />
-          {emailError && <p className="text-red-500 text-sm">{emailError}</p>}
-        </div>
+          <button
+            type="submit"
+            className="w-full py-3 px-4 border border-transparent rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200 font-medium"
+          >
+            {state === "Sign up" ? "Create Account" : "Sign In"}
+          </button>
 
-        <div className="w-full">
-          <p>Password</p>
-          <input
-            className="border border-zinc-300 rounded w-full p-2 mt-1"
-            type="password"
-            onChange={(e) => setPassword(e.target.value)}
-            value={PASSWORD}
-            placeholder="Enter your password"
-          />
-          {passwordError && (
-            <p className="text-red-500 text-sm">{passwordError}</p>
-          )}
-
-          {/* Password validation indicators */}
-          {state === "Sign up" && (
-            <div className="mt-2 space-y-1">
-              <div className="flex items-center gap-2 text-sm">
-                {passwordValidations.hasUpperCase ? (
-                  <Check className="w-4 h-4 text-green-500" />
-                ) : (
-                  <X className="w-4 h-4 text-red-500" />
-                )}
-                <span
-                  className={`${
-                    passwordValidations.hasUpperCase
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  At least one uppercase letter
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 text-sm">
-                {passwordValidations.hasNumber ? (
-                  <Check className="w-4 h-4 text-green-500" />
-                ) : (
-                  <X className="w-4 h-4 text-red-500" />
-                )}
-                <span
-                  className={`${
-                    passwordValidations.hasNumber
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  At least one number
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 text-sm">
-                {passwordValidations.hasMinLength ? (
-                  <Check className="w-4 h-4 text-green-500" />
-                ) : (
-                  <X className="w-4 h-4 text-red-500" />
-                )}
-                <span
-                  className={`${
-                    passwordValidations.hasMinLength
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  At least 8 characters
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <button
-          type="submit"
-          className="w-full py-2 bg-blue-500 text-white rounded mt-4 hover:bg-blue-600 transition-colors"
-        >
-          {state === "Sign up" ? "Sign up" : "Login"}
-        </button>
-
-        <p>
-          {state === "Sign up" ? (
-            <span>
-              Already have an account?{" "}
-              <span
-                onClick={switchState}
-                className="text-blue-500 cursor-pointer hover:text-blue-600"
-              >
-                Login
-              </span>
-            </span>
-          ) : (
-            <span>
-              Don't have an account?{" "}
-              <span
-                onClick={switchState}
-                className="text-blue-500 cursor-pointer hover:text-blue-600"
-              >
-                Sign up
-              </span>
-            </span>
-          )}
-        </p>
+          <p className="text-sm text-center text-gray-600">
+            {state === "Sign up" ? "Already have an account?" : "Don't have an account?"}{" "}
+            <button
+              type="button"
+              onClick={switchState}
+              className="font-medium text-blue-600 hover:text-blue-500 focus:outline-none focus:underline transition duration-200"
+            >
+              {state === "Sign up" ? "Sign in" : "Sign up"}
+            </button>
+          </p>
+        </form>
       </div>
-    </form>
+    </div>
   );
 };
 
