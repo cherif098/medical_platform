@@ -3,6 +3,7 @@ import { AppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { Calendar, Clock, MapPin, Trash2, Plus, Loader2 } from "lucide-react";
 
 const MyAppointments = () => {
   const { backendUrl, token } = useContext(AppContext);
@@ -157,139 +158,185 @@ const MyAppointments = () => {
   };
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[200px]">
-        <div className="text-gray-600">Loading appointments...</div>
+      <div className="flex justify-center items-center min-h-screen bg-white">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <p className="text-gray-600 animate-pulse">
+            Loading your appointments...
+          </p>
+        </div>
       </div>
     );
   }
 
   if (!appointments.length) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[200px]">
-        <p className="text-gray-600 text-lg mb-4">No appointments found</p>
-        <button
-          onClick={() => navigate("/doctors")}
-          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-600 transition-colors"
-        >
-          Book an Appointment
-        </button>
+      <div className="flex flex-col items-center justify-center min-h-[400px] bg-white">
+        <div className="text-center space-y-4 max-w-md mx-auto p-8 bg-white rounded-xl shadow-lg transform hover:scale-105 transition-all">
+          <div className="p-4 bg-primary/10 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+            <Calendar className="w-8 h-8 text-primary" />
+          </div>
+          <h2 className="text-2xl font-semibold text-gray-800">
+            No Appointments Yet
+          </h2>
+          <p className="text-gray-600">
+            Schedule your first appointment with one of our qualified doctors.
+          </p>
+          <button
+            onClick={() => navigate("/doctors")}
+            className="group flex items-center justify-center gap-2 w-full px-6 py-3 bg-primary text-white rounded-lg hover:bg-blue-600 transition-all transform hover:translate-y-[-2px]"
+          >
+            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+            Book an Appointment
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">
-          My Appointments
-        </h1>
-        <button
-          onClick={() => navigate("/doctors")}
-          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-600 transition-colors"
-        >
-          Book New Appointment
-        </button>
-      </div>
+    <div className="min-h-screen bg-white py-8">
+      <div className="container mx-auto px-4 max-w-6xl">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              My Appointments
+            </h1>
+            <p className="text-gray-600">
+              {appointments.length} upcoming appointments
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/doctors")}
+            className="group flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-blue-600 transition-all transform hover:translate-y-[-2px] hover:shadow-lg"
+          >
+            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+            Book New
+          </button>
+        </div>
 
-      <div className="grid gap-6">
-        {appointments.map((appointment) => {
-          const isPast = isAppointmentPast(
-            appointment.SLOT_DATE,
-            appointment.SLOT_TIME
-          );
+        <div className="grid gap-6">
+          {appointments.map((appointment) => {
+            const isPast = isAppointmentPast(
+              appointment.SLOT_DATE,
+              appointment.SLOT_TIME
+            );
 
-          return (
-            <div
-              key={appointment.APPOINTMENT_ID}
-              className={`bg-white rounded-lg shadow p-6 ${
-                isPast ? "opacity-75" : ""
-              }`}
-            >
-              <div className="flex flex-col md:flex-row gap-6">
-                {/* Doctor Image */}
-                <div className="w-full md:w-1/4">
-                  <img
-                    src={appointment.DOCTOR_IMAGE}
-                    alt={appointment.DOCTOR_NAME}
-                    className="w-full h-48 object-cover rounded-lg"
-                    onError={(e) => {
-                      e.target.src = "/default-doctor-image.png";
-                    }}
-                  />
-                </div>
-
-                {/* Appointment Details */}
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-800">
-                        Dr. {appointment.DOCTOR_NAME}
-                      </h2>
-                      <p className="text-gray-600">{appointment.SPECIALTY}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-semibold text-primary">
-                        {appointment.FEES} €
-                      </p>
-                    </div>
+            return (
+              <div
+                key={appointment.APPOINTMENT_ID}
+                className={`group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] overflow-hidden ${
+                  isPast ? "opacity-75" : ""
+                }`}
+              >
+                <div className="flex flex-col md:flex-row">
+                  {/* Doctor Image Container */}
+                  <div className="w-full md:w-1/4 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                    <img
+                      src={appointment.DOCTOR_IMAGE}
+                      alt={appointment.DOCTOR_NAME}
+                      className="w-full h-full object-cover object-center transform group-hover:scale-110 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.src = "/default-doctor-image.png";
+                      }}
+                    />
                   </div>
 
-                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-gray-600">
-                        <span className="font-medium">Date: </span>
-                        {formatDate(appointment.SLOT_DATE)}
-                      </p>
-                      <p className="text-gray-600">
-                        <span className="font-medium">Time: </span>
-                        {formatTime(appointment.SLOT_TIME)}
-                      </p>
+                  {/* Appointment Details */}
+                  <div className="flex-1 p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-1">
+                          Dr. {appointment.DOCTOR_NAME}
+                        </h2>
+                        <p className="text-primary font-medium">
+                          {appointment.SPECIALTY}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-primary">
+                          {appointment.FEES} €
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-gray-600">
-                        <span className="font-medium">Location: </span>
-                      </p>
-                      <p className="text-gray-500 text-sm">
-                        {appointment.ADRESS_1}
-                      </p>
-                      <p className="text-gray-500 text-sm">
-                        {appointment.ADRESS_2}
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Action Buttons */}
-                  {!isPast && (
-                    <div className="mt-6 flex gap-4 justify-end">
-                      <button
-                        className={`px-4 py-2 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors ${
-                          deleteLoading === appointment.APPOINTMENT_ID
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }`}
-                        onClick={() =>
-                          handleDeleteAppointment(appointment.APPOINTMENT_ID)
-                        }
-                        disabled={deleteLoading === appointment.APPOINTMENT_ID}
-                      >
-                        {deleteLoading === appointment.APPOINTMENT_ID
-                          ? "Deleting..."
-                          : "Delete Appointment"}
-                      </button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <Calendar className="w-5 h-5 text-primary" />
+                          <div>
+                            <p className="text-sm text-gray-500">Date</p>
+                            <p className="font-medium">
+                              {formatDate(appointment.SLOT_DATE)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Clock className="w-5 h-5 text-primary" />
+                          <div>
+                            <p className="text-sm text-gray-500">Time</p>
+                            <p className="font-medium">
+                              {formatTime(appointment.SLOT_TIME)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-1" />
+                        <div>
+                          <p className="text-sm text-gray-500 mb-1">Location</p>
+                          <p className="font-medium">{appointment.ADRESS_1}</p>
+                          <p className="text-gray-600">
+                            {appointment.ADRESS_2}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  {isPast && (
-                    <div className="mt-4">
-                      <p className="text-yellow-600 text-sm">
-                        This appointment has passed
-                      </p>
-                    </div>
-                  )}
+
+                    {/* Action Buttons */}
+                    {!isPast && (
+                      <div className="mt-6 flex justify-end">
+                        <button
+                          className={`group flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg 
+                            hover:bg-red-100 transition-colors ${
+                              deleteLoading === appointment.APPOINTMENT_ID
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
+                          onClick={() =>
+                            handleDeleteAppointment(appointment.APPOINTMENT_ID)
+                          }
+                          disabled={
+                            deleteLoading === appointment.APPOINTMENT_ID
+                          }
+                        >
+                          {deleteLoading === appointment.APPOINTMENT_ID ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                          )}
+                          {deleteLoading === appointment.APPOINTMENT_ID
+                            ? "Cancelling..."
+                            : "Cancel Appointment"}
+                        </button>
+                      </div>
+                    )}
+                    {isPast && (
+                      <div className="mt-4 flex items-center gap-2 text-yellow-600">
+                        <Clock className="w-4 h-4" />
+                        <p className="text-sm font-medium">
+                          This appointment has passed
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

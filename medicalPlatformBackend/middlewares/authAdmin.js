@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 const authAdmin = async (req, res, next) => {
   try {
     const { aToken } = req.headers;
-    console.log("Token received in middleware:", aToken);
 
     if (!aToken) {
       return res.json({

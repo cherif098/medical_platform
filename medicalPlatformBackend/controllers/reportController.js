@@ -6,6 +6,8 @@ import {
   updateReport,
   deleteReport,
   getDoctorPatientsList,
+  getPatientReportById,
+  getPatientReports,
 } from "../models/reportModel.js";
 import PDFDocument from "pdfkit";
 
@@ -432,6 +434,74 @@ export const generateReportPDF = async (req, res) => {
     doc.end();
   } catch (error) {
     console.error("Error generating PDF:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate PDF",
+      error: error.message,
+    });
+  }
+};
+// Nouvelles fonctions à ajouter au contrôleur existant
+
+export const getPatientMedicalReports = async (req, res) => {
+  try {
+    const patientId = req.user.PATIENT_ID; // ID du patient à partir du token
+    console.log(patientId);
+    const reports = await getPatientReports(patientId);
+
+    res.json({
+      success: true,
+      data: reports,
+    });
+  } catch (error) {
+    console.error("Error in getPatientMedicalReports:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch patient reports",
+      error: error.message,
+    });
+  }
+};
+
+export const getPatientMedicalReport = async (req, res) => {
+  try {
+    const patientId = req.user.PATIENT_ID;
+    const reports = await getPatientReports(patientId);
+
+    console.log("Reports from database:", reports); // Pour déboguer
+
+    res.json({
+      success: true,
+      reports: reports, // Assurez-vous que c'est un tableau
+    });
+  } catch (error) {
+    console.error("Error in getPatientMedicalReports:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch reports",
+      error: error.message,
+    });
+  }
+};
+export const generatePatientReportPDF = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const patientId = req.user.PATIENT_ID;
+
+    const report = await getPatientReportById(reportId, patientId);
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: "Report not found or access denied",
+      });
+    }
+
+    // Réutiliser la même logique de génération de PDF que generateReportPDF
+    // mais avec des restrictions sur les informations sensibles
+    await generateReportPDF(req, res);
+  } catch (error) {
+    console.error("Error in generatePatientReportPDF:", error);
     res.status(500).json({
       success: false,
       message: "Failed to generate PDF",

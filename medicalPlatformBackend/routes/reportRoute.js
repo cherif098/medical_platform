@@ -1,4 +1,3 @@
-// routes/reportRoute.js
 import express from "express";
 import {
   createMedicalReport,
@@ -8,32 +7,37 @@ import {
   deleteMedicalReport,
   generateReportPDF,
   getDoctorPatients,
+  getPatientMedicalReport,
+  generatePatientReportPDF,
+  getPatientMedicalReports,
 } from "../controllers/reportController.js";
 import authDoctor from "../middlewares/authDoctor.js";
+import authPatient from "../middlewares/authPatient.js";
 
 const reportRouter = express.Router();
 
-// Routes protégées par l'authentification du médecin
-reportRouter.use(authDoctor);
+// Routes pour les patients (à placer AVANT les routes avec :reportId)
+reportRouter.get("/patient-reports", authPatient, getPatientMedicalReports);
+reportRouter.get(
+  "/patient-report/:reportId",
+  authPatient,
+  getPatientMedicalReport
+);
+reportRouter.get(
+  "/patient-report/:reportId/pdf",
+  authPatient,
+  generatePatientReportPDF
+);
 
-reportRouter.get("/patients", getDoctorPatients);
+// Routes pour les médecins
+reportRouter.get("/patients", authDoctor, getDoctorPatients);
+reportRouter.get("/patient/:patientId", authDoctor, getMedicalReports);
+reportRouter.post("/", authDoctor, createMedicalReport);
 
-// Route pour créer un nouveau rapport médical
-reportRouter.post("/", createMedicalReport);
-
-// Route pour obtenir tous les rapports d'un patient
-reportRouter.get("/patient/:patientId", getMedicalReports);
-
-// Route pour obtenir un rapport spécifique
-reportRouter.get("/:reportId", getMedicalReport);
-
-// Route pour mettre à jour un rapport
-reportRouter.put("/:reportId", updateMedicalReport);
-
-// Route pour supprimer un rapport
-reportRouter.delete("/:reportId", deleteMedicalReport);
-
-// Route pour générer un PDF du rapport
-reportRouter.get("/:reportId/pdf", generateReportPDF);
+// Routes avec :reportId en dernier
+reportRouter.get("/:reportId", authDoctor, getMedicalReport);
+reportRouter.put("/:reportId", authDoctor, updateMedicalReport);
+reportRouter.delete("/:reportId", authDoctor, deleteMedicalReport);
+reportRouter.get("/:reportId/pdf", authDoctor, generateReportPDF);
 
 export default reportRouter;

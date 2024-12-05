@@ -270,3 +270,44 @@ export const getDoctorPatientsList = async (doctorId) => {
     throw error;
   }
 };
+export const getPatientReports = async (patientId) => {
+  const query = `
+    SELECT R.*, 
+           D.NAME as DOCTOR_NAME,
+           D.SPECIALTY
+    FROM MEDICAL_DB.MEDICAL_SCHEMA.REPORTS R
+    JOIN MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS D ON R.DOCTOR_ID = D.DOCTOR_ID
+    WHERE R.PATIENT_ID = ?
+    AND R.IS_DELETED = FALSE
+    AND R.STATUS = 'COMPLETED'
+    ORDER BY R.CREATED_AT DESC`;
+
+  try {
+    const reports = await executeQuery(query, [patientId]);
+    return reports;
+  } catch (error) {
+    console.error("Error fetching patient reports:", error);
+    throw error;
+  }
+};
+
+export const getPatientReportById = async (reportId, patientId) => {
+  const query = `
+    SELECT R.*, 
+           D.NAME as DOCTOR_NAME,
+           D.SPECIALTY
+    FROM MEDICAL_DB.MEDICAL_SCHEMA.REPORTS R
+    JOIN MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS D ON R.DOCTOR_ID = D.DOCTOR_ID
+    WHERE R.REPORT_ID = ?
+    AND R.PATIENT_ID = ?
+    AND R.IS_DELETED = FALSE
+    AND R.STATUS = 'COMPLETED'`;
+
+  try {
+    const result = await executeQuery(query, [reportId, patientId]);
+    return result[0];
+  } catch (error) {
+    console.error("Error fetching patient report:", error);
+    throw error;
+  }
+};
