@@ -4,7 +4,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { AppContext } from "../context/AppContext";
 
-const ReportCard = ({ report, onClick }) => {
+const ReportCard = ({ report, onClick,backendUrl }) => {
+
   const getStatusBadge = (status) => {
     const statusConfig = {
       DRAFT: {
@@ -101,7 +102,10 @@ const ReportCard = ({ report, onClick }) => {
             </button>
             <button
               onClick={() =>
-                window.open(`/api/reports/${report.REPORT_ID}/pdf`, "_blank")
+                window.open(
+                  `${backendUrl}/api/reports/patient-report/${report.REPORT_ID}/pdf`,
+                  "_blank"
+                )
               }
               className="text-purple-600 hover:text-purple-800 flex items-center gap-2"
             >
@@ -232,6 +236,7 @@ const MedicalReports = () => {
               <ReportCard
                 key={report.REPORT_ID}
                 report={report}
+                backendUrl={backendUrl}
                 onClick={() => navigate(`/report-details/${report.REPORT_ID}`)}
               />
             ))}

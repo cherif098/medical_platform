@@ -42,9 +42,12 @@ const ReportDetails = () => {
             headers: { token },
           }
         );
+        
 
-        if (response.data.success) {
-          setReport(response.data.data);
+        if (response.data) {
+          setReport(response.data.reports);
+          console.log(response.data)
+
         } else {
           throw new Error(response.data.message || "Failed to fetch report");
         }
@@ -291,7 +294,7 @@ const ReportDetails = () => {
           {/* Footer Actions */}
           <div className="flex justify-end mt-6">
             <button
-              onClick={() => navigate("/medical-reports")}
+              onClick={() => navigate("/my-medicalReport")}
               className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 
                        transition-colors flex items-center gap-2"
             >

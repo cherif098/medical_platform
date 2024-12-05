@@ -3,6 +3,7 @@ import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import axios from "axios";
 import { toast } from "react-toastify";
+
 const MyProfile = () => {
   const { patientData, setPatientData, token, backendUrl, loadPatientData } =
     useContext(AppContext);
@@ -31,7 +32,6 @@ const MyProfile = () => {
       if (data.success) {
         toast.success(data.message);
         await loadPatientData();
-        console.log(data);
         setIsEdit(false);
         setImage(false);
       } else {
@@ -44,143 +44,160 @@ const MyProfile = () => {
   };
 
   if (!patientData) {
-    return <div>Loading profile...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   return (
     patientData && (
-      <div className="max-w-lg flex flex-col gap-2 text-sm">
-        {isEdit ? (
-          <label htmlFor="IMAGE">
-            <div className="inline-block relative cursor-pointer">
-              <img
-                className="w-36 rounded opacity-75"
-                src={IMAGE ? URL.createObjectURL(IMAGE) : patientData.IMAGE}
-                alt=""
+      <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8 my-8">
+        <div className="flex flex-col items-center">
+          {isEdit ? (
+            <label htmlFor="IMAGE" className="group relative cursor-pointer">
+              <div className="relative w-40 h-40 rounded-full overflow-hidden border-4 border-blue-100 hover:border-blue-300 transition-all">
+                <img
+                  className="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
+                  src={IMAGE ? URL.createObjectURL(IMAGE) : patientData.IMAGE}
+                  alt=""
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <img
+                    className="w-12 h-12"
+                    src={IMAGE ? "" : assets.upload_icon}
+                    alt=""
+                  />
+                </div>
+              </div>
+              <input
+                onChange={(e) => setImage(e.target.files[0])}
+                type="file"
+                id="IMAGE"
+                className="hidden"
               />
-              <img
-                className="w-10 absolute bottom-12 right-12"
-                src={IMAGE ? "" : assets.upload_icon}
-                alt=""
-              />
-            </div>
-            <input
-              onChange={(e) => setImage(e.target.files[0])}
-              type="file"
-              id="IMAGE"
-              hidden
+            </label>
+          ) : (
+            <img 
+              className="w-40 h-40 rounded-full object-cover border-4 border-blue-100" 
+              src={patientData.IMAGE} 
+              alt="" 
             />
-          </label>
-        ) : (
-          <img className="w-36 rounded-full" src={patientData.IMAGE} alt="" />
-        )}
+          )}
 
-        {isEdit ? (
-          <input
-            className="bg-gray-50 text-3xl font-medium max-w-60 mt-4"
-            type="text"
-            value={patientData.NAME}
-            onChange={(e) =>
-              setPatientData((prev) => ({ ...prev, NAME: e.target.value }))
-            }
-          />
-        ) : (
-          <p className="font-medium text-3xl text-neutral-800 mt-4">
-            {patientData.NAME}
-          </p>
-        )}
-        <hr className="bg-zinc-400 h-[1px] border-none" />
-        <div className=" grid grid-cols-[1fr_3fr] gap-y-2.5 mt-3 text-neutral-700">
-          <p className="text-neutral-500 underline mt-3">CONTACT INFORMATION</p>
-          <div className="">
-            <p className="font-medium">Email:</p>
-            <p className="text-blue-500 cursor-pointer">{patientData.EMAIL}</p>
-            <p className="font-medium">Phone:</p>
-            {isEdit ? (
-              <input
-                className=" bg-gray-100 max-w-52"
-                type="text"
-                value={patientData.PHONE}
-                onChange={(e) =>
-                  setPatientData((prev) => ({ ...prev, PHONE: e.target.value }))
-                }
-              />
-            ) : (
-              <p className="text-blue-500 cursor-pointer">
-                {patientData.PHONE}
-              </p>
-            )}
-            <p className="font-medium">Adresse:</p>
-            {isEdit ? (
-              <input
-                className="bg-gray-50"
-                onChange={(e) =>
-                  setPatientData((prev) => ({
-                    ...prev,
-                    ADRESSE: e.target.value, // Met à jour directement la propriété ADRESSE
-                  }))
-                }
-                value={patientData.ADRESSE}
-                type="text"
-              />
-            ) : (
-              <p className="text-gray-500">{patientData.ADRESSE}</p>
-            )}
+          {isEdit ? (
+            <input
+              className="mt-6 text-4xl font-bold text-gray-800 bg-transparent border-b-2 border-gray-200 focus:border-blue-500 focus:outline-none text-center"
+              type="text"
+              value={patientData.NAME}
+              onChange={(e) =>
+                setPatientData((prev) => ({ ...prev, NAME: e.target.value }))
+              }
+            />
+          ) : (
+            <h1 className="mt-6 text-4xl font-bold text-gray-800">{patientData.NAME}</h1>
+          )}
+        </div>
+
+        <div className="mt-12 space-y-8">
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold text-blue-600 border-b pb-2">Contact Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-600">Email</label>
+                <p className="mt-1 text-blue-500">{patientData.EMAIL}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600">Phone</label>
+                {isEdit ? (
+                  <input
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    type="text"
+                    value={patientData.PHONE}
+                    onChange={(e) =>
+                      setPatientData((prev) => ({ ...prev, PHONE: e.target.value }))
+                    }
+                  />
+                ) : (
+                  <p className="mt-1 text-blue-500">{patientData.PHONE}</p>
+                )}
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-600">Address</label>
+                {isEdit ? (
+                  <input
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    type="text"
+                    value={patientData.ADRESSE}
+                    onChange={(e) =>
+                      setPatientData((prev) => ({ ...prev, ADRESSE: e.target.value }))
+                    }
+                  />
+                ) : (
+                  <p className="mt-1 text-gray-700">{patientData.ADRESSE}</p>
+                )}
+              </div>
+            </div>
           </div>
-          <p className="text-neutral-500 underline mt-3">BASIC INFORMATION</p>
-          <div className="grid grid-cols-[1fr_3fr] gap-y-2.5 mt-3 text-neutral-700">
-            <p className="font-medium">Gender:</p>
-            {isEdit ? (
-              <select
-                className="max-w-20 bg-gray-100"
-                onChange={(e) =>
-                  setPatientData((prev) => ({
-                    ...prev,
-                    GENDER: e.target.value,
-                  }))
-                }
-                value={patientData.GENDER}
-              >
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Others">Others</option>
-              </select>
-            ) : (
-              <p className="text-gray-400">{patientData.GENDER}</p>
-            )}
-            <p className="font-medium">Birthday:</p>
-            {isEdit ? (
-              <input
-                className="maz-w-28 bg-gray-100"
-                onChange={(e) =>
-                  setPatientData((prev) => ({
-                    ...prev,
-                    DATE_OF_BIRTH: e.target.value,
-                  }))
-                }
-                value={patientData.DATE_OF_BIRTH}
-                type="date"
-              />
-            ) : (
-              <p className="text-gray-500">{patientData.DATE_OF_BIRTH}</p>
-            )}
+
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold text-blue-600 border-b pb-2">Basic Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-600">Gender</label>
+                {isEdit ? (
+                  <select
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    value={patientData.GENDER}
+                    onChange={(e) =>
+                      setPatientData((prev) => ({ ...prev, GENDER: e.target.value }))
+                    }
+                  >
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Others">Others</option>
+                  </select>
+                ) : (
+                  <p className="mt-1 text-gray-700">{patientData.GENDER}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600">Birthday</label>
+                {isEdit ? (
+                  <input
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    type="date"
+                    value={patientData.DATE_OF_BIRTH}
+                    onChange={(e) =>
+                      setPatientData((prev) => ({
+                        ...prev,
+                        DATE_OF_BIRTH: e.target.value,
+                      }))
+                    }
+                  />
+                ) : (
+                  <p className="mt-1 text-gray-700">{patientData.DATE_OF_BIRTH}</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-        <div className="mt-10">
+
+        <div className="mt-12 flex justify-center">
           {isEdit ? (
             <button
-              className="border border-primary px-8 rounded-full hover:bg-primary hover:text-while transition-all "
+              className="px-8 py-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               onClick={updatePatientProfileData}
             >
-              Save information
+              Save Information
             </button>
           ) : (
             <button
-              className="border border-primary px-8 rounded-full hover:bg-primary hover:text-while transition-all"
+              className="px-8 py-3 border-2 border-blue-500 text-blue-500 rounded-full hover:bg-blue-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               onClick={() => setIsEdit(true)}
             >
-              {" "}
-              Edit
+              Edit Profile
             </button>
           )}
         </div>

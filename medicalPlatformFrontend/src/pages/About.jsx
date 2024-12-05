@@ -17,13 +17,13 @@ const About = () => {
         />
         <div className="flex flex-col justify-center gap-6 md:w-2/4 text-sm text-gray-600">
           <p>
-            Welcome to Prescripto, your trusted partner in managing your
+            Welcome to J-KOC Medical, your trusted partner in managing your
             healthcare needs conveniently and efficiently. At Prescripto, we
             understand the challenges individuals face when it comes to
             scheduling doctor appointments and managing their health records.
           </p>
           <p>
-            Prescripto is committed to excellence in healthcare technology. We
+            J-KOC is committed to excellence in healthcare technology. We
             continuously strive to enhance our platform, integrating the latest
             advancements to improve user experience and deliver superior
             service. Whether you're booking your first appointment or managing
@@ -32,7 +32,7 @@ const About = () => {
           </p>
           <b className="text-gray-800">Our Vision</b>
           <p>
-            Our vision at Prescripto is to create a seamless healthcare
+            Our vision at J-KOC is to create a seamless healthcare
             experience for every user. We aim to bridge the gap between patients
             and healthcare providers, making it easier for you to access the
             care you need, when you need it.

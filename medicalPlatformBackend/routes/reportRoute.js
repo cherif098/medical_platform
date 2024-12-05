@@ -25,7 +25,7 @@ reportRouter.get(
 );
 reportRouter.get(
   "/patient-report/:reportId/pdf",
-  authPatient,
+
   generatePatientReportPDF
 );
 

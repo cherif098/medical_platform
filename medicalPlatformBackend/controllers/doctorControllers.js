@@ -129,7 +129,7 @@ export const doctorLogin = async (req, res) => {
       { doctorId: doctor.DOCTOR_ID, email: EMAIL },
       process.env.JWT_SECRET,
       {
-        expiresIn: "1h",
+        expiresIn: "24h",
       }
     );
 

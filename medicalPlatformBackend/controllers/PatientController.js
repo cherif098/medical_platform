@@ -105,7 +105,7 @@ export const loginPatientController = async (req, res) => {
       const token = jwt.sign(
         { id: patient.PATIENT_ID },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "24h" }
       );
       return res.status(200).json({ success: true, token });
     } else {

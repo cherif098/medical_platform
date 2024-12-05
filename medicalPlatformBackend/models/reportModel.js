@@ -291,7 +291,7 @@ export const getPatientReports = async (patientId) => {
   }
 };
 
-export const getPatientReportById = async (reportId, patientId) => {
+export const getPatientReportById = async (reportId) => {
   const query = `
     SELECT R.*, 
            D.NAME as DOCTOR_NAME,
@@ -299,12 +299,11 @@ export const getPatientReportById = async (reportId, patientId) => {
     FROM MEDICAL_DB.MEDICAL_SCHEMA.REPORTS R
     JOIN MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS D ON R.DOCTOR_ID = D.DOCTOR_ID
     WHERE R.REPORT_ID = ?
-    AND R.PATIENT_ID = ?
     AND R.IS_DELETED = FALSE
     AND R.STATUS = 'COMPLETED'`;
 
   try {
-    const result = await executeQuery(query, [reportId, patientId]);
+    const result = await executeQuery(query, [reportId]);
     return result[0];
   } catch (error) {
     console.error("Error fetching patient report:", error);
