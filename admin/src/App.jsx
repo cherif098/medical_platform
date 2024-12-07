@@ -23,7 +23,7 @@ import CreateReport from "./pages/Doctors/Reports/CreateReport";
 import EditReport from "./pages/Doctors/Reports/EditReport";
 import ViewReport from "./pages/Doctors/Reports/ViewReport";
 import SubscriptionPlan from "./pages/Doctors/SubscriptionPlan";
-// import AIAssistant from "./pages/Doctors/AIAssistant";
+import AIAssistant from "./pages/Doctors/AIAssistant";
 import PaymentSuccess from "./pages/Doctors/PaymentSuccess";
 import PaymentCancel from "./pages/Doctors/PaymentCancel";
 
@@ -67,7 +67,7 @@ const App = () => {
 
           {/* Subscription and AI Routes */}
           <Route path="/subscription-plans" element={<SubscriptionPlan />} />
-          {/* <Route path="/ai-assistant" element={<AIAssistant />} /> */}
+          <Route path="/ai-assistant" element={<AIAssistant />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
           <Route path="/payment/cancel" element={<PaymentCancel />} />
         </Routes>

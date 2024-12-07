@@ -318,6 +318,66 @@ const DoctorContextProvider = (props) => {
       getSubscriptionStatus();
     }
   }, [dToken]);
+
+  // Fonction pour récupérer le statut de l'abonnement
+  const fetchSubscriptionStatus = async () => {
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/stripe/status`,
+        getHeaders()
+      );
+      if (data.success) {
+        setSubscriptionPlan(data.plan);
+      }
+    } catch (error) {
+      console.error("Error fetching subscription status:", error);
+    }
+  };
+
+  // Fonction pour mettre à jour l'abonnement vers Pro
+  const upgradeToPro = async (sessionId) => {
+    try {
+      const { data } = await axios.post(
+        `${backendUrl}/api/stripe/confirm-payment`,
+        { session_id: sessionId },
+        getHeaders()
+      );
+      if (data.success) {
+        setSubscriptionPlan("PRO");
+        toast.success("Successfully upgraded to Pro!");
+        return true;
+      }
+      return false;
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Error upgrading subscription"
+      );
+      return false;
+    }
+  };
+
+  // Fonction pour rétrograder vers Basic
+  const downgradeToBasic = async () => {
+    try {
+      const { data } = await axios.post(
+        `${backendUrl}/api/stripe/cancel-subscription`,
+        {},
+        getHeaders()
+      );
+      if (data.success) {
+        setSubscriptionPlan("BASIC");
+        toast.success("Successfully downgraded to Basic");
+        return true;
+      }
+      return false;
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Error downgrading subscription"
+      );
+      return false;
+    }
+  };
+
   const value = {
     dToken,
     setDToken,
@@ -348,6 +408,9 @@ const DoctorContextProvider = (props) => {
     downloadReportPDF,
     subscriptionPlan,
     initiateProPayment,
+    fetchSubscriptionStatus,
+    upgradeToPro,
+    downgradeToBasic,
   };
   return (
     <DoctorContext.Provider value={value}>

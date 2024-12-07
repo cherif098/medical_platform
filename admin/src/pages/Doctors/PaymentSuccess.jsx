@@ -1,42 +1,32 @@
-// pages/Doctors/PaymentSuccess.jsx
 import React, { useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { DoctorContext } from "../../context/DoctorContext";
 import { Check } from "lucide-react";
-import axios from "axios";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
-  const { backendUrl, getHeaders, setSubscriptionPlan } =
-    useContext(DoctorContext);
+  const [searchParams] = useSearchParams();
+  const { upgradeToPro, fetchSubscriptionStatus } = useContext(DoctorContext);
 
   useEffect(() => {
-    const confirmPayment = async () => {
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const session_id = urlParams.get("session_id");
-
-        const { data } = await axios.post(
-          `${backendUrl}/api/stripe/confirm-payment`,
-          { session_id },
-          getHeaders()
-        );
-
-        if (data.success) {
-          setSubscriptionPlan("PRO");
+    const handleSuccess = async () => {
+      const sessionId = searchParams.get("session_id");
+      if (sessionId) {
+        const success = await upgradeToPro(sessionId);
+        await fetchSubscriptionStatus(); // Recharger le statut
+        if (success) {
           setTimeout(() => {
             navigate("/ai-assistant");
-          }, 3000);
-        }
-      } catch (error) {
-        console.error("Error confirming payment:", error);
-        setTimeout(() => {
+          }, 2000);
+        } else {
           navigate("/subscription-plans");
-        }, 3000);
+        }
+      } else {
+        navigate("/subscription-plans");
       }
     };
 
-    confirmPayment();
+    handleSuccess();
   }, []);
 
   return (
@@ -48,11 +38,10 @@ const PaymentSuccess = () => {
           </div>
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Paiement réussi !
+          Payment Successful!
         </h2>
         <p className="text-gray-600 mb-4">
-          Merci d'avoir souscrit au plan Pro. Vous allez être redirigé vers
-          l'assistant AI.
+          Thank you for upgrading to Pro. You'll be redirected shortly.
         </p>
         <div className="animate-pulse">
           <div className="h-2 bg-gray-200 rounded w-24 mx-auto"></div>
