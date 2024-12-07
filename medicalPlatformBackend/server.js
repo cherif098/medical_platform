@@ -8,6 +8,7 @@ import doctorRouter from "./routes/doctorRoute.js";
 import patientRouter from "./routes/patientRoute.js";
 import appointmentRouter from "./routes/appointmentRoute.js";
 import reportRouter from "./routes/reportRoute.js"; // Nouvelle importation
+import stripeRouter from "./routes/stripeRoute.js";
 
 //App config
 const app = express();
@@ -41,6 +42,7 @@ app.use("/api/doctor", doctorRouter);
 app.use("/api/patient", patientRouter);
 app.use("/api/appointment", appointmentRouter);
 app.use("/api/reports", reportRouter);
+app.use("/api/stripe", stripeRouter);
 
 // Démarrer le serveur
 const startServer = async () => {

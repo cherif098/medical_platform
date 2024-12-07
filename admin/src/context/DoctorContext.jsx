@@ -1,5 +1,5 @@
 import axios from "axios";
-import { createContext } from "react";
+import { createContext, useEffect } from "react";
 import { useState } from "react";
 import { toast } from "react-toastify";
 
@@ -12,7 +12,7 @@ const DoctorContextProvider = (props) => {
   );
   const [appointments, setAppointments] = useState([]);
   const [dashData, setDashData] = useState(false);
-
+  const [subscriptionPlan, setSubscriptionPlan] = useState("BASIC");
   const [profileData, setProfileData] = useState(false);
   const [reports, setReports] = useState([]);
   const [patients, setPatients] = useState([]);
@@ -281,6 +281,43 @@ const DoctorContextProvider = (props) => {
       toast.error("Error updating some information");
     }
   };
+
+  const initiateProPayment = async () => {
+    try {
+      const { data } = await axios.post(
+        `${backendUrl}/api/stripe/create-payment`,
+        {},
+        getHeaders()
+      );
+      if (data.success) {
+        window.location.href = data.url;
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error("Error initiating payment");
+    }
+  };
+
+  const getSubscriptionStatus = async () => {
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/stripe/status`,
+        getHeaders()
+      );
+      if (data.success) {
+        setSubscriptionPlan(data.plan);
+      }
+    } catch (error) {
+      console.error("Error fetching subscription status:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (dToken) {
+      getSubscriptionStatus();
+    }
+  }, [dToken]);
   const value = {
     dToken,
     setDToken,
@@ -309,6 +346,8 @@ const DoctorContextProvider = (props) => {
     updateReport,
     deleteReport,
     downloadReportPDF,
+    subscriptionPlan,
+    initiateProPayment,
   };
   return (
     <DoctorContext.Provider value={value}>
