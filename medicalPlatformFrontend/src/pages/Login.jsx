@@ -6,6 +6,19 @@ import { useNavigate } from "react-router-dom";
 import { Check, X, Upload } from "lucide-react";
 import { assets } from "../assets/assets";
 
+const MemoInput = React.memo(function MemoInput({ label, error, ...props }) {
+  return (
+    <div className="w-full space-y-1">
+      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <input
+        {...props}
+        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
+      />
+      {error && <p className="text-sm text-red-500">{error}</p>}
+    </div>
+  );
+});
+
 const Login = () => {
   const { backendUrl, token, setToken } = useContext(AppContext);
   const navigate = useNavigate();
@@ -20,7 +33,6 @@ const Login = () => {
   const [GENDER, setGender] = useState("");
   const [IMAGE, setImage] = useState(false);
 
-  // Error states and validations remain the same
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [nameError, setNameError] = useState("");
@@ -30,14 +42,12 @@ const Login = () => {
   const [genderError, setGenderError] = useState("");
   const [imageError, setImageError] = useState("");
 
-  // All validation functions remain the same
   const passwordValidations = {
     hasUpperCase: /[A-Z]/.test(PASSWORD),
     hasNumber: /\d/.test(PASSWORD),
     hasMinLength: PASSWORD.length >= 8,
   };
 
-  // Keeping all the validation functions and form handling logic the same
   const validateEmail = (email) => {
     const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return regex.test(email);
@@ -132,19 +142,19 @@ const Login = () => {
     }
 
     try {
-      const formData = new FormData();
-      formData.append("NAME", NAME.trim());
-      formData.append("EMAIL", EMAIL.trim().toLowerCase());
-      formData.append("PASSWORD", PASSWORD);
-      formData.append("DATE_OF_BIRTH", DATE_OF_BIRTH);
-      formData.append("PHONE", PHONE.replace(/\D/g, ""));
-      formData.append("ADRESSE", ADRESSE.trim());
-      formData.append("GENDER", GENDER);
-      if (IMAGE) {
-        formData.append("IMAGE", IMAGE);
-      }
-
       if (state === "Sign up") {
+        const formData = new FormData();
+        formData.append("NAME", NAME.trim());
+        formData.append("EMAIL", EMAIL.trim().toLowerCase());
+        formData.append("PASSWORD", PASSWORD);
+        formData.append("DATE_OF_BIRTH", DATE_OF_BIRTH);
+        formData.append("PHONE", PHONE.replace(/\D/g, ""));
+        formData.append("ADRESSE", ADRESSE.trim());
+        formData.append("GENDER", GENDER);
+        if (IMAGE) {
+          formData.append("IMAGE", IMAGE);
+        }
+
         const { data } = await axios.post(
           backendUrl + "/api/patient/register",
           formData
@@ -189,18 +199,16 @@ const Login = () => {
     setAddress("");
     setGender("");
     setImage(false);
+    // Clear all errors
+    setEmailError("");
+    setPasswordError("");
+    setNameError("");
+    setDobError("");
+    setPhoneError("");
+    setAddressError("");
+    setGenderError("");
+    setImageError("");
   };
-
-  const InputField = ({ label, error, ...props }) => (
-    <div className="w-full space-y-1">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
-      <input
-        {...props}
-        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
-      />
-      {error && <p className="text-sm text-red-500">{error}</p>}
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
@@ -210,7 +218,8 @@ const Login = () => {
             {state === "Sign up" ? "Create Account" : "Welcome Back"}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Please {state === "Sign up" ? "sign up" : "login"} to book an appointment
+            Please {state === "Sign up" ? "sign up" : "login"} to book an
+            appointment
           </p>
         </div>
 
@@ -218,7 +227,7 @@ const Login = () => {
           <div className="space-y-4">
             {state === "Sign up" && (
               <>
-                <InputField
+                <MemoInput
                   label="Full Name"
                   type="text"
                   value={NAME}
@@ -227,7 +236,7 @@ const Login = () => {
                   error={nameError}
                 />
 
-                <InputField
+                <MemoInput
                   label="Date of Birth"
                   type="date"
                   value={DATE_OF_BIRTH}
@@ -235,7 +244,7 @@ const Login = () => {
                   error={dobError}
                 />
 
-                <InputField
+                <MemoInput
                   label="Phone Number"
                   type="tel"
                   value={PHONE}
@@ -244,7 +253,7 @@ const Login = () => {
                   error={phoneError}
                 />
 
-                <InputField
+                <MemoInput
                   label="Address"
                   type="text"
                   value={ADRESSE}
@@ -254,7 +263,9 @@ const Login = () => {
                 />
 
                 <div className="w-full space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Gender</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Gender
+                  </label>
                   <select
                     value={GENDER}
                     onChange={(e) => setGender(e.target.value)}
@@ -265,11 +276,15 @@ const Login = () => {
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                   </select>
-                  {genderError && <p className="text-sm text-red-500">{genderError}</p>}
+                  {genderError && (
+                    <p className="text-sm text-red-500">{genderError}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Profile Picture</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Profile Picture
+                  </label>
                   <div className="flex items-center justify-center">
                     <label className="relative cursor-pointer group">
                       <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-gray-200 group-hover:border-blue-500 transition duration-200">
@@ -298,12 +313,16 @@ const Login = () => {
                       />
                     </label>
                   </div>
-                  {imageError && <p className="text-sm text-red-500 text-center">{imageError}</p>}
+                  {imageError && (
+                    <p className="text-sm text-red-500 text-center">
+                      {imageError}
+                    </p>
+                  )}
                 </div>
               </>
             )}
 
-            <InputField
+            <MemoInput
               label="Email"
               type="email"
               value={EMAIL}
@@ -313,7 +332,7 @@ const Login = () => {
             />
 
             <div className="space-y-1">
-              <InputField
+              <MemoInput
                 label="Password"
                 type="password"
                 value={PASSWORD}
@@ -325,7 +344,8 @@ const Login = () => {
               {state === "Sign up" && (
                 <div className="mt-2 space-y-2">
                   {Object.entries({
-                    "At least one uppercase letter": passwordValidations.hasUpperCase,
+                    "At least one uppercase letter":
+                      passwordValidations.hasUpperCase,
                     "At least one number": passwordValidations.hasNumber,
                     "At least 8 characters": passwordValidations.hasMinLength,
                   }).map(([text, isValid]) => (
@@ -335,7 +355,11 @@ const Login = () => {
                       ) : (
                         <X className="w-4 h-4 text-red-500" />
                       )}
-                      <span className={`text-sm ${isValid ? "text-green-500" : "text-red-500"}`}>
+                      <span
+                        className={`text-sm ${
+                          isValid ? "text-green-500" : "text-red-500"
+                        }`}
+                      >
                         {text}
                       </span>
                     </div>
@@ -353,7 +377,9 @@ const Login = () => {
           </button>
 
           <p className="text-sm text-center text-gray-600">
-            {state === "Sign up" ? "Already have an account?" : "Don't have an account?"}{" "}
+            {state === "Sign up"
+              ? "Already have an account?"
+              : "Don't have an account?"}{" "}
             <button
               type="button"
               onClick={switchState}

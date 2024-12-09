@@ -282,6 +282,42 @@ const DoctorContextProvider = (props) => {
     }
   };
 
+  const initiateSubscriptionPayment = async (plan) => {
+    try {
+      const { data } = await axios.post(
+        `${backendUrl}/api/stripe/create-payment`,
+        { plan }, // Add plan parameter
+        getHeaders()
+      );
+      if (data.success) {
+        window.location.href = data.url;
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error("Error initiating payment");
+    }
+  };
+  const upgradeToPlan = async (sessionId) => {
+    try {
+      const { data } = await axios.post(
+        `${backendUrl}/api/stripe/confirm-payment`,
+        { session_id: sessionId },
+        getHeaders()
+      );
+      if (data.success) {
+        setSubscriptionPlan(data.plan);
+        toast.success(`Successfully upgraded to ${data.plan}!`);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Error upgrading subscription"
+      );
+      return false;
+    }
+  };
   const initiateProPayment = async () => {
     try {
       const { data } = await axios.post(
@@ -411,6 +447,8 @@ const DoctorContextProvider = (props) => {
     fetchSubscriptionStatus,
     upgradeToPro,
     downgradeToBasic,
+    initiateSubscriptionPayment,
+    upgradeToPlan,
   };
   return (
     <DoctorContext.Provider value={value}>

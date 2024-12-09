@@ -3,7 +3,7 @@ import { AdminContext } from "../context/AdminContext";
 import { NavLink } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { DoctorContext } from "../context/DoctorContext";
-import { CreditCard, Bot } from "lucide-react";
+import { CreditCard, Bot, ImagePlus } from "lucide-react";
 
 const Sidebar = () => {
   const { aToken } = useContext(AdminContext);
@@ -131,23 +131,8 @@ const Sidebar = () => {
             <p className="hidden md:block">Profile</p>
           </NavLink>
 
-          {/* Mon abonnement link (visible pour tous les médecins) */}
-          <NavLink
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
-                isActive
-                  ? "bg-[#F2F3FF] border-r-4 border-primary"
-                  : "bg-transparent border-none"
-              }`
-            }
-            to={"/subscription-plans"}
-          >
-            <CreditCard className="h-5 w-5" />
-            <p className="hidden md:block">Mon abonnement</p>
-          </NavLink>
-
-          {/* Assistant AI (visible uniquement pour les utilisateurs Pro) */}
-          {subscriptionPlan === "PRO" && (
+          {/* AI Assistant (visible for PRO and PLATINUM) */}
+          {(subscriptionPlan === "PRO" || subscriptionPlan === "PLATINUM") && (
             <NavLink
               className={({ isActive }) =>
                 `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
@@ -162,6 +147,43 @@ const Sidebar = () => {
               <p className="hidden md:block">AI Assistant</p>
             </NavLink>
           )}
+
+          {/* AI Image Scanner (visible only for PLATINUM) */}
+          {subscriptionPlan === "PLATINUM" && (
+            <NavLink
+              className={({ isActive }) =>
+                `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+                  isActive
+                    ? "bg-[#F2F3FF] border-r-4 border-primary"
+                    : "bg-transparent border-none"
+                }`
+              }
+              to={"/ai-image-scanner"}
+            >
+              <ImagePlus className="h-5 w-5" />
+              <p className="hidden md:block">AI Image Scanner</p>
+            </NavLink>
+          )}
+          <NavLink></NavLink>
+          <NavLink></NavLink>
+          <NavLink></NavLink>
+          <NavLink></NavLink>
+          <NavLink></NavLink>
+          <NavLink></NavLink>
+          {/* Mon abonnement link (visible pour tous les médecins) */}
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+                isActive
+                  ? "bg-[#F2F3FF] border-r-4 border-primary"
+                  : "bg-transparent border-none"
+              }`
+            }
+            to={"/subscription-plans"}
+          >
+            <CreditCard className="h-5 w-5" />
+            <p className="hidden md:block">My plans</p>
+          </NavLink>
         </ul>
       )}
     </div>

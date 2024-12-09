@@ -8,12 +8,18 @@ import { getDoctorById } from "../models/doctorModel.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+const PLAN_PRICES = {
+  PRO: 2000, // $20.00
+  PLATINUM: 5000, // $50.00
+};
+
 export const createPaymentSession = async (req, res) => {
   try {
     const doctorId = req.user.DOCTOR_ID;
+    const plan = req.body.plan || "PRO"; // Default to PRO if no plan specified
     const doctor = await getDoctorById(doctorId);
 
-    // Créer ou récupérer le client Stripe
+    // Create or get Stripe customer
     let stripeCustomerId = doctor.STRIPE_CUSTOMER_ID;
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
@@ -27,7 +33,7 @@ export const createPaymentSession = async (req, res) => {
       await updateStripeCustomerId(doctorId, stripeCustomerId);
     }
 
-    // Créer la session de paiement
+    // Create payment session
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       payment_method_types: ["card"],
@@ -36,10 +42,10 @@ export const createPaymentSession = async (req, res) => {
           price_data: {
             currency: "usd",
             product_data: {
-              name: "Pro Plan Subscription",
-              description: "One-time payment for Pro access",
+              name: `${plan} Plan Subscription`,
+              description: `One-time payment for ${plan} access`,
             },
-            unit_amount: 2000, // $20.00
+            unit_amount: PLAN_PRICES[plan],
           },
           quantity: 1,
         },
@@ -49,6 +55,7 @@ export const createPaymentSession = async (req, res) => {
       cancel_url: `${process.env.FRONTEND_URL}/payment/cancel`,
       metadata: {
         doctorId: doctorId.toString(),
+        plan: plan,
       },
     });
 
@@ -70,11 +77,13 @@ export const confirmPayment = async (req, res) => {
     const session = await stripe.checkout.sessions.retrieve(session_id);
 
     if (session.payment_status === "paid") {
-      await updateDoctorSubscription(doctorId, "PRO");
+      const plan = session.metadata.plan;
+      await updateDoctorSubscription(doctorId, plan);
 
       res.json({
         success: true,
         message: "Subscription upgraded successfully",
+        plan: plan,
       });
     } else {
       res.status(400).json({

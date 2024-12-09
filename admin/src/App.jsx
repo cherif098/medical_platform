@@ -26,6 +26,7 @@ import SubscriptionPlan from "./pages/Doctors/SubscriptionPlan";
 import AIAssistant from "./pages/Doctors/AIAssistant";
 import PaymentSuccess from "./pages/Doctors/PaymentSuccess";
 import PaymentCancel from "./pages/Doctors/PaymentCancel";
+import AIImageScanner from "./pages/Doctors/AIImageScanner";
 
 const App = () => {
   const { aToken } = useContext(AdminContext);
@@ -68,6 +69,7 @@ const App = () => {
           {/* Subscription and AI Routes */}
           <Route path="/subscription-plans" element={<SubscriptionPlan />} />
           <Route path="/ai-assistant" element={<AIAssistant />} />
+          <Route path="//ai-image-scanner" element={<AIImageScanner />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
           <Route path="/payment/cancel" element={<PaymentCancel />} />
         </Routes>
