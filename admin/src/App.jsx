@@ -33,46 +33,66 @@ const App = () => {
   const { dToken } = useContext(DoctorContext);
 
   return aToken || dToken ? (
-    <div className="bg-[#F8F9FD]">
+    <div className="min-h-screen bg-[#F8F9FD]">
       <ToastContainer />
-      <Navbar />
-      <div className="flex items-start">
-        <Sidebar />
-        <Routes>
-          {/* Admin Routes */}
-          <Route path="/" element={<></>} />
-          <Route path="/admin-dashboard" element={<Dashboard />} />
-          <Route path="/all-apointments" element={<AllAppointments />} />
-          <Route path="/add-doctors" element={<AddDoctor />} />
-          <Route path="/doctors-list" element={<DoctorsList />} />
+      {/* Navbar fixe en haut */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-[#F8F9FD]">
+        <Navbar />
+      </div>
 
-          {/* Doctor Routes */}
-          <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
-          <Route path="/doctor-appointments" element={<DoctorAppointments />} />
-          <Route path="/doctor-profile" element={<DoctorProfile />} />
+      <div className="flex pt-[42px]">
+        {" "}
+        {/* Ajustez pt-[64px] selon la hauteur de votre Navbar */}
+        {/* Sidebar fixe */}
+        <div className="fixed left-0 h-[calc(100vh-64px)] w-64 overflow-y-auto">
+          <Sidebar />
+        </div>
+        {/* Zone de contenu principal défilante */}
+        <div className="flex-1 ml-64">
+          <main className="h-[calc(100vh-64px)] overflow-y-auto">
+            <Routes>
+              {/* Admin Routes */}
+              <Route path="/" element={<></>} />
+              <Route path="/admin-dashboard" element={<Dashboard />} />
+              <Route path="/all-apointments" element={<AllAppointments />} />
+              <Route path="/add-doctors" element={<AddDoctor />} />
+              <Route path="/doctors-list" element={<DoctorsList />} />
 
-          {/* Medical Reports Routes */}
-          <Route path="/medical-reports" element={<MedicalReports />} />
-          <Route
-            path="/medical-reports/create/:patientId"
-            element={<CreateReport />}
-          />
-          <Route
-            path="/medical-reports/edit/:reportId"
-            element={<EditReport />}
-          />
-          <Route
-            path="/medical-reports/view/:reportId"
-            element={<ViewReport />}
-          />
+              {/* Doctor Routes */}
+              <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
+              <Route
+                path="/doctor-appointments"
+                element={<DoctorAppointments />}
+              />
+              <Route path="/doctor-profile" element={<DoctorProfile />} />
 
-          {/* Subscription and AI Routes */}
-          <Route path="/subscription-plans" element={<SubscriptionPlan />} />
-          <Route path="/ai-assistant" element={<AIAssistant />} />
-          <Route path="//ai-image-scanner" element={<AIImageScanner />} />
-          <Route path="/payment/success" element={<PaymentSuccess />} />
-          <Route path="/payment/cancel" element={<PaymentCancel />} />
-        </Routes>
+              {/* Medical Reports Routes */}
+              <Route path="/medical-reports" element={<MedicalReports />} />
+              <Route
+                path="/medical-reports/create/:patientId"
+                element={<CreateReport />}
+              />
+              <Route
+                path="/medical-reports/edit/:reportId"
+                element={<EditReport />}
+              />
+              <Route
+                path="/medical-reports/view/:reportId"
+                element={<ViewReport />}
+              />
+
+              {/* Subscription and AI Routes */}
+              <Route
+                path="/subscription-plans"
+                element={<SubscriptionPlan />}
+              />
+              <Route path="/ai-assistant" element={<AIAssistant />} />
+              <Route path="//ai-image-scanner" element={<AIImageScanner />} />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/cancel" element={<PaymentCancel />} />
+            </Routes>
+          </main>
+        </div>
       </div>
     </div>
   ) : (

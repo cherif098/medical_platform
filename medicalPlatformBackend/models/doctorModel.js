@@ -54,6 +54,23 @@ export const insertDoctor = async (doctorData) => {
     throw err;
   }
 };
+export const deleteDoctor = async (DOCTOR_ID) => {
+  const query = `
+    DELETE FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
+    WHERE DOCTOR_ID = ?
+  `;
+
+  try {
+    const result = await executeQuery(query, [DOCTOR_ID]);
+    if (result.affectedRows === 0) {
+      throw new Error("Doctor not found");
+    }
+    return result;
+  } catch (error) {
+    console.error("Error deleting doctor:", error);
+    throw error;
+  }
+};
 
 export const getDoctorsWithoutPassword = async () => {
   const query = `
@@ -313,22 +330,22 @@ export const getDoctorById = async (DOCTOR_ID) => {
 
 export const updateDoctorProfileModel = async (DOCTOR_ID, updatedData) => {
   const allowedFields = [
-    'NAME',
-    'SPECIALTY',
-    'FEES',
-    'ADRESS_1',
-    'ADRESS_2',
-    'DEGREE',
-    'EXPERIENCE',
-    'ABOUT',
-    'IMAGE',
-    'STATUS'  
+    "NAME",
+    "SPECIALTY",
+    "FEES",
+    "ADRESS_1",
+    "ADRESS_2",
+    "DEGREE",
+    "EXPERIENCE",
+    "ABOUT",
+    "IMAGE",
+    "STATUS",
   ];
 
   const updates = Object.entries(updatedData)
     .filter(([key]) => allowedFields.includes(key))
     .map(([key, value]) => `${key} = ?`)
-    .join(', ');
+    .join(", ");
 
   const values = Object.entries(updatedData)
     .filter(([key]) => allowedFields.includes(key))
@@ -342,11 +359,11 @@ export const updateDoctorProfileModel = async (DOCTOR_ID, updatedData) => {
 
   try {
     const result = await executeQuery(query, [...values, DOCTOR_ID]);
-    
+
     if (result.affectedRows === 0) {
-      throw new Error('Doctor not found or no changes made');
+      throw new Error("Doctor not found or no changes made");
     }
-    
+
     return result;
   } catch (error) {
     console.error("Error updating doctor profile:", error);

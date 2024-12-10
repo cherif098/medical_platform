@@ -1,15 +1,18 @@
-import { insertDoctor } from "../models/doctorModel.js";
+import { insertDoctor, deleteDoctor } from "../models/doctorModel.js";
 import validator from "validator";
 import bcrypt from "bcrypt";
 import { v2 as cloudinary } from "cloudinary";
 import { executeQuery } from "../config/snowflake.js";
 import jwt from "jsonwebtoken";
-import { getDoctorsWithoutPassword, getAllDoctors } from "../models/doctorModel.js";
-import { 
+import {
+  getDoctorsWithoutPassword,
+  getAllDoctors,
+} from "../models/doctorModel.js";
+import {
   getAllAppointmentsForAdmin,
   deleteAppointmentByAdmin,
   getAllAppointments,
- } from "../models/appointmentModel.js";
+} from "../models/appointmentModel.js";
 import { getAllPatients } from "../models/patientModel.js";
 
 // Fonction pour vérifier si un champ existe déjà dans la base de données
@@ -196,34 +199,51 @@ export const getAllAppointmentsAdmin = async (req, res) => {
       message: "Appointments retrieved successfully",
       data: appointments,
     });
-  }
-  catch (error) {
+  } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message: "Failed to retrieve appointments" });
-
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to retrieve appointments" });
   }
-}
+};
 
 //API to cancel an appointment from admin panel
 export const AppointmentCancel = async (req, res) => {
   try {
     const { APPOINTMENT_ID } = req.params;
-    console.log('Request Params:', req.params); // Logs route parameters
+    console.log("Request Params:", req.params); // Logs route parameters
 
-
-    await deleteAppointmentByAdmin (APPOINTMENT_ID);
-    console.log('Request Params1:', req.params); // Logs route parameters
-
+    await deleteAppointmentByAdmin(APPOINTMENT_ID);
+    console.log("Request Params1:", req.params); // Logs route parameters
 
     return res.json({
       success: true,
-      message: 'Appointment cancelled successfully'
+      message: "Appointment cancelled successfully",
     });
   } catch (error) {
-    console.error('Error cancelling appointment:', error);
+    console.error("Error cancelling appointment:", error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Error cancelling appointment'
+      message: error.message || "Error cancelling appointment",
+    });
+  }
+};
+
+export const deleteDoctorAdmin = async (req, res) => {
+  try {
+    const { DOCTOR_ID } = req.params;
+
+    await deleteDoctor(DOCTOR_ID);
+
+    res.status(200).json({
+      success: true,
+      message: "Doctor deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error in deleteDoctorAdmin:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to delete doctor",
     });
   }
 };
@@ -233,7 +253,7 @@ export const AdminDashboard = async (req, res) => {
   try {
     const doctors = await getAllDoctors();
     const appointments = await getAllAppointments();
-    const patient = await getAllPatients(); 
+    const patient = await getAllPatients();
 
     const dashData = {
       doctors: doctors.length,
@@ -241,16 +261,15 @@ export const AdminDashboard = async (req, res) => {
       patients: patient.length,
       latestAppointments: appointments.reverse().slice(0, 5),
       doctorName: appointments.doctorName,
-      doctorImage: appointments.doctorImage
-    }
+      doctorImage: appointments.doctorImage,
+    };
     res.status(200).json({
       success: true,
       message: "Dashboard data retrieved successfully",
       data: dashData,
     });
-    
   } catch (error) {
     console.log(error);
-    res.status(500).json({ success: false, message:error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
-}
+};

@@ -69,15 +69,14 @@ const AdminContextProvider = (props) => {
       } else {
         toast.error(data.message);
       }
-
-    }catch (error) {
+    } catch (error) {
       toast.error(error.message);
     }
   };
 
   const cancelAppointment = async (APPOINTMENT_ID) => {
     try {
-      console.log("id1",APPOINTMENT_ID)
+      console.log("id1", APPOINTMENT_ID);
       const { data } = await axios.delete(
         `${backendUrl}/api/admin/cancel-appointment/${APPOINTMENT_ID}`,
         { headers: { aToken } }
@@ -88,17 +87,33 @@ const AdminContextProvider = (props) => {
       } else {
         toast.error(data.message);
       }
-    }catch (error) {
+    } catch (error) {
       toast.error(error.message);
     }
-  }
+  };
+  const deleteDoctor = async (DOCTOR_ID) => {
+    try {
+      const { data } = await axios.delete(
+        `${backendUrl}/api/admin/delete-doctor/${DOCTOR_ID}`,
+        { headers: { aToken } }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        getAllDoctors(); // Rafraîchir la liste
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Error deleting doctor");
+    }
+  };
 
   const getDashData = async () => {
     try {
-      const { data } = await axios.get(
-        backendUrl + "/api/admin/dashboard",
-        { headers: { aToken } }
-      );
+      const { data } = await axios.get(backendUrl + "/api/admin/dashboard", {
+        headers: { aToken },
+      });
       if (data) {
         setDashData(data.data);
         console.log(data.data);
@@ -108,19 +123,22 @@ const AdminContextProvider = (props) => {
     } catch (error) {
       toast.error(error.message);
     }
-  }
+  };
 
   const value = {
-    aToken,setAToken,
+    aToken,
+    setAToken,
     backendUrl,
     getAllDoctors,
     doctors,
     changeAvailability,
-    appointments, setAppointments,
+    appointments,
+    setAppointments,
     getAllAppointments,
     cancelAppointment,
     dashData,
-    getDashData
+    getDashData,
+    deleteDoctor,
   };
   return (
     <AdminContext.Provider value={value}>
