@@ -1,79 +1,176 @@
 import React, { useContext, useEffect } from "react";
 import { DoctorContext } from "../../context/DoctorContext";
-import { assets } from "../../assets/assets";
 import { AppContext } from "../../context/AppContext";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  Calendar,
+  Clock,
+  Users,
+  ActivitySquare,
+  TrendingUp,
+  Check,
+  Clock3,
+} from "lucide-react";
 
 const DoctorDashboard = () => {
   const { dToken, dashData, setDashData, getDashData } =
     useContext(DoctorContext);
-  const { currency } = useContext(AppContext);
-  const { slotDateFormat, convertTimeToAmPm } = useContext(AppContext);
+  const { currency, slotDateFormat, convertTimeToAmPm } =
+    useContext(AppContext);
 
   useEffect(() => {
     if (dToken) {
       getDashData();
     }
   }, [dToken]);
+
+  const revenueData = [
+    { month: "Jan", revenue: 2400 },
+    { month: "Feb", revenue: 3600 },
+    { month: "Mar", revenue: 3200 },
+    { month: "Apr", revenue: 4500 },
+    { month: "May", revenue: 3800 },
+    { month: "Jun", revenue: 5000 },
+  ];
+
   return (
     dashData && (
-      <div className="m-5">
-        <div className="flex flex-wrap gap-3">
-          <div className="flex items-center gap-2 bg-white p-4 min-w-52 rounded border-2 border-gray-100 cursor-pointer hover:scale-105 transition-all">
-            <img className="w-14" src={assets.earning_icon} alt="" />
-            <div>
-              <p className="text-xl font-semibold">
-                {dashData.earnings}
-                {currency}
-              </p>
-              <p className="text-gray-400">Earnings</p>
+      <div className="p-6 bg-gray-50 min-h-screen">
+        {/* En-tête */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-800">Tableau de bord</h1>
+          <p className="text-gray-600">Bienvenue sur votre espace de gestion</p>
+        </div>
+
+        {/* Cartes statistiques */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <TrendingUp className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">
+                  {dashData.earnings}
+                  {currency}
+                </p>
+                <p className="text-gray-500">Revenus totaux</p>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-white p-4 min-w-52 rounded border-2 border-gray-100 cursor-pointer hover:scale-105 transition-all">
-            <img className="w-14" src={assets.appointments_icon} alt="" />
-            <div>
-              <p className="text-xl font-semibold">{dashData.appointments}</p>
-              <p className="text-gray-400">Appointments</p>
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-green-50 rounded-lg">
+                <Calendar className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">
+                  {dashData.appointments}
+                </p>
+                <p className="text-gray-500">Rendez-vous</p>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-white p-4 min-w-52 rounded border-2 border-gray-100 cursor-pointer hover:scale-105 transition-all">
-            <img className="w-14" src={assets.patients_icon} alt="" />
-            <div>
-              <p className="text-xl font-semibold">{dashData.patients}</p>
-              <p className="text-gray-400">Patients</p>
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-purple-50 rounded-lg">
+                <Users className="w-6 h-6 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">
+                  {dashData.patients}
+                </p>
+                <p className="text-gray-500">Patients</p>
+              </div>
             </div>
           </div>
         </div>
-        <div className="bg-white">
-          <div className="flex items-center gap-2.5 px-4 py-4 mt-10 rounded-t border">
-            <img src={assets.list_icon} alt="" />
-            <p className="font-semibold">Latest Bookings</p>
-          </div>
-          <div className="pt-4 border border-t-0">
-            {dashData.latestAppointments.map((item, index) => (
-              <div className="flex items-center px-6 py-3 gap-3" key={index}>
-                <img
-                  className="w-10 h-10 rounded-full"
-                  src={item.PATIENT_IMAGE}
-                  alt=""
+
+        {/* Graphique des revenus */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
+          <h2 className="text-lg font-semibold text-gray-800 mb-6">
+            Évolution des revenus
+          </h2>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={revenueData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#4F46E5"
+                  strokeWidth={2}
                 />
-                <div className="flex-1 text-sm">
-                  <p className="text-gray-800 font-medium">
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Liste des derniers rendez-vous */}
+        <div className="bg-white rounded-xl shadow-sm">
+          <div className="p-6 border-b">
+            <div className="flex items-center gap-3">
+              <ActivitySquare className="w-5 h-5 text-blue-600" />
+              <h2 className="text-lg font-semibold text-gray-800">
+                Derniers rendez-vous
+              </h2>
+            </div>
+          </div>
+
+          <div className="divide-y divide-gray-100">
+            {dashData.latestAppointments.map((item, index) => (
+              <div
+                key={index}
+                className="p-6 flex items-center gap-4 hover:bg-gray-50 transition-colors"
+              >
+                <img
+                  src={item.PATIENT_IMAGE}
+                  alt={item.PATIENT_NAME}
+                  className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                />
+
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">
                     {item.PATIENT_NAME}
                   </p>
-                  <p className="text-gray-600">
-                    {slotDateFormat(item.SLOT_DATE)} à{" "}
-                    {convertTimeToAmPm(item.SLOT_TIME)}
-                  </p>
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                    <Calendar className="w-4 h-4" />
+                    <span>{slotDateFormat(item.SLOT_DATE)}</span>
+                    <Clock className="w-4 h-4 ml-2" />
+                    <span>{convertTimeToAmPm(item.SLOT_TIME)}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div
+                  className={`px-4 py-2 rounded-full text-sm font-medium ${
+                    item.STATUS === "COMPLETED"
+                      ? "bg-green-50 text-green-700"
+                      : "bg-blue-50 text-blue-700"
+                  }`}
+                >
                   {item.STATUS === "COMPLETED" ? (
-                    <span className="text-green-500 font-medium">
-                      Completed
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <Check className="w-4 h-4" />
+                      <span>Terminé</span>
+                    </div>
                   ) : (
-                    <span className="text-primary font-medium">Scheduled</span>
+                    <div className="flex items-center gap-1">
+                      <Clock3 className="w-4 h-4" />
+                      <span>Planifié</span>
+                    </div>
                   )}
                 </div>
               </div>

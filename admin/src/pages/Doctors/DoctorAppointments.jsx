@@ -1,14 +1,25 @@
 import React, { useContext, useEffect, useState } from "react";
 import { DoctorContext } from "../../context/DoctorContext";
-import { assets } from "../../assets/assets";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import {
+  Calendar,
+  Mail,
+  Phone,
+  Users,
+  FileText,
+  Check,
+  X,
+  Loader2,
+  Clock,
+} from "lucide-react";
 
 const DoctorAppointments = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(null);
   const [canceling, setCanceling] = useState(null);
+  const [filterStatus, setFilterStatus] = useState("ALL");
 
   const {
     dToken,
@@ -24,7 +35,7 @@ const DoctorAppointments = () => {
       try {
         await getAppointments();
       } catch (error) {
-        toast.error("Failed to fetch appointments. Please try again.");
+        toast.error("Échec du chargement des rendez-vous");
       } finally {
         setLoading(false);
       }
@@ -34,13 +45,10 @@ const DoctorAppointments = () => {
 
   const handleCancelAppointment = async (APPOINTMENT_ID) => {
     try {
-      console.log("Vue - Starting cancellation for ID:", APPOINTMENT_ID);
       setCanceling(APPOINTMENT_ID);
-      console.log("Vue - Current dToken:", localStorage.getItem("dToken"));
       await cancelAppointment(APPOINTMENT_ID);
     } catch (error) {
-      console.error("Vue - Error:", error);
-      toast.error("Failed to cancel appointment. Please try again.");
+      toast.error("Échec de l'annulation du rendez-vous");
     } finally {
       setCanceling(null);
     }
@@ -58,9 +66,10 @@ const DoctorAppointments = () => {
               : apt
           )
         );
+        toast.success("Rendez-vous marqué comme terminé");
       }
     } catch (error) {
-      toast.error("Failed to complete appointment. Please try again.");
+      toast.error("Échec de la validation du rendez-vous");
     } finally {
       setProcessing(null);
     }
@@ -68,112 +77,183 @@ const DoctorAppointments = () => {
 
   const handleCreateReport = (appointment) => {
     navigate(`/medical-reports/create/${appointment.USER_ID}`);
-    toast.info("Creating medical report for patient");
+    toast.info("Création du rapport médical en cours");
   };
+
+  const filteredAppointments = appointments.filter((apt) => {
+    if (filterStatus === "ALL") return true;
+    return apt.STATUS === filterStatus;
+  });
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[200px]">
-        <div className="text-gray-600">Loading appointments...</div>
+      <div className="flex justify-center items-center min-h-[80vh]">
+        <div className="flex items-center gap-2 text-blue-600">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span>Chargement des rendez-vous...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-6xl m-5">
-      <p className="mb-3 text-lg font-medium">All Appointments</p>
-      <div className="bg-white border rounded text-sm max-h-[80vh] min-h-[50vh] overflow-y-scroll">
-        <div className="max-sm:hidden grid grid-cols-[0.5fr_2fr_3fr_1fr_1fr_1fr_3fr_1fr_1fr] gap-1 py-3 px-6 border-b">
-          <p>#</p>
-          <p>Patient</p>
-          <p>E-mail</p>
-          <p>Phone</p>
-          <p>Gender</p>
-          <p>Status</p>
-          <p>Date & Time</p>
-          <p>Fees</p>
-          <p>Action</p>
-        </div>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* En-tête */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Rendez-vous</h1>
+        <p className="text-gray-600">
+          Gérez vos consultations et suivis patients
+        </p>
+      </div>
 
-        {appointments.map((item, index) => (
-          <div
-            key={item.APPOINTMENT_ID}
-            className="flex flex-wrap justify-between max-sm:gap-5 max-sm:text-base sm:grid grid-cols-[0.5fr_2fr_3fr_1fr_1fr_1fr_3fr_1fr_1fr] gap-1 items-center text-gray-500 py-3 px-6 border-b"
-          >
-            <p className="max-sm:hidden">{index + 1}</p>
-            <div className="flex items-center gap-2">
-              <img
-                src={item.PATIENT_IMAGE}
-                alt="Patient Icon"
-                className="w-8 rounded-full"
-              />
-              <p>{item.PATIENT_NAME}</p>
-            </div>
-            <p>{item.PATIENT_EMAIL}</p>
-            <p>{item.PATIENT_PHONE}</p>
-            <p>{item.PATIENT_GENDER}</p>
-            <p
-              className={`text-xs inline border px-2 rounded-full ${
-                item.STATUS === "COMPLETED"
-                  ? "border-green-500 text-green-500"
-                  : "border-primary"
-              }`}
+      {/* Filtres */}
+      <div className="bg-white p-4 rounded-lg shadow-sm mb-6 flex items-center gap-4">
+        <span className="text-gray-700 font-medium">Filtrer par statut:</span>
+        <div className="flex gap-2">
+          {["ALL", "SCHEDULED", "COMPLETED", "CANCELED"].map((status) => (
+            <button
+              key={status}
+              onClick={() => setFilterStatus(status)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                ${
+                  filterStatus === status
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
             >
-              {item.STATUS}
-            </p>
-            <p>
-              {item.SLOT_DATE}, {item.SLOT_TIME}
-            </p>
-            <p>{item.FEES}€</p>
-            <div className="flex items-center gap-2">
-              {item.STATUS === "COMPLETED" ? (
-                <div className="flex items-center gap-2">
-                  {/* <span className="text-green-500 font-medium">Completed</span> */}
-                  <button
-                    onClick={() => handleCreateReport(item)}
-                    className="flex items-center gap-1 text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-md transition-colors"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              {status === "ALL" ? "Tous" : status}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Liste des rendez-vous */}
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 text-left text-gray-600 text-sm">
+                <th className="py-4 px-6 font-medium">Patient</th>
+                <th className="py-4 px-6 font-medium">Contact</th>
+                <th className="py-4 px-6 font-medium">Date & Heure</th>
+                <th className="py-4 px-6 font-medium">Statut</th>
+                <th className="py-4 px-6 font-medium">Honoraires</th>
+                <th className="py-4 px-6 font-medium text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredAppointments.map((item) => (
+                <tr key={item.APPOINTMENT_ID} className="hover:bg-gray-50">
+                  <td className="py-4 px-6">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={item.PATIENT_IMAGE}
+                        alt={item.PATIENT_NAME}
+                        className="w-10 h-10 rounded-full object-cover"
                       />
-                    </svg>
-                    Add Report
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <img
-                    className={`w-10 cursor-pointer ${
-                      canceling === item.APPOINTMENT_ID ? "opacity-50" : ""
-                    }`}
-                    src={assets.cancel_icon}
-                    alt="Cancel Icon"
-                    onClick={() => handleCancelAppointment(item.APPOINTMENT_ID)}
-                  />
-                  <img
-                    className={`w-10 cursor-pointer ${
-                      processing === item.APPOINTMENT_ID ? "opacity-50" : ""
-                    }`}
-                    src={assets.tick_icon}
-                    alt="Complete Icon"
-                    onClick={() =>
-                      handleCompleteAppointment(item.APPOINTMENT_ID)
-                    }
-                  />
-                </>
-              )}
-            </div>
-          </div>
-        ))}
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {item.PATIENT_NAME}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {item.PATIENT_GENDER}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-4 px-6">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Mail className="w-4 h-4" />
+                        {item.PATIENT_EMAIL}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Phone className="w-4 h-4" />
+                        {item.PATIENT_PHONE}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-4 px-6">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Calendar className="w-4 h-4" />
+                      <span>
+                        {item.SLOT_DATE}, {item.SLOT_TIME}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="py-4 px-6">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium
+                      ${
+                        item.STATUS === "COMPLETED"
+                          ? "bg-green-50 text-green-700"
+                          : item.STATUS === "CANCELED"
+                          ? "bg-red-50 text-red-700"
+                          : "bg-blue-50 text-blue-700"
+                      }`}
+                    >
+                      {item.STATUS === "COMPLETED" ? (
+                        <Check className="w-4 h-4" />
+                      ) : item.STATUS === "CANCELED" ? (
+                        <X className="w-4 h-4" />
+                      ) : (
+                        <Clock className="w-4 h-4" />
+                      )}
+                      {item.STATUS}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6">
+                    <span className="font-medium text-gray-900">
+                      {item.FEES}€
+                    </span>
+                  </td>
+                  <td className="py-4 px-6">
+                    <div className="flex items-center justify-center gap-2">
+                      {item.STATUS === "COMPLETED" ? (
+                        <button
+                          onClick={() => handleCreateReport(item)}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                        >
+                          <FileText className="w-4 h-4" />
+                          Rapport
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() =>
+                              handleCancelAppointment(item.APPOINTMENT_ID)
+                            }
+                            disabled={canceling === item.APPOINTMENT_ID}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {canceling === item.APPOINTMENT_ID ? (
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                              <X className="w-5 h-5" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleCompleteAppointment(item.APPOINTMENT_ID)
+                            }
+                            disabled={processing === item.APPOINTMENT_ID}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {processing === item.APPOINTMENT_ID ? (
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                              <Check className="w-5 h-5" />
+                            )}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
