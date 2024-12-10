@@ -1,0 +1,15 @@
+streamlit
+langchain-openai
+langchain-core
+langchain-ollama
+python-dotenv
+openai
+typing-extensions
+pytesseract
+Pillow
+PyPDF2
+pandas
+faiss-cpu
+tiktoken
+langchain
+sentence-transformers

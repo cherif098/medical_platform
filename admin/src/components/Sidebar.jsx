@@ -164,12 +164,7 @@ const Sidebar = () => {
               <p className="hidden md:block">AI Image Scanner</p>
             </NavLink>
           )}
-          <NavLink></NavLink>
-          <NavLink></NavLink>
-          <NavLink></NavLink>
-          <NavLink></NavLink>
-          <NavLink></NavLink>
-          <NavLink></NavLink>
+
           {/* Mon abonnement link (visible pour tous les médecins) */}
           <NavLink
             className={({ isActive }) =>
