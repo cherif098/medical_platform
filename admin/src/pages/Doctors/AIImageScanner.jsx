@@ -54,15 +54,16 @@ export default function MedicalChatInterface() {
     localStorage.removeItem("chatMessages");
   };
 
+
   const handleSubmit = async () => {
     if (!inputMessage.trim() && !image) {
       setError("Please enter a message or upload an image");
       return;
     }
-
+  
     setLoading(true);
     setError("");
-
+  
     const newUserMessage = {
       type: "user",
       text: inputMessage,
@@ -70,29 +71,46 @@ export default function MedicalChatInterface() {
       timestamp: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, newUserMessage]);
-
+  
     const formData = new FormData();
     formData.append("query", inputMessage);
     if (image) {
       formData.append("image", image);
     }
-
+  
     try {
+      // Création du message assistant vide au début
+      const assistantMessage = {
+        type: "assistant",
+        text: "",
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+  
       const response = await fetch("http://localhost:8000/api/v1/process", {
         method: "POST",
         body: formData,
       });
-
+  
       const data = await response.json();
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          type: "assistant",
-          text: data.response,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+  
+      // Simuler un streaming du texte
+      const finalText = data.response;
+      const words = finalText.split(' ');
+      
+      for (let i = 0; i < words.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 50)); // Délai entre chaque mot
+        setMessages(prev => prev.map((msg, idx) => {
+          if (idx === prev.length - 1) {
+            return {
+              ...msg,
+              text: words.slice(0, i + 1).join(' ')
+            };
+          }
+          return msg;
+        }));
+      }
+  
     } catch (err) {
       setError("An error occurred while sending the message");
       console.error(err);
