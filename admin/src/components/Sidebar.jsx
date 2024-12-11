@@ -1,72 +1,81 @@
 import React, { useContext } from "react";
 import { AdminContext } from "../context/AdminContext";
-import { NavLink } from "react-router-dom";
-import { assets } from "../assets/assets";
 import { DoctorContext } from "../context/DoctorContext";
-import { CreditCard, Bot, ImagePlus } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Calendar,
+  UserPlus,
+  Users,
+  FileText,
+  User,
+  Bot,
+  ImagePlus,
+  CreditCard,
+} from "lucide-react";
 
 const Sidebar = () => {
   const { aToken } = useContext(AdminContext);
   const { dToken, subscriptionPlan } = useContext(DoctorContext);
 
   return (
-    <div className="min-h-screen bg-white border-r">
+    <div className="min-h-screen bg-white border-r border-gray-100">
       {/* Section Admin */}
       {aToken && (
-        <ul className="text-[#515151] mt-5">
+        <ul className="text-gray-600 mt-5">
           <NavLink
             className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
                 isActive
-                  ? "bg-[#F2F3FF] border-r-4 border-primary"
-                  : "bg-transparent border-none"
+                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+                  : "hover:bg-gray-50"
               }`
             }
-            to={"/admin-dashboard"}
+            to="/admin-dashboard"
           >
-            <img src={assets.home_icon} alt="" />
+            <LayoutDashboard className="w-5 h-5" />
             <p className="hidden md:block">Dashboard</p>
           </NavLink>
 
           <NavLink
             className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
                 isActive
-                  ? "bg-[#F2F3FF] border-r-4 border-primary"
-                  : "bg-transparent border-none"
+                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+                  : "hover:bg-gray-50"
               }`
             }
-            to={"/all-apointments"}
+            to="/all-apointments"
           >
-            <img src={assets.appointment_icon} alt="" />
-            <p className="hidden md:block">Appointements</p>
+            <Calendar className="w-5 h-5" />
+            <p className="hidden md:block">Appointments</p>
           </NavLink>
 
           <NavLink
             className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
                 isActive
-                  ? "bg-[#F2F3FF] border-r-4 border-primary"
-                  : "bg-transparent border-none"
+                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+                  : "hover:bg-gray-50"
               }`
             }
-            to={"/add-doctors"}
+            to="/add-doctors"
           >
-            <img src={assets.add_icon} alt="" />
+            <UserPlus className="w-5 h-5" />
             <p className="hidden md:block">Add Doctor</p>
           </NavLink>
 
           <NavLink
             className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
                 isActive
-                  ? "bg-[#F2F3FF] border-r-4 border-primary"
-                  : "bg-transparent border-none"
+                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+                  : "hover:bg-gray-50"
               }`
             }
-            to={"/doctors-list"}
+            to="/doctors-list"
           >
-            <img src={assets.people_icon} alt="" />
+            <Users className="w-5 h-5" />
             <p className="hidden md:block">Doctors List</p>
           </NavLink>
         </ul>
@@ -74,110 +83,110 @@ const Sidebar = () => {
 
       {/* Section Doctor */}
       {dToken && (
-        <ul className="text-[#515151] mt-5">
+        <ul className="text-gray-600 mt-5">
           <NavLink
             className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
                 isActive
-                  ? "bg-[#F2F3FF] border-r-4 border-primary"
-                  : "bg-transparent border-none"
+                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+                  : "hover:bg-gray-50"
               }`
             }
-            to={"/doctor-dashboard"}
+            to="/doctor-dashboard"
           >
-            <img src={assets.home_icon} alt="" />
+            <LayoutDashboard className="w-5 h-5" />
             <p className="hidden md:block">Dashboard</p>
           </NavLink>
 
           <NavLink
             className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
                 isActive
-                  ? "bg-[#F2F3FF] border-r-4 border-primary"
-                  : "bg-transparent border-none"
+                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+                  : "hover:bg-gray-50"
               }`
             }
-            to={"/doctor-appointments"}
+            to="/doctor-appointments"
           >
-            <img src={assets.appointment_icon} alt="" />
-            <p className="hidden md:block">Appointements</p>
+            <Calendar className="w-5 h-5" />
+            <p className="hidden md:block">Appointments</p>
           </NavLink>
 
           <NavLink
             className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
                 isActive
-                  ? "bg-[#F2F3FF] border-r-4 border-primary"
-                  : "bg-transparent border-none"
+                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+                  : "hover:bg-gray-50"
               }`
             }
-            to={"/medical-reports"}
+            to="/medical-reports"
           >
-            <img src={assets.add_icon} alt="" />
+            <FileText className="w-5 h-5" />
             <p className="hidden md:block">Medical Reports</p>
           </NavLink>
 
           <NavLink
             className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
                 isActive
-                  ? "bg-[#F2F3FF] border-r-4 border-primary"
-                  : "bg-transparent border-none"
+                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+                  : "hover:bg-gray-50"
               }`
             }
-            to={"/doctor-profile"}
+            to="/doctor-profile"
           >
-            <img src={assets.people_icon} alt="" />
+            <User className="w-5 h-5" />
             <p className="hidden md:block">Profile</p>
           </NavLink>
 
-          {/* AI Assistant (visible for PRO and PLATINUM) */}
+          {/* AI Assistant (PRO et PLATINUM) */}
           {(subscriptionPlan === "PRO" || subscriptionPlan === "PLATINUM") && (
             <NavLink
               className={({ isActive }) =>
-                `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+                `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
                   isActive
-                    ? "bg-[#F2F3FF] border-r-4 border-primary"
-                    : "bg-transparent border-none"
+                    ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+                    : "hover:bg-gray-50"
                 }`
               }
-              to={"/ai-assistant"}
+              to="/ai-assistant"
             >
-              <Bot className="h-5 w-5" />
+              <Bot className="w-5 h-5" />
               <p className="hidden md:block">AI Assistant</p>
             </NavLink>
           )}
 
-          {/* AI Image Scanner (visible only for PLATINUM) */}
+          {/* AI Image Scanner (PLATINUM) */}
           {subscriptionPlan === "PLATINUM" && (
             <NavLink
               className={({ isActive }) =>
-                `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+                `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
                   isActive
-                    ? "bg-[#F2F3FF] border-r-4 border-primary"
-                    : "bg-transparent border-none"
+                    ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+                    : "hover:bg-gray-50"
                 }`
               }
-              to={"/ai-image-scanner"}
+              to="/ai-image-scanner"
             >
-              <ImagePlus className="h-5 w-5" />
+              <ImagePlus className="w-5 h-5" />
               <p className="hidden md:block">AI Image Scanner</p>
             </NavLink>
           )}
 
-          {/* Mon abonnement link (visible pour tous les médecins) */}
+          {/* Subscription Plans */}
           <NavLink
             className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
                 isActive
-                  ? "bg-[#F2F3FF] border-r-4 border-primary"
-                  : "bg-transparent border-none"
+                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+                  : "hover:bg-gray-50"
               }`
             }
-            to={"/subscription-plans"}
+            to="/subscription-plans"
           >
-            <CreditCard className="h-5 w-5" />
-            <p className="hidden md:block">My plans</p>
+            <CreditCard className="w-5 h-5" />
+            <p className="hidden md:block">My Plans</p>
           </NavLink>
         </ul>
       )}

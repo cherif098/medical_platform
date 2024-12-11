@@ -29,7 +29,7 @@ const MyAppointments = () => {
 
       if (data.success) {
         const sortedAppointments = data.appointments
-          .filter((apt) => apt !== null)
+          .filter((apt) => apt !== null && apt.STATUS !== "COMPLETED")
           .sort((a, b) => {
             const dateTimeA = new Date(
               `${a.SLOT_DATE.split("T")[0]} ${a.SLOT_TIME}`
@@ -62,10 +62,10 @@ const MyAppointments = () => {
     fetchAppointments();
   }, [fetchAppointments]);
 
-  const handleDeleteAppointment = async (appointmentId) => {
+  const handleCancelAppointment = async (appointmentId) => {
     if (
       !window.confirm(
-        "Are you sure you want to delete this appointment? This action cannot be undone."
+        "Are you sure you want to cancel this appointment? This action cannot be undone."
       )
     ) {
       return;
@@ -80,22 +80,22 @@ const MyAppointments = () => {
       );
 
       if (response.data.success) {
-        toast.success("Appointment deleted successfully");
+        toast.success("Appointment cancelled successfully");
         setAppointments((prev) =>
           prev.filter((app) => app.APPOINTMENT_ID !== appointmentId)
         );
       } else {
-        toast.error(response.data.message || "Failed to delete appointment");
+        toast.error(response.data.message || "Failed to cancel appointment");
       }
     } catch (error) {
-      console.error("Delete appointment error:", error);
+      console.error("Cancel appointment error:", error);
       if (error.response?.status === 401) {
         toast.error("Session expired. Please login again");
         navigate("/login");
       } else {
         toast.error(
           error.response?.data?.message ||
-            "Error deleting appointment. Please try again later."
+            "Error cancelling appointment. Please try again later."
         );
       }
     } finally {
@@ -156,6 +156,7 @@ const MyAppointments = () => {
       return false;
     }
   };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-white">
@@ -306,7 +307,7 @@ const MyAppointments = () => {
                                 : ""
                             }`}
                           onClick={() =>
-                            handleDeleteAppointment(appointment.APPOINTMENT_ID)
+                            handleCancelAppointment(appointment.APPOINTMENT_ID)
                           }
                           disabled={
                             deleteLoading === appointment.APPOINTMENT_ID

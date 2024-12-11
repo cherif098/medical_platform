@@ -1,17 +1,21 @@
-import React from 'react';
-import { specialityData } from '../assets/assets';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { specialityData } from "../assets/assets";
+import { Link } from "react-router-dom";
 
 const SpecialityMenu = () => {
   return (
-    <section className="py-16 bg-gradient-to-b from-white to-blue-50" id="speciality">
+    <section
+      className="py-16 bg-gradient-to-b from-white to-blue-50"
+      id="speciality"
+    >
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-6">
             Find by Speciality
           </h1>
           <p className="text-lg text-gray-600 leading-relaxed">
-            Simply browse through our extensive list of trusted doctors, schedule your appointment hassle-free.
+            Simply browse through our extensive list of trusted doctors,
+            schedule your appointment hassle-free.
           </p>
         </div>
 
@@ -19,7 +23,7 @@ const SpecialityMenu = () => {
           {/* Gradient fade for scrollable content */}
           <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-blue-50 to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-blue-50 to-transparent z-10 pointer-events-none" />
-          
+
           <div className="flex justify-start sm:justify-center gap-8 pt-5 w-full overflow-x-auto pb-4 px-4 scrollbar-hide">
             {specialityData.map((item, index) => (
               <Link

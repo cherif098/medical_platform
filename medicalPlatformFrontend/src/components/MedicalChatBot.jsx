@@ -1,25 +1,28 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Bot } from 'lucide-react';
-import axios from 'axios';
+import React, { useState, useRef, useEffect } from "react";
+import { Send, Loader2, Bot } from "lucide-react";
+import axios from "axios";
 
 const MedicalChatbot = ({ userId }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([{
-    role: 'assistant',
-    content: "Bonjour, je suis votre assistant médical. Comment puis-je vous aider aujourd'hui ?"
-  }]);
-  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      content:
+        "Bonjour, je suis votre assistant médical. Comment puis-je vous aider aujourd'hui ?",
+    },
+  ]);
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [currentResponse, setCurrentResponse] = useState('');
+  const [currentResponse, setCurrentResponse] = useState("");
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
 
   // Instance axios avec configuration de base
   const api = axios.create({
-    baseURL: 'http://localhost:8080',
+    baseURL: "http://localhost:8002",
     headers: {
-      'Content-Type': 'application/json'
-    }
+      "Content-Type": "application/json",
+    },
   });
 
   const scrollToBottom = () => {
@@ -31,9 +34,9 @@ const MedicalChatbot = ({ userId }) => {
   }, [messages, currentResponse]);
 
   const formatMessages = (msgs) => {
-    return msgs.map(msg => ({
+    return msgs.map((msg) => ({
       role: msg.role,
-      content: msg.content
+      content: msg.content,
     }));
   };
   const handleSubmit = async (e) => {
@@ -41,36 +44,43 @@ const MedicalChatbot = ({ userId }) => {
     if (!input.trim()) return;
     setError(null);
 
-    const userMessage = { role: 'user', content: input.trim() };
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
+    const userMessage = { role: "user", content: input.trim() };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
     setIsLoading(true);
-    setCurrentResponse('');
+    setCurrentResponse("");
 
     try {
-      const response = await api.post('/api/chat', {
-        message: userMessage.content,
-        history: formatMessages(messages),
-        user_id: userId || 'default'
-      }, {
-        responseType: 'text',
-        onDownloadProgress: (progressEvent) => {
-          const text = progressEvent.event.target.responseText;
-          setCurrentResponse(text);
+      const response = await api.post(
+        "/api/chat",
+        {
+          message: userMessage.content,
+          history: formatMessages(messages),
+          user_id: userId || "default",
+        },
+        {
+          responseType: "text",
+          onDownloadProgress: (progressEvent) => {
+            const text = progressEvent.event.target.responseText;
+            setCurrentResponse(text);
+          },
         }
-      });
+      );
 
       // Une fois la réponse complète reçue
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: currentResponse || response.data
-      }]);
-      setCurrentResponse('');
-
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: currentResponse || response.data,
+        },
+      ]);
+      setCurrentResponse("");
     } catch (err) {
-      console.error('Error:', err);
-      let errorMessage = "Désolé, je rencontre des difficultés techniques. Veuillez réessayer.";
-      
+      console.error("Error:", err);
+      let errorMessage =
+        "Désolé, je rencontre des difficultés techniques. Veuillez réessayer.";
+
       if (err.response) {
         switch (err.response.status) {
           case 422:
@@ -80,20 +90,23 @@ const MedicalChatbot = ({ userId }) => {
             errorMessage = "Une erreur est survenue. Veuillez réessayer.";
         }
       } else if (err.request) {
-        errorMessage = "Impossible de joindre le serveur. Vérifiez votre connexion.";
+        errorMessage =
+          "Impossible de joindre le serveur. Vérifiez votre connexion.";
       }
 
       setError(errorMessage);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: errorMessage
-      }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: errorMessage,
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
-};
+  };
 
-  
   // Composant du bouton flottant (chat fermé)
   if (!isOpen) {
     return (
@@ -129,9 +142,7 @@ const MedicalChatbot = ({ userId }) => {
 
       {/* Zone d'erreur */}
       {error && (
-        <div className="p-2 bg-red-100 text-red-600 text-sm">
-          {error}
-        </div>
+        <div className="p-2 bg-red-100 text-red-600 text-sm">{error}</div>
       )}
 
       {/* Messages */}
@@ -139,18 +150,20 @@ const MedicalChatbot = ({ userId }) => {
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${
+              message.role === "user" ? "justify-end" : "justify-start"
+            }`}
           >
-            {message.role === 'assistant' && (
+            {message.role === "assistant" && (
               <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center mr-2">
                 <Bot className="w-5 h-5 text-white" />
               </div>
             )}
             <div
               className={`max-w-[80%] rounded-lg p-3 ${
-                message.role === 'user'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-800'
+                message.role === "user"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 text-gray-800"
               }`}
             >
               {message.content}

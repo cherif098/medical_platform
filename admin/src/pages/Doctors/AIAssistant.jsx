@@ -63,7 +63,7 @@ const AIAssistant = () => {
 
   const loadConversations = async () => {
     try {
-      const response = await axios.get("http://localhost:8001/conversations");
+      const response = await axios.get("http://localhost:8000/conversations");
       setConversations(response.data);
     } catch (error) {
       showToastMessage("Erreur lors du chargement des conversations", "error");
@@ -73,7 +73,7 @@ const AIAssistant = () => {
   const loadConversationDetails = async (conversationId) => {
     try {
       const response = await axios.get(
-        `http://localhost:8001/conversation/${conversationId}`
+        `http://localhost:8000/conversation/${conversationId}`
       );
       setCurrentConversationDetails(response.data);
     } catch (error) {
@@ -101,7 +101,7 @@ const AIAssistant = () => {
     try {
       setIsLoading(true);
       const response = await axios.post(
-        "http://localhost:8001/upload-documents",
+        "http://localhost:8000/upload-documents",
         formData
       );
       const { conversation_id, patient_name, doctor_name } = response.data;
@@ -159,7 +159,7 @@ const AIAssistant = () => {
 
     try {
       setIsLoading(true);
-      const response = await axios.post("http://localhost:8001/ask", {
+      const response = await axios.post("http://localhost:8000/ask", {
         question: userMessage,
         conversation_id: currentConversationId,
       });

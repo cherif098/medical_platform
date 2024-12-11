@@ -58,7 +58,7 @@ const SubscriptionPlan = () => {
     pro: {
       name: "Expert",
       description: "Pour les médecins qui veulent plus d'efficacité",
-      price: "20€",
+      price: "20$",
       period: "/mois",
       icon: <Brain className="w-6 h-6" />,
       features: [
@@ -88,7 +88,7 @@ const SubscriptionPlan = () => {
     platinum: {
       name: "Premium",
       description: "L'excellence pour votre pratique médicale",
-      price: "50€",
+      price: "50$",
       period: "/mois",
       icon: <Crown className="w-6 h-6" />,
       features: [
