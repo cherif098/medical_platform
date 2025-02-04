@@ -30,7 +30,6 @@ const PatientSelector = ({
               <div className="mt-1 text-sm text-gray-600">
                 <p>Age: {calculateAge(patient.DATE_OF_BIRTH)} years</p>
                 <p>Gender: {patient.GENDER}</p>
-                <p>ID: {patient.PATIENT_ID}</p>
               </div>
             </div>
           </div>
