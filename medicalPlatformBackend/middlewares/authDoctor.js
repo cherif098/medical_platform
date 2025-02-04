@@ -3,6 +3,10 @@ import jwt from "jsonwebtoken";
 const authDoctor = async (req, res, next) => {
   try {
     const dToken = req.headers["dtoken"] || req.headers["dToken"];
+    console.log("Middleware authDoctor exécuté pour :", req.originalUrl);
+    console.log("Headers reçus :", req.headers);
+    console.log("Token extrait :", req.headers["dtoken"]);
+
 
     if (!dToken) {
       return res.status(401).json({
