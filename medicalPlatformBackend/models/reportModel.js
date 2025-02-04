@@ -294,10 +294,17 @@ export const getPatientReports = async (patientId) => {
 export const getPatientReportById = async (reportId) => {
   const query = `
     SELECT R.*, 
-           D.NAME as DOCTOR_NAME,
-           D.SPECIALTY
+           D.NAME AS DOCTOR_NAME,
+           D.SPECIALTY,
+           P.NAME AS PATIENT_NAME,
+           P.DATE_OF_BIRTH,
+           P.GENDER,
+           P.PHONE,
+           P.EMAIL,
+           P.ADRESSE
     FROM MEDICAL_DB.MEDICAL_SCHEMA.REPORTS R
     JOIN MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS D ON R.DOCTOR_ID = D.DOCTOR_ID
+    JOIN MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS P ON R.PATIENT_ID = P.PATIENT_ID
     WHERE R.REPORT_ID = ?
     AND R.IS_DELETED = FALSE
     AND R.STATUS = 'COMPLETED'`;
@@ -310,3 +317,73 @@ export const getPatientReportById = async (reportId) => {
     throw error;
   }
 };
+
+
+// Récupérer tous les rapports par l'ID d'un patient (pour nurse)
+
+export const getMReports = async (patientId) => {
+  const query = `SELECT *
+    FROM MEDICAL_DB.MEDICAL_SCHEMA.REPORTS
+    WHERE PATIENT_ID = ?
+    ORDER BY CONSULTATION_DATE DESC
+  `;
+    
+
+  try {
+    console.log(`Executing query for patient ID: ${patientId}`); 
+    const result = await executeQuery(query, [patientId]);
+    console.log("Query result:", result); 
+
+    return result;
+  } catch (error) {
+    console.error("Error executing SQL query:", error); 
+    throw error; 
+  }
+};
+
+// Récupérer les détails d'un rapport par son ID (pour nurse)
+export const getMReportById = async (reportId) => {
+  const query = `
+    SELECT R.*, 
+          P.NAME as PATIENT_NAME,
+          P.DATE_OF_BIRTH,
+          P.GENDER,
+          P.PHONE,
+          P.EMAIL,
+           D.NAME as DOCTOR_NAME,
+           D.SPECIALTY
+    FROM MEDICAL_DB.MEDICAL_SCHEMA.REPORTS R
+    JOIN MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS D ON R.DOCTOR_ID = D.DOCTOR_ID
+    JOIN MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS P ON R.PATIENT_ID = P.PATIENT_ID
+    WHERE R.REPORT_ID = ?
+    AND R.IS_DELETED = FALSE`;
+
+  try {
+    const result = await executeQuery(query, [reportId]);
+    return result[0];
+  } catch (error) {
+    console.error("Error fetching patient report:", error);
+    throw error;
+  }
+};
+
+// Récupérer les notes d'un infirmier pour un rapport
+export const getNurseNotesForReport = async (reportId) => {
+  try {
+    const query = `
+      SELECT nn.NOTE_ID, nn.NOTE_TEXT, nn.CREATED_AT, n.NAME AS NURSE_NAME
+      FROM MEDICAL_DB.MEDICAL_SCHEMA.NURSENOTES nn
+      JOIN MEDICAL_DB.MEDICAL_SCHEMA.NURSES n ON nn.NURSE_ID = n.NURSE_ID
+      WHERE nn.REPORT_ID = ? 
+      ORDER BY nn.CREATED_AT DESC;
+    `;
+    
+    const result = await executeQuery(query, [reportId]);
+    return result;
+  } catch (error) {
+    console.error("Error fetching nurse notes from DB:", error);
+    throw new Error("Failed to retrieve nurse notes.");
+  }
+};
+
+
