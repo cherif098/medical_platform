@@ -1,6 +1,9 @@
 import express from "express";
 import {
   addDoctor,
+  addNurse,
+  deleteNurseAdmin,
+  allNurses,
   allDoctors,
   loginAdmin,
   getAllAppointmentsAdmin,
@@ -15,6 +18,9 @@ import { changeAvailability } from "../controllers/doctorControllers.js";
 const adminRouter = express.Router();
 
 adminRouter.post("/add-doctor", upload.single("IMAGE"), addDoctor);
+adminRouter.post("/add-nurse", upload.single("IMAGE"), addNurse);
+adminRouter.get("/all-nurses", allNurses);
+adminRouter.delete("/delete-nurse/:nurseId", deleteNurseAdmin);
 adminRouter.post("/login", loginAdmin);
 adminRouter.post("/all-doctors", allDoctors);
 adminRouter.post("/change-availability", changeAvailability);
