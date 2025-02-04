@@ -9,15 +9,22 @@ import patientRouter from "./routes/patientRoute.js";
 import appointmentRouter from "./routes/appointmentRoute.js";
 import reportRouter from "./routes/reportRoute.js"; // Nouvelle importation
 import stripeRouter from "./routes/stripeRoute.js";
-
+import nurseRouter from "./routes/nurseRoute.js";
 //App config
 const app = express();
 const port = process.env.PORT || 3000;
 connectCloudinary();
 
+process.env.GOOGLE_APPLICATION_CREDENTIALS = "C:\\protean-set-439816-u5-9842f9fa35d4.json";
+
 //Middlewares
 app.use(express.json());
 app.use(cors());
+app.use((req, res, next) => {
+  console.log(` Requête reçue : ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 
 // Initialiser la connexion Snowflake au demarrage du serveur
 let snowflakeConnected = false;
@@ -43,6 +50,7 @@ app.use("/api/patient", patientRouter);
 app.use("/api/appointment", appointmentRouter);
 app.use("/api/reports", reportRouter);
 app.use("/api/stripe", stripeRouter);
+app.use("/api/nurse", nurseRouter);
 
 // Démarrer le serveur
 const startServer = async () => {
