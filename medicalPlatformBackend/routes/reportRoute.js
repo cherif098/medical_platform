@@ -11,7 +11,8 @@ import {
   getPatientMedicalReports,
   getReports,
   getReportDetails,
-  fetchNurseNotes
+  fetchNurseNotes,
+  modifyVitalSigns,
 } from "../controllers/reportController.js";
 import authDoctor from "../middlewares/authDoctor.js";
 import authPatient from "../middlewares/authPatient.js";
@@ -40,6 +41,8 @@ reportRouter.get("/:reportId/nurse-notes", authDoctor ,fetchNurseNotes);
 reportRouter.get("/nurse/patients/:patientId/reports", authNurse, getReports);
 reportRouter.get("/nurse/:reportId", authNurse, getReportDetails);
 reportRouter.get("/nurse/:reportId/pdf", authNurse, downloadPDF);
+reportRouter.put("/nurse/:reportId/vital-signs", authNurse, modifyVitalSigns);
+
 
 
 
