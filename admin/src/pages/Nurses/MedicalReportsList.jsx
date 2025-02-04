@@ -10,8 +10,6 @@ const MedicalReportsList = () => {
   const [searchTerm, setSearchTerm] = useState(""); 
   const [filteredPatients, setFilteredPatients] = useState([]); 
   const [selectedPatient, setSelectedPatient] = useState(null);
-
-  // Ref pour la section des rapports
   const reportsSectionRef = useRef(null);
 
   useEffect(() => {
