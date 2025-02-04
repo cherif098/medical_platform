@@ -2,8 +2,11 @@ import React, { useContext } from "react";
 import { Routes, Route } from "react-router-dom";
 import { AdminContext } from "./context/AdminContext";
 import { DoctorContext } from "./context/DoctorContext";
+import{NurseContext} from "./context/NurseContext";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
+
+
 import Login from "./pages/Login";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -28,11 +31,18 @@ import PaymentSuccess from "./pages/Doctors/PaymentSuccess";
 import PaymentCancel from "./pages/Doctors/PaymentCancel";
 import AIImageScanner from "./pages/Doctors/AIImageScanner";
 
+// page infimier
+import NurseProfile from "./pages/Nurses/NurseProfile";
+//import NurseDashboard from "./pages/Nurses/NurseDashboard";
+import MedicalReportsList from "./pages/Nurses/MedicalReportsList";
+import ViewMedicalReport from "./pages/Nurses/ViewMedicalReport";
+
 const App = () => {
   const { aToken } = useContext(AdminContext);
   const { dToken } = useContext(DoctorContext);
+  const { nToken } = useContext(NurseContext);
 
-  return aToken || dToken ? (
+  return aToken || dToken || nToken ? ( 
     <div className="min-h-screen bg-[#F8F9FD]">
       <ToastContainer />
       {/* Navbar fixe en haut */}
@@ -90,6 +100,16 @@ const App = () => {
               <Route path="//ai-image-scanner" element={<AIImageScanner />} />
               <Route path="/payment/success" element={<PaymentSuccess />} />
               <Route path="/payment/cancel" element={<PaymentCancel />} />
+
+              {/* Nurse Routes */}
+              {/* <Route path="/nurse-dashboard" element={<NurseDashboard />} /> */}
+              <Route path="/nurse-profile" element={<NurseProfile />} />
+              <Route path="/medicalreports-list" element={<MedicalReportsList />} />
+              <Route path="/view-report/:reportId" element={<ViewMedicalReport />} />
+  
+
+
+            
             </Routes>
           </main>
         </div>
