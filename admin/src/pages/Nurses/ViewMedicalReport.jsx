@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { NurseContext } from "../../context/NurseContext";
 import { toast } from "react-toastify";
-import { FileText, Download, Edit, Mic, StopCircle, Trash2} from "lucide-react";
+import { FileText, Download, Edit, Mic, StopCircle, Trash2, Check, X} from "lucide-react";
 import axios from "axios";
 import { ReactMic } from "react-mic";
 
@@ -28,7 +28,7 @@ const Field = ({ label, value }) => (
 const ViewMedicalReport = () => {
   const { reportId } = useParams();
   const navigate = useNavigate();
-  const { getReportDetails, getNurseNote, addNurseNote, updateNurseNote, downloadNurseReportPDF, transcribeSpeech , deleteNurseNote} =
+  const { getReportDetails, getNurseNote, addNurseNote, updateNurseNote, downloadNurseReportPDF, transcribeSpeech , deleteNurseNote, updateVitalSigns} =
     useContext(NurseContext);
 
   const [report, setReport] = useState(null);
@@ -42,10 +42,15 @@ const ViewMedicalReport = () => {
 
   const nurseObsRef = useRef(null);
   const location = useLocation();
+  const [editingVitalSigns, setEditingVitalSigns] = useState(false);
+  const [updatedVitalSigns, setUpdatedVitalSigns] = useState({});
 
   
 
   const nToken = localStorage.getItem("nToken");
+  const vitalSignsRef = useRef(null);
+
+
 
   useEffect(() => {
 
@@ -54,6 +59,16 @@ const ViewMedicalReport = () => {
         const data = await getReportDetails(reportId);
         if (data) {
           setReport(data);
+          setUpdatedVitalSigns({
+            TEMPERATURE: data.TEMPERATURE || "",
+            BLOOD_PRESSURE: data.BLOOD_PRESSURE || "",
+            HEART_RATE: data.HEART_RATE || "",
+            RESPIRATORY_RATE: data.RESPIRATORY_RATE || "",
+            OXYGEN_SATURATION: data.OXYGEN_SATURATION || "",
+            WEIGHT: data.WEIGHT || "",
+            HEIGHT: data.HEIGHT || "",
+            BMI: data.BMI || "",
+          });
         } else {
           toast.error("Report not found");
           navigate("/medicalreports-list");
@@ -80,22 +95,22 @@ const ViewMedicalReport = () => {
   useEffect(() => {
     let scrollToSection = location.state?.scrollTo || sessionStorage.getItem("scrollTo");
     console.log("Location State:", location.state);
-    console.log("Session Storage ScrollTo:", sessionStorage.getItem("scrollTo"));
+    console.log("Session Storage ScrollTo:", scrollToSection);
   
-    sessionStorage.removeItem("scrollTo"); 
+    sessionStorage.removeItem("scrollTo"); // Nettoyer après usage
   
-    if (scrollToSection === "nurseObservations") {
-      setTimeout(() => {
-        if (nurseObsRef.current) {
-          console.log("Défilement vers Nurse Observations...");
-          nurseObsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-        } else {
-          console.warn("nurseObsRef est NULL !");
-        }
-      }, 500);
-    }
+    setTimeout(() => {
+      if (scrollToSection === "nurseObservations" && nurseObsRef.current) {
+        console.log("Défilement vers Nurse Observations...");
+        nurseObsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else if (scrollToSection === "VitalSigns" && vitalSignsRef.current) {
+        console.log("Défilement vers Vital Signs...");
+        vitalSignsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        console.warn("Aucune section correspondante trouvée !");
+      }
+    }, 500);
   }, [location]);
-  
   
   
   
@@ -210,6 +225,28 @@ const stopRecording = () => {
 };
 
 
+const handleSaveVitalSigns = async () => {
+  const filteredSigns = Object.fromEntries(
+    Object.entries(updatedVitalSigns).filter(([_, value]) =>
+      typeof value === "string" ? value.trim() !== "" : value !== null && value !== undefined
+    )
+  );
+
+  if (Object.keys(filteredSigns).length === 0) {
+    toast.error("Please enter at least one vital sign to update.");
+    return;
+  }
+
+  try {
+    await updateVitalSigns(reportId, filteredSigns, nToken);
+    toast.success("Vital signs updated successfully!");
+    setEditingVitalSigns(false);
+  } catch (error) {
+    toast.error("Failed to update vital signs.");
+  }
+};
+
+
 
 
 
@@ -290,41 +327,58 @@ const stopRecording = () => {
             />
           </InfoSection>
 
-          {/* Vital Signs */}
+          <div ref={vitalSignsRef}>
           <InfoSection title="Vital Signs" icon="❤️">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Field
-                label="Temperature"
-                value={report.TEMPERATURE && `${report.TEMPERATURE}°C`}
-              />
-              <Field label="Blood Pressure" value={report.BLOOD_PRESSURE} />
-              <Field
-                label="Heart Rate"
-                value={report.HEART_RATE && `${report.HEART_RATE} bpm`}
-              />
-              <Field
-                label="Respiratory Rate"
-                value={
-                  report.RESPIRATORY_RATE && `${report.RESPIRATORY_RATE}/min`
-                }
-              />
-              <Field
-                label="Oxygen Saturation"
-                value={
-                  report.OXYGEN_SATURATION && `${report.OXYGEN_SATURATION}%`
-                }
-              />
-              <Field
-                label="Weight"
-                value={report.WEIGHT && `${report.WEIGHT} kg`}
-              />
-              <Field
-                label="Height"
-                value={report.HEIGHT && `${report.HEIGHT} cm`}
-              />
-              <Field label="BMI" value={report.BMI} />
+            <div className="flex justify-between">
+              <h2 className="text-lg font-semibold">Vital Signs</h2>
+              <button
+                onClick={() => setEditingVitalSigns(!editingVitalSigns)}
+                className="text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
+              >
+                <Edit className="w-5 h-5" />
+              </button>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              {Object.entries(updatedVitalSigns).map(([key, value]) => (
+                <div key={key} className="flex flex-col">
+                  <label className="block text-sm font-medium text-gray-500">
+                    {key.replace("_", " ")}
+                  </label>
+                  {editingVitalSigns ? (
+                    <input
+                      type="text"
+                      className="mt-1 text-sm text-gray-900 p-2 border rounded-md w-full"
+                      value={value}
+                      onChange={(e) =>
+                        setUpdatedVitalSigns((prev) => ({ ...prev, [key]: e.target.value }))
+                      }
+                    />
+                  ) : (
+                    <div className="mt-1 text-sm text-gray-900 p-2 bg-gray-50 rounded-md">
+                      {value || "Not specified"}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {editingVitalSigns && (
+              <div className="flex justify-end gap-3 mt-4">
+                <button
+                  onClick={handleSaveVitalSigns}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                >
+                  <Check className="w-5 h-5 inline-block" /> Save
+                </button>
+                <button
+                  onClick={() => setEditingVitalSigns(false)}
+                  className="px-4 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition-colors"
+                >
+                  <X className="w-5 h-5 inline-block" /> Cancel
+                </button>
+              </div>
+            )}
           </InfoSection>
+        </div>
 
           {/* Medical History */}
           <InfoSection title="Medical History" icon="📚">
