@@ -11,6 +11,7 @@ import {
   getMReports,
   getMReportById,
   getNurseNotesForReport,
+  UpdateVitalSigns,
 } from "../models/reportModel.js";
 import PDFDocument from "pdfkit";
 import jwt from "jsonwebtoken";
@@ -469,7 +470,7 @@ export const getReportDetails = async (req, res) => {
     });
   }
 }; 
-
+// get nurse notes (for doctors)
 export const fetchNurseNotes = async (req, res) => {
   try {
     const doctorId = req.user.DOCTOR_ID; 
@@ -486,3 +487,28 @@ export const fetchNurseNotes = async (req, res) => {
     res.status(500).json({ error: "Failed to retrieve nurse notes" });
   }
 };
+
+// update vital signs (for nurses)
+export const modifyVitalSigns = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const vitalSigns = req.body; 
+
+    console.log(`Updating vital signs for report ${reportId}`, vitalSigns);
+
+    const success = await UpdateVitalSigns(reportId, vitalSigns);
+
+    if (success) {
+      res.status(200).json({ success: true, message: "Vital signs updated successfully" });
+    } else {
+      res.status(404).json({ success: false, message: "Report not found" });
+    }
+  } catch (error) {
+    console.error("Error updating vital signs:", error);
+    res.status(500).json({ success: false, message: "Failed to update vital signs" });
+  }
+};
+
+
+
+
