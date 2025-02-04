@@ -76,30 +76,45 @@ const DoctorContextProvider = (props) => {
     }
   };
 
-  // Fonction pour télécharger le PDF
-  const downloadReportPDF = async (reportId) => {
-    try {
-      const response = await axios.get(
-        `${backendUrl}/api/reports/${reportId}/pdf`,
-        {
-          ...getHeaders(),
-          responseType: "blob",
-        }
-      );
+  const downloadReportPDF = async (reportId, patientName) => {
+      try {
+        const response = await axios.get(
+          `${backendUrl}/api/reports/${reportId}`, 
+          { headers: { dtoken: dToken, ...getHeaders() } }
+        );
+    
+        console.log("API Response:", response); // 🔍 Vérification
+    
+        // Vérifier si le backend renvoie bien le nom du patient
+        console.log("Patient Name:", patientName);
+    
+        const formattedName = patientName ? patientName.replace(/\s+/g, "_") : "inconnu";
+        const fileName = `rapport-${formattedName}.pdf`;
+    
+        // Création d'un objet Blob pour gérer le fichier PDF
+        const blob = new Blob([response.data], { type: "application/pdf" });
+    
+        // Création d'une URL temporaire pour le téléchargement
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", fileName);
+    
+        // Déclenchement du téléchargement
+        document.body.appendChild(link);
+        link.click();
+    
+        // Nettoyage du DOM
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Error downloading nurse report PDF:", error);
+        toast.error("Erreur lors du téléchargement du rapport PDF");
+      }
+    };
 
-      const blob = new Blob([response.data], { type: "application/pdf" });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `report-${reportId}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      toast.error("Error downloading PDF");
-    }
-  };
+
+  
   // Récupérer la liste des patients du médecin
   const getPatients = async () => {
     try {
@@ -107,6 +122,8 @@ const DoctorContextProvider = (props) => {
         `${backendUrl}/api/reports/patients`,
         getHeaders()
       );
+      console.log("Headers envoyés :", getHeaders());
+
       if (data.success) {
         setPatients(data.patients);
       } else {
@@ -414,6 +431,20 @@ const DoctorContextProvider = (props) => {
     }
   };
 
+
+   // récupérer les notes des infirmiers d'un rapport
+   const getNurseNotesForReport = async (reportId) => {
+    try {
+      const response = await axios.get(`${backendUrl}/api/reports/${reportId}/nurse-notes`
+        , getHeaders());
+      
+      return response.data; 
+    } catch (error) {
+      console.error("Error fetching nurse notes:", error);
+      return []; 
+    }
+  };
+
   const value = {
     dToken,
     setDToken,
@@ -449,6 +480,7 @@ const DoctorContextProvider = (props) => {
     downgradeToBasic,
     initiateSubscriptionPayment,
     upgradeToPlan,
+    getNurseNotesForReport,
   };
   return (
     <DoctorContext.Provider value={value}>

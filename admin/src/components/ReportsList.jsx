@@ -2,7 +2,7 @@ import React, { useContext, useState } from "react";
 import { DoctorContext } from "../context/DoctorContext";
 import { toast } from "react-toastify";
 
-const ReportsList = ({ reports, patientId, navigate }) => {
+const ReportsList = ({ reports, patientId, navigate, hideCreateButton, onDownloadPDF, userRole }) => {
   const { deleteReport, downloadReportPDF, getPatientReports } =
     useContext(DoctorContext);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -30,12 +30,15 @@ const ReportsList = ({ reports, patientId, navigate }) => {
         <p className="mt-1 text-gray-500">
           No medical reports have been created for this patient yet.
         </p>
-        <button
-          onClick={() => navigate(`/medical-reports/create/${patientId}`)}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-        >
-          Create First Report
-        </button>
+        {/* Bouton caché pour les infirmiers */}
+        {!hideCreateButton && (
+          <button
+            onClick={() => navigate(`/medical-reports/create/${patientId}`)}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Create First Report
+          </button>
+        )}
       </div>
     );
   }
@@ -227,26 +230,27 @@ const ReportsList = ({ reports, patientId, navigate }) => {
                         Edit
                       </button>
                       <button
-                        onClick={() => handleDownloadPDF(report.REPORT_ID)}
-                        disabled={isDownloading}
-                        className="text-purple-600 hover:text-purple-900 flex items-center gap-1"
-                        title="Download PDF"
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                          />
-                        </svg>
-                        PDF
-                      </button>
+  onClick={() => onDownloadPDF ? onDownloadPDF(report.REPORT_ID) : downloadReportPDF(report.REPORT_ID)}
+  disabled={isDownloading}
+  className="text-purple-600 hover:text-purple-900 flex items-center gap-1 download-pdf-btn"
+  title="Download PDF"
+>
+  <svg
+    className="w-4 h-4"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+    />
+  </svg>
+  PDF
+</button>
+
                       <button
                         onClick={() => handleDelete(report.REPORT_ID)}
                         disabled={isDeleting}
@@ -268,6 +272,28 @@ const ReportsList = ({ reports, patientId, navigate }) => {
                         </svg>
                         Delete
                       </button>
+                      {userRole === "Nurse" && (
+  <button
+  onClick={() => {
+    sessionStorage.setItem("scrollTo", "nurseObservations");
+    console.log("ScrollTo saved:", sessionStorage.getItem("scrollTo"));
+    navigate(`/view-report/${report.REPORT_ID}`);
+  }}
+  className="text-blue-500 hover:text-blue-700 flex items-center gap-1"
+  title="Add Notes"
+>
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+  </svg>
+  Add Notes
+</button>
+
+
+
+
+)}
+
+
                     </div>
                   </td>
                 </tr>

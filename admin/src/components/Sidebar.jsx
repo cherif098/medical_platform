@@ -1,6 +1,7 @@
 import React, { useContext } from "react";
 import { AdminContext } from "../context/AdminContext";
 import { DoctorContext } from "../context/DoctorContext";
+import {NurseContext} from "../context/NurseContext";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -12,11 +13,15 @@ import {
   Bot,
   ImagePlus,
   CreditCard,
+  MessageCircle,
+   Bed,
+   Bell
 } from "lucide-react";
 
 const Sidebar = () => {
   const { aToken } = useContext(AdminContext);
   const { dToken, subscriptionPlan } = useContext(DoctorContext);
+  const { nToken } = useContext(NurseContext);
 
   return (
     <div className="min-h-screen bg-white border-r border-gray-100">
@@ -139,57 +144,98 @@ const Sidebar = () => {
             <User className="w-5 h-5" />
             <p className="hidden md:block">Profile</p>
           </NavLink>
-
-          {/* AI Assistant (PRO et PLATINUM) */}
-          {(subscriptionPlan === "PRO" || subscriptionPlan === "PLATINUM") && (
-            <NavLink
-              className={({ isActive }) =>
-                `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                  isActive
-                    ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                    : "hover:bg-gray-50"
-                }`
-              }
-              to="/ai-assistant"
-            >
-              <Bot className="w-5 h-5" />
-              <p className="hidden md:block">AI Assistant</p>
-            </NavLink>
-          )}
-
-          {/* AI Image Scanner (PLATINUM) */}
-          {subscriptionPlan === "PLATINUM" && (
-            <NavLink
-              className={({ isActive }) =>
-                `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                  isActive
-                    ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                    : "hover:bg-gray-50"
-                }`
-              }
-              to="/ai-image-scanner"
-            >
-              <ImagePlus className="w-5 h-5" />
-              <p className="hidden md:block">AI Image Scanner</p>
-            </NavLink>
-          )}
-
-          {/* Subscription Plans */}
-          <NavLink
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-            to="/subscription-plans"
-          >
-            <CreditCard className="w-5 h-5" />
-            <p className="hidden md:block">My Plans</p>
-          </NavLink>
         </ul>
       )}
+
+     {/* Section Nurse */}
+{nToken && (
+  <ul className="text-gray-600 mt-5">
+    <NavLink
+      className={({ isActive }) =>
+        `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
+          isActive
+            ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+            : "hover:bg-gray-50"
+        }`
+      }
+      to="/nurse-dashboard"
+    >
+      <LayoutDashboard className="w-5 h-5" />
+      <p className="hidden md:block">Dashboard</p>
+    </NavLink>
+
+    <NavLink
+      className={({ isActive }) =>
+        `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
+          isActive
+            ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+            : "hover:bg-gray-50"
+        }`
+      }
+      to="/medicalreports-list"
+    >
+      <FileText className="w-5 h-5" />
+      <p className="hidden md:block">Medical Reports</p>
+    </NavLink>
+
+    <NavLink
+      className={({ isActive }) =>
+        `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
+          isActive
+            ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+            : "hover:bg-gray-50"
+        }`
+      }
+      to="/bed-status"
+    >
+      <Bed className="w-5 h-5" />
+      <p className="hidden md:block">Bed Status</p>
+    </NavLink>
+
+    <NavLink
+      className={({ isActive }) =>
+        `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
+          isActive
+            ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+            : "hover:bg-gray-50"
+        }`
+      }
+      to="/notifications"
+    >
+      <Bell className="w-5 h-5" />
+      <p className="hidden md:block">Notifications</p>
+    </NavLink>
+    <NavLink
+      className={({ isActive }) =>
+        `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
+          isActive
+            ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+            : "hover:bg-gray-50"
+        }`
+      }
+      to="/messaging-service"
+    >
+      <MessageCircle className="w-5 h-5" />
+      <p className="hidden md:block">Messaging Service</p>
+    </NavLink>
+
+    <NavLink
+      className={({ isActive }) =>
+        `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
+          isActive
+            ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+            : "hover:bg-gray-50"
+        }`
+      }
+      to="/nurse-profile"
+    >
+      <User className="w-5 h-5" />
+      <p className="hidden md:block">Profile</p>
+    </NavLink>
+  </ul>
+)}
+
+
     </div>
   );
 };

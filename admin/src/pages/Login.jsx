@@ -1,6 +1,7 @@
 import React, { useState, useContext } from "react";
 import { AdminContext } from "../context/AdminContext";
 import { DoctorContext } from "../context/DoctorContext";
+import { NurseContext } from "../context/NurseContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -13,36 +14,58 @@ const Login = () => {
 
   const { setAToken, backendUrl } = useContext(AdminContext);
   const { setDToken } = useContext(DoctorContext);
+  const { setNToken } = useContext(NurseContext);
 
   const onSubmitHandler = async (event) => {
-    event.preventDefault();
-    try {
-      if (state === "Admin") {
-        const { data } = await axios.post(backendUrl + "/api/admin/login", {
-          EMAIL,
-          PASSWORD,
-        });
-        if (data) {
-          localStorage.setItem("aToken", data.token);
-          setAToken(data.token);
-          toast.success("Connexion réussie");
-        }
-      } else {
-        const { data } = await axios.post(backendUrl + "/api/doctor/login", {
-          EMAIL,
-          PASSWORD,
-        });
-        if (data) {
-          localStorage.setItem("dToken", data.token);
-          setDToken(data.token);
-          navigate("/doctor-dashboard");
-          toast.success("Connexion réussie");
-        }
+  event.preventDefault();
+  try {
+    if (state === "Admin") {
+      const { data } = await axios.post(backendUrl + "/api/admin/login", {
+        EMAIL,
+        PASSWORD,
+      });
+      if (data && data.token) {
+        localStorage.setItem("aToken", data.token);
+        setAToken(data.token);
+        toast.success("Connexion réussie");
       }
-    } catch (error) {
-      toast.error("Erreur de connexion. Veuillez vérifier vos identifiants.");
-    }
-  };
+    } else if (state === "Doctor") {
+      const { data } = await axios.post(backendUrl + "/api/doctor/login", {
+        EMAIL,
+        PASSWORD,
+      });
+      if (data && data.token) {
+        localStorage.setItem("dToken", data.token);
+        setDToken(data.token);
+        navigate("/doctor-dashboard");
+        toast.success("Connexion réussie");
+      }
+    } else if (state === "Nurse") {
+      try {
+        console.log("Données envoyées :", { EMAIL, PASSWORD });
+    
+        const { data } = await axios.post(backendUrl + "/api/nurse/login", {
+          EMAIL,
+          PASSWORD,
+        });
+        console.log("Réponse reçue :", data);
+    
+        if (data && data.token) {
+          localStorage.setItem("nToken", data.token);
+          setNToken(data.token);
+          toast.success("Connexion réussie");
+          navigate("/nurse-dashboard");
+        }
+      } catch (error) {
+        console.error("Erreur lors de la connexion :", error);
+        toast.error("Erreur de connexion. Veuillez vérifier vos identifiants.");
+      }}
+  } catch (error) {
+    console.error("Erreur lors de la connexion :", error);
+    toast.error("Erreur de connexion. Veuillez vérifier vos identifiants.");
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -53,7 +76,7 @@ const Login = () => {
           <p className="text-gray-600">Connectez-vous à votre compte</p>
         </div>
 
-        {/* Sélecteur Admin/Docteur */}
+        {/* Sélecteur Admin/Docteur/Infirmier */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <div className="flex rounded-md overflow-hidden mb-8">
             <button
@@ -75,6 +98,16 @@ const Login = () => {
               } transition-colors duration-200`}
             >
               Médecin
+            </button>
+            <button
+              onClick={() => setState("Nurse")}
+              className={`flex-1 py-3 text-sm font-medium ${
+                state === "Nurse"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              } transition-colors duration-200`}
+            >
+              Infirmier
             </button>
           </div>
 

@@ -8,7 +8,7 @@ import {
   updateDoctorProfileModel
 } from "../models/doctorModel.js";
 import { deleteAppointmentDoctor } from "../models/appointmentModel.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { executeQuery } from "../config/snowflake.js";
 

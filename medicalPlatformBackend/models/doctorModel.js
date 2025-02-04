@@ -370,3 +370,6 @@ export const updateDoctorProfileModel = async (DOCTOR_ID, updatedData) => {
     throw error;
   }
 };
+
+
+
