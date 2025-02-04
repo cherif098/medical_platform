@@ -7,7 +7,7 @@ import adminRouter from "./routes/adminRoute.js";
 import doctorRouter from "./routes/doctorRoute.js";
 import patientRouter from "./routes/patientRoute.js";
 import appointmentRouter from "./routes/appointmentRoute.js";
-import reportRouter from "./routes/reportRoute.js"; // Nouvelle importation
+import reportRouter from "./routes/reportRoute.js"; 
 import stripeRouter from "./routes/stripeRoute.js";
 
 //App config
