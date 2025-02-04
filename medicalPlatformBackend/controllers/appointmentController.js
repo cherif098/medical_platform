@@ -135,41 +135,38 @@ export const bookAppointment = async (req, res) => {
 
     // Format the time
     let formattedTime;
-    try {
-      // Convert "11:00 a.m." format to "11:00:00"
-      const timeMatch = slotTime.match(/(\d{1,2}):(\d{2})\s*(a\.m\.|p\.m\.)/i);
-      if (timeMatch) {
-        let [_, hours, minutes, period] = timeMatch;
-        hours = parseInt(hours);
+try {
+  if (slotTime.match(/^\d{2}:\d{2}$/)) {
+    // Format 24h, ex: "14:30"
+    formattedTime = `${slotTime}:00`;
+  } else if (slotTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)) {
+    // Format 12h avec AM/PM, ex: "2:30 PM"
+    const timeMatch = slotTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    let [_, hours, minutes, period] = timeMatch;
+    hours = parseInt(hours);
 
-        // Convert to 24-hour format
-        if (period.toLowerCase().includes("p") && hours !== 12) {
-          hours += 12;
-        } else if (period.toLowerCase().includes("a") && hours === 12) {
-          hours = 0;
-        }
-
-        formattedTime = `${hours.toString().padStart(2, "0")}:${minutes}:00`;
-      } else {
-        // If time is already in 24-hour format
-        formattedTime = slotTime.length === 5 ? `${slotTime}:00` : slotTime;
-      }
-
-      if (!formattedTime.match(/^\d{2}:\d{2}:\d{2}$/)) {
-        throw new Error("Invalid time format");
-      }
-    } catch (error) {
-      console.error("Time parsing error:", error);
-      return res.status(400).json({
-        success: false,
-        message: "Invalid time format. Please use HH:MM AM/PM format.",
-      });
+    if (period.toUpperCase() === "PM" && hours !== 12) {
+      hours += 12;
+    } else if (period.toUpperCase() === "AM" && hours === 12) {
+      hours = 0;
     }
 
-    console.log("Formatted values:", {
-      formattedDate,
-      formattedTime,
-    });
+    formattedTime = `${hours.toString().padStart(2, "0")}:${minutes}:00`;
+  } else {
+    throw new Error("Invalid time format");
+  }
+
+  // Validation finale du format
+  if (!formattedTime.match(/^\d{2}:\d{2}:\d{2}$/)) {
+    throw new Error("Invalid time format");
+  }
+} catch (error) {
+  console.error("Time parsing error:", error);
+  return res.status(400).json({
+    success: false,
+    message: "Invalid time format. Please use HH:MM AM/PM or HH:MM.",
+  });
+}
 
     // Verify doctor availability
     const doctor = await doctorModel.findAvailableDoctor(docId);
