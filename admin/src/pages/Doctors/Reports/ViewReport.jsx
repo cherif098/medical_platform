@@ -59,9 +59,10 @@ Field.displayName = "Field";
 const ViewReport = () => {
   const { reportId } = useParams();
   const navigate = useNavigate();
-  const { getReport, downloadReportPDF } = useContext(DoctorContext);
+  const { getReport, downloadReportPDF, getNurseNotesForReport} = useContext(DoctorContext);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [nurseNotes, setNurseNotes] = useState([]);
 
   useEffect(() => {
     const loadReport = async () => {
@@ -82,6 +83,24 @@ const ViewReport = () => {
     };
     loadReport();
   }, [reportId, getReport, navigate]);
+
+  useEffect(() => {
+    const loadNurseNotes = async () => {
+        try {
+            const notes = await getNurseNotesForReport(reportId);
+            console.log("Nurse Notes:", notes);
+            setNurseNotes(Array.isArray(notes) ? notes : []);
+        } catch (error) {
+            console.error("Error fetching nurse notes:", error);
+            setNurseNotes([]);
+        }
+    };
+
+    loadNurseNotes();
+}, [reportId, getNurseNotesForReport]);
+
+  
+  
 
   const formatDate = (date) => {
     if (!date) return "Not specified";
@@ -175,7 +194,7 @@ const ViewReport = () => {
                 Edit
               </button>
               <button
-                onClick={() => downloadReportPDF(reportId)}
+                onClick={() => downloadReportPDF(reportId, report.PATIENT_NAME)}
                 className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 
                        transition-colors flex items-center gap-2 shadow-sm"
               >
@@ -340,10 +359,31 @@ const ViewReport = () => {
               value={report.WORK_RETURN_RECOMMENDATIONS}
             />
           </InfoSection>
+          <InfoSection title="Nurse Observations" icon="📝">
+  {Array.isArray(nurseNotes) && nurseNotes.length > 0 ? (
+    nurseNotes.map((note) => (
+      <div key={note.NOTE_ID} className="bg-gray-100 p-4 rounded-lg mb-3 shadow-sm">
+        <p className="text-gray-900">{note.NOTE_TEXT}</p>
+        <p className="text-sm text-gray-500 mt-2">
+          Written by <strong>{note.NURSE_NAME}</strong> on{" "}
+          {new Date(note.CREATED_AT).toLocaleDateString()}
+        </p>
+      </div>
+    ))
+  ) : (
+    <p className="text-gray-500 italic">No nurse observations available for this report.</p>
+  )}
+</InfoSection>
+
+
+
+
+
+
         </div>
       </div>
 
-      {/* Bouton de retour fixe en bas */}
+     
       <div className="p-8 pt-4 bg-gray-50">
         <div className="max-w-4xl mx-auto flex justify-end">
           <button
