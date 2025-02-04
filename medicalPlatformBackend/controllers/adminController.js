@@ -1,6 +1,7 @@
 import { insertDoctor, deleteDoctor } from "../models/doctorModel.js";
+import { insertNurse, deleteNurse , getNursesWithoutPassword} from "../models/nurseModel.js";
 import validator from "validator";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { v2 as cloudinary } from "cloudinary";
 import { executeQuery } from "../config/snowflake.js";
 import jwt from "jsonwebtoken";
@@ -105,7 +106,6 @@ export const addDoctor = async (req, res) => {
       CREATED_BY,
       IMAGE: imageUrl,
     };
-
     // Insertion des données dans la base
     await insertDoctor(doctorData);
 
@@ -120,6 +120,71 @@ export const addDoctor = async (req, res) => {
       .json({ error: "Failed to add doctor", details: err.message });
   }
 };
+
+// Fonction pour vérifier si un champ existe déjà dans la base de données
+export const checkIfEmailExists = async (field, value) => {
+  const query = `SELECT COUNT(*) AS count FROM MEDICAL_DB.MEDICAL_SCHEMA.Nurses WHERE ${field} = ?`;
+  const result = await executeQuery(query, [value]);
+  return result[0].COUNT > 0; // Retourne true si l'élément existe déjà
+};
+
+export const addNurse = async (req, res) => {
+  const {
+    EMAIL,
+    PASSWORD,
+    NAME,
+    PHONE,
+    ADRESSE,
+    STATUS,
+    EXPERIENCE,
+    ABOUT,
+    IS_PASSWORD_TEMPORARY,
+  } = req.body;
+
+  const imageFile = req.file; 
+  let imageUrl = "default-nurse-image.jpg"; 
+
+  if (!EMAIL || !PASSWORD || !NAME) {
+    return res.status(400).json({ error: "Missing required fields (EMAIL, PASSWORD, NAME)" });
+  }
+
+  try {
+    const emailExists = await checkIfEmailExists("EMAIL", EMAIL);
+    if (emailExists) {
+      return res.status(400).json({ error: `Email ${EMAIL} already exists.` });
+    }
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(PASSWORD, salt);
+
+    if (imageFile) {
+      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+        resource_type: "image",
+      });
+      imageUrl = imageUpload.secure_url; 
+    }
+    const nurseData = {
+      EMAIL,
+      PASSWORD: hashedPassword,
+      NAME,
+      PHONE: PHONE || "Not provided",
+      ADRESSE: ADRESSE || "Not provided",
+      IMAGE: imageUrl,
+      STATUS: STATUS ?? true,
+      CREATED_AT: new Date().toISOString(),
+      EXPERIENCE: EXPERIENCE || 0,
+      ABOUT: ABOUT || "No description provided",
+      IS_PASSWORD_TEMPORARY: IS_PASSWORD_TEMPORARY ?? true,
+    };
+    await insertNurse(nurseData);
+
+    res.status(200).json({ message: "Nurse added successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to add nurse", details: err.message });
+  }
+};
+
+
 
 // Fonction pour gérer l'authentification de l'admin
 export const loginAdmin = async (req, res) => {
@@ -273,3 +338,56 @@ export const AdminDashboard = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// supp un infirmier
+export const deleteNurseAdmin = async (req, res) => {
+  try {
+    const { nurseId } = req.params; 
+
+    if (!nurseId) {
+      return res.status(400).json({
+        success: false,
+        message: "NURSE_ID is required to delete a nurse.",
+      });
+    }
+
+    const result = await deleteNurse(nurseId);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Nurse not found or already deleted.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Nurse deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Error in deleteNurseAdmin:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to delete nurse.",
+    });
+  }
+};
+// liste des infimiers
+export const allNurses = async (req, res) => {
+  try {
+    const nurses = await getNursesWithoutPassword();
+    res.status(200).json({
+      success: true,
+      message: "Nurses retrieved successfully",
+      data: nurses,
+    });
+  } catch (error) {
+    console.error("Error retrieving nurses:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve nurses",
+      error: error.message,
+    });
+  }
+};
+
