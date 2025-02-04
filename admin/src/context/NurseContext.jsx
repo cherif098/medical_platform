@@ -238,6 +238,26 @@ const NurseContextProvider = (props) => {
     }
   };
 
+  const updateVitalSigns = async (reportId, vitalSigns, nToken) => {
+    try {
+      const url = `${backendUrl}/api/reports/nurse/${reportId}/vital-signs`;
+      console.log("PUT request to:", url);
+  
+      const response = await axios.put(
+        url,
+        vitalSigns,
+        { headers: { ntoken: nToken } }
+      );
+  
+      console.log("Response:", response.status, response.data);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating vital signs:", error.response || error);
+      throw error;
+    }
+  };
+  
+
 
   
   
@@ -270,6 +290,7 @@ const NurseContextProvider = (props) => {
         updateNurseNote,
         transcribeSpeech,
         deleteNurseNote,
+        updateVitalSigns
         
         
       
