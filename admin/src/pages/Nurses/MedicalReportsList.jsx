@@ -10,14 +10,18 @@ const MedicalReportsList = () => {
   const [searchTerm, setSearchTerm] = useState(""); 
   const [filteredPatients, setFilteredPatients] = useState([]); 
   const [selectedPatient, setSelectedPatient] = useState(null);
-
-  // Ref pour la section des rapports
   const reportsSectionRef = useRef(null);
 
   useEffect(() => {
     fetchPatientsList();
+    const storedPatient = localStorage.getItem("selectedPatient");
+    if (storedPatient) {
+      const parsedPatient = JSON.parse(storedPatient);
+      setSelectedPatient(parsedPatient);
+      getPatientReports(parsedPatient.PATIENT_ID);
+    }
   }, []);
-
+  
   useEffect(() => {
     if (patients && patients.length > 0) {
       setFilteredPatients(
@@ -32,13 +36,16 @@ const MedicalReportsList = () => {
     event.stopPropagation(); 
     setSelectedPatient(patient);
     localStorage.setItem("selectedPatient", JSON.stringify(patient));
+  
     getPatientReports(patient.PATIENT_ID);
+    
     setTimeout(() => {
       if (reportsSectionRef.current) {
         reportsSectionRef.current.scrollIntoView({ behavior: "smooth" });
       }
     }, 300);
   };
+  
 
   const handleOutsideClick = () => {
     setSelectedPatient(null); 

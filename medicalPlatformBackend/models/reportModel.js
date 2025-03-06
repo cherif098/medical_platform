@@ -242,7 +242,7 @@ export const deleteReport = async (reportId, doctorId) => {
     throw error;
   }
 };
-// models/reportModel.js
+
 
 export const getDoctorPatientsList = async (doctorId) => {
   const query = `
@@ -385,5 +385,40 @@ export const getNurseNotesForReport = async (reportId) => {
     throw new Error("Failed to retrieve nurse notes.");
   }
 };
+
+export const UpdateVitalSigns = async (reportId, vitalSigns) => {
+  const query = `
+  UPDATE MEDICAL_DB.MEDICAL_SCHEMA.REPORTS
+  SET TEMPERATURE = ?, 
+      BLOOD_PRESSURE = ?, 
+      HEART_RATE = ?, 
+      RESPIRATORY_RATE = ?, 
+      OXYGEN_SATURATION = ?, 
+      WEIGHT = ?, 
+      HEIGHT = ?, 
+      BMI = ?, 
+      UPDATED_AT = CURRENT_TIMESTAMP
+  WHERE REPORT_ID = CAST(? AS NUMBER)
+`;
+
+  try {
+    const result = await executeQuery(query, [
+      vitalSigns.TEMPERATURE,
+      vitalSigns.BLOOD_PRESSURE,
+      vitalSigns.HEART_RATE,
+      vitalSigns.RESPIRATORY_RATE,
+      vitalSigns.OXYGEN_SATURATION,
+      vitalSigns.WEIGHT,
+      vitalSigns.HEIGHT,
+      vitalSigns.BMI,
+      reportId
+    ]);
+    return result;
+  } catch (error) {
+    console.error("Error updating vital signs:", error);
+    throw new Error("Failed to update vital signs.");
+  }
+};
+
 
 
