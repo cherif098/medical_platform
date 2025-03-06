@@ -1,17 +1,22 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
-import { connectToSnowflake, executeQuery } from "./config/snowflake.js";
-import superAdminRouter from "../Backend/routes/superAdminRoute.js"
-
+import { connectToSnowflake } from "./config/snowflake.js";
+import superAdminRouter from "../Backend/routes/superAdminRoute.js";
+import paymentRouter from "../Backend/routes/paymentRoutes.js";
 
 //App config
 const app = express();
 const port = process.env.PORT || 4000;
 
 //Middlewares
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Autorise les requêtes depuis votre frontend
+    credentials: true, // Permet l'envoi de cookies
+  })
+);
 app.use(express.json());
-app.use(cors());
 
 // Initialiser la connexion Snowflake au demarrage du serveur
 let snowflakeConnected = false;
@@ -32,17 +37,26 @@ async function initializeSnowflake() {
 
 //api endpoints
 app.use("/api/superAdmin", superAdminRouter);
+app.use("/api/payment", paymentRouter);
+
+// Vérification du statut Snowflake
+app.get("/api/status", (req, res) => {
+  res.json({
+    snowflakeConnected,
+    serverStatus: "running",
+  });
+});
 
 // Démarrer le serveur
 const startServer = async () => {
-    try {
-      await initializeSnowflake();
-      app.listen(port, () => {
-        console.log(`Server is running on port ${port}`);
-      });
-    } catch (error) {
-      console.error("Server startup error:", error);
-    }
-  };
-  
-  startServer();
+  try {
+    await initializeSnowflake();
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
+  } catch (error) {
+    console.error("Server startup error:", error);
+  }
+};
+
+startServer();
