@@ -6,7 +6,7 @@ import {
   getHospitalById,
   deleteHospital,
   updateHospital,
-} from "../models/HospitalModel.js";
+} from "../models/hospitalModel.js";
 
 export const loginSuperAdmin = (req, res) => {
   try {
