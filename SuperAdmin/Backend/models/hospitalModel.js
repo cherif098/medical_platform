@@ -21,9 +21,9 @@ export const createHospital = async (data) => {
         EMAIL,
         hashedPassword,
         PHONE_NUMBER,
-        TOTAL_BEDS,
+        TOTAL_BEDS || 0,
         SUBSCRIPTION_STATUS,
-        SUBSCRIPTION_ID || null
+        SUBSCRIPTION_ID || 0
     ];
 
     try {
@@ -35,17 +35,21 @@ export const createHospital = async (data) => {
 }
 
 export const checkHospitalExists = async (NAME, EMAIL) => {
-    const query = `
-      SELECT COUNT(*) AS count
-      FROM MEDICAL_DB.MEDICAL_SCHEMA.HOSPITALS
-      WHERE NAME = ? OR EMAIL = ?
-    `;
-    
-    const values = [NAME, EMAIL];
-    const result = await executeQuery(query, values);
-    
-    return result[0].COUNT > 0;
-  };
+  // S'assurer que NAME et EMAIL ne sont jamais undefined
+  const safeName = NAME || '';
+  const safeEmail = EMAIL || '';
+  
+  const query = `
+    SELECT COUNT(*) AS count
+    FROM MEDICAL_DB.MEDICAL_SCHEMA.HOSPITALS
+    WHERE NAME = ? OR EMAIL = ?
+  `;
+  
+  const values = [safeName, safeEmail];
+  const result = await executeQuery(query, values);
+  
+  return result[0].COUNT > 0;
+};
 
 export const getAllHospitals = async () => {
     const query = `SELECT * FROM HOSPITALS`;

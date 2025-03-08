@@ -4,14 +4,14 @@ import { toast } from "react-toastify";
 import axios from "axios";
 
 const AddHospital = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [address, setAddress] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [totalBeds, setTotalBeds] = useState("");
-  const [subscriptionStatus, setSubscriptionStatus] = useState("Active");
-  const [subscriptionId, setSubscriptionId] = useState("");
+  const [NAME, setName] = useState("");
+  const [EMAIL, setEmail] = useState("");
+  const [PASSWORD, setPassword] = useState("");
+  const [ADDRESS, setAddress] = useState("");
+  const [PHONE_NUMBER, setPhoneNumber] = useState("");
+  const [TOTAL_BEDS, setTotalBeds] = useState("");
+  const [SUBSCRIPTION_STATUS, setSubscriptionStatus] = useState("Active");
+  const [SUBSCRIPTION_ID, setSubscriptionId] = useState("");
 
   const { saToken, backendUrl } = useContext(superAdminContext);
 
@@ -27,29 +27,32 @@ const AddHospital = () => {
         return;
       }
       
-      const formData = new FormData();
+      // Utiliser un objet JSON au lieu de FormData
+      const hospitalData = {
+        NAME,
+        EMAIL,
+        PASSWORD,
+        ADDRESS,
+        PHONE_NUMBER,
+        TOTAL_BEDS: TOTAL_BEDS || 0,
+        SUBSCRIPTION_STATUS,
+        SUBSCRIPTION_ID: SUBSCRIPTION_ID || 0
+      };
       
-      formData.append("NAME", name);
-      formData.append("EMAIL", email);
-      formData.append("PASSWORD", password);
-      formData.append("ADDRESS", address);
-      formData.append("PHONE_NUMBER", phoneNumber);
-      formData.append("TOTAL_BEDS", totalBeds);
-      formData.append("SUBSCRIPTION_STATUS", subscriptionStatus);
-      
-      if (subscriptionId) {
-        formData.append("SUBSCRIPTION_ID", subscriptionId);
-      }
+      console.log("Données à envoyer:", hospitalData);
 
       const { data } = await axios.post(
         `${backendUrl}/api/superAdmin/add-hospital`,
-        formData,
+        hospitalData,
         {
           headers: { 
-            saToken: saToken
+            saToken,
+            'Content-Type': 'application/json'
           },
         }
       );
+      
+      console.log('Réponse du serveur:', data);
 
       if (data && data.success) {
         toast.success(data.message);
@@ -105,7 +108,7 @@ const AddHospital = () => {
               </label>
               <input
                 type="text"
-                value={name}
+                value={NAME}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="ex: Hôpital Général"
@@ -119,7 +122,7 @@ const AddHospital = () => {
               </label>
               <input
                 type="email"
-                value={email}
+                value={EMAIL}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="contact@hopital.com"
@@ -133,7 +136,7 @@ const AddHospital = () => {
               </label>
               <input
                 type="password"
-                value={password}
+                value={PASSWORD}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="••••••••"
@@ -147,7 +150,7 @@ const AddHospital = () => {
               </label>
               <input
                 type="tel"
-                value={phoneNumber}
+                value={PHONE_NUMBER}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="+1 (123) 456-7890"
@@ -167,7 +170,7 @@ const AddHospital = () => {
                 Adresse
               </label>
               <textarea
-                value={address}
+                value={ADDRESS}
                 onChange={(e) => setAddress(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="Adresse complète de l'hôpital"
@@ -182,7 +185,7 @@ const AddHospital = () => {
               </label>
               <input
                 type="number"
-                value={totalBeds}
+                value={TOTAL_BEDS}
                 onChange={(e) => setTotalBeds(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="ex: 200"
@@ -196,7 +199,7 @@ const AddHospital = () => {
                   Statut de l'abonnement
                 </label>
                 <select
-                  value={subscriptionStatus}
+                  value={SUBSCRIPTION_STATUS}
                   onChange={(e) => setSubscriptionStatus(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   required
@@ -207,19 +210,6 @@ const AddHospital = () => {
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ID d'abonnement
-                </label>
-                <input
-                  type="text"
-                  value={subscriptionId}
-                  onChange={(e) => setSubscriptionId(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="Optionnel"
-                />
               </div>
             </div>
           </div>

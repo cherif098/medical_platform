@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 const authSuperAdmin = async (req, res, next) => {
   try {
     // Récupérer le token dans l'en-tête
-    const { saToken } = req.headers;
+    const saToken = req.headers.satoken;
     console.log("Token reçu:", saToken);
 
     // Vérifier si le token est présent
@@ -22,7 +22,7 @@ const authSuperAdmin = async (req, res, next) => {
     const { role, email } = decoded;
 
     // Vérifier que l'email et le rôle correspondent bien au Super Admin
-    if (email !== process.env.SUPER_ADMIN_EMAIL || role !== "admin") {
+    if (email !== process.env.SUPER_ADMIN_EMAIL || role !== "super_admin") {
       return res.status(403).json({
         success: false,
         message: "Not Authorized. Invalid role or email.",

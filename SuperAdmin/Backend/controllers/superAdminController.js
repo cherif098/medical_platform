@@ -27,7 +27,7 @@ export const loginSuperAdmin = (req, res) => {
     ) {
       // Création du token JWT
       const saToken = jwt.sign(
-        { email: EMAIL, role: "admin" },
+        { email: EMAIL, role: "super_admin" },
         process.env.JWT_SECRET,
         {
           expiresIn: "1h",
