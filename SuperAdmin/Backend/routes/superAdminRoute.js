@@ -1,6 +1,6 @@
 import express from "express";
 import { loginSuperAdmin, addHospital, getHospitals, getHospital, removeHospital, updateHospitalById } from "../controllers/superAdminController.js";
-import authSuperAdmin from "../middlewares/authSuperAdmin.js";
+import authSuperAdmin from "../middlewares/AuthSuperAdmin.js";
 
 const superAdminRouter = express.Router();
 
