@@ -9,6 +9,7 @@ import AddHospital from "./pages/AddHospital";
 import HospitalList from "./pages/HospitalList";
 import Partnership from "./pages/Partnership";
 import LoginSuperAdmin from "./pages/Login";
+import EditHospital from "./pages/EditHospital";
 
 const App = () => {
   const { saToken } = useContext(superAdminContext);
@@ -61,6 +62,7 @@ const App = () => {
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/add-hospital" element={<ProtectedRoute><AddHospital /></ProtectedRoute>} />
                   <Route path="/hospital-list" element={<ProtectedRoute><HospitalList /></ProtectedRoute>} />
+                  <Route path="/edit-hospital/:ID" element={<ProtectedRoute><EditHospital /></ProtectedRoute>} />
                   <Route path="/partnership" element={<ProtectedRoute><Partnership /></ProtectedRoute>} />
                   <Route path="/login" element={<Navigate to="/" />} />
                   <Route path="*" element={<Navigate to="/" />} />
