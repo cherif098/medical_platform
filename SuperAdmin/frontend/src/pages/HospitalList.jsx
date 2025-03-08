@@ -68,6 +68,45 @@ const HospitalList = () => {
     }
   };
 
+  const approveHospital = async (hospitalId) => {
+    try {
+      console.log("Approbation de l'hôpital:", hospitalId);
+      
+      // Données à envoyer
+      const statusData = { status: "Active" };
+      console.log("Données envoyées:", statusData);
+      
+      const { data } = await axios.put(
+        `${backendUrl}/api/superAdmin/update-hospital-status/${hospitalId}`,
+        statusData,
+        {
+          headers: { 
+            saToken,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log("Réponse reçue:", data);
+      
+      if (data && data.success) {
+        toast.success("Hôpital approuvé avec succès");
+        fetchHospitals(); // Actualiser la liste
+      } else {
+        toast.error(data.message || "Échec de l'approbation de l'hôpital");
+      }
+    } catch (error) {
+      console.error("Détails de l'erreur:", error);
+      
+      // Afficher le message d'erreur du serveur s'il existe
+      if (error.response && error.response.data && error.response.data.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Échec de l'approbation de l'hôpital");
+      }
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -99,7 +138,7 @@ const HospitalList = () => {
           <p className="text-sm font-medium text-gray-600">#</p>
           <p className="text-sm font-medium text-gray-600">Nom</p>
           <p className="text-sm font-medium text-gray-600">Adresse</p>
-          <p className="text-sm font-medium text-gray-600">Cellulaire</p>
+          <p className="text-sm font-medium text-gray-600">Contact</p>
           <p className="text-sm font-medium text-gray-600">Lits</p>
           <p className="text-sm font-medium text-gray-600">Statut</p>
           <p className="text-sm font-medium text-gray-600">Actions</p>
@@ -121,7 +160,7 @@ const HospitalList = () => {
 
                   <div className="flex items-center gap-3">
                     <div className="bg-indigo-100 text-indigo-700 w-10 h-10 rounded-full flex items-center justify-center font-bold">
-                      {hospital.NAME.charAt(0)}
+                      {hospital.NAME ? hospital.NAME.charAt(0) : "?"}
                     </div>
                     <div>
                       <p className="font-medium text-gray-800">
@@ -134,18 +173,18 @@ const HospitalList = () => {
                   </div>
 
                   <div className="text-gray-600">
-                    <p>{hospital.ADDRESS}</p>
+                    <p>{hospital.ADDRESS || "Non spécifié"}</p>
                   </div>
 
                   <div className="text-gray-600">
-                    <p>{hospital.PHONE_NUMBER}</p>
+                    <p>{hospital.PHONE_NUMBER || "Non spécifié"}</p>
                   </div>
 
                   <p className="font-medium text-gray-800">
-                    {hospital.TOTAL_BEDS}
+                    {hospital.TOTAL_BEDS || 0}
                   </p>
 
-                  <div>
+                  <div className="flex items-center gap-2">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       hospital.SUBSCRIPTION_STATUS === "Active" 
                         ? "bg-green-100 text-green-800" 
@@ -155,6 +194,16 @@ const HospitalList = () => {
                     }`}>
                       {hospital.SUBSCRIPTION_STATUS}
                     </span>
+                    
+                    {hospital.SUBSCRIPTION_STATUS === "Pending" && (
+                      <button
+                        onClick={() => approveHospital(hospital.ID)}
+                        className="ml-2 px-2 py-0.5 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors"
+                        title="Approuver cet hôpital"
+                      >
+                        Approuver
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -178,7 +227,6 @@ const HospitalList = () => {
                         />
                       </svg>
                     </Link>
-                    
                     <button
                       onClick={() => removeHospital(hospital.ID)}
                       className="p-2 hover:bg-red-50 rounded-lg transition-colors"

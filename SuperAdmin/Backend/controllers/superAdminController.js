@@ -6,6 +6,7 @@ import {
   getHospitalById,
   deleteHospital,
   updateHospital,
+  updateHospitalStatus,
 } from "../models/hospitalModel.js";
 
 export const loginSuperAdmin = (req, res) => {
@@ -157,22 +158,91 @@ export const removeHospital = async (req, res) => {
 
 export const updateHospitalById = async (req, res) => {
   try {
-    const id = req.params.ID;
-    const hospitalData = req.body;
-
-    const result = await updateHospital(id, hospitalData);
-
+    const { ID } = req.params;
+    
+    const updateData = req.body;
+    
+    if (updateData.SUBSCRIPTION_STATUS && 
+        !["Active", "Pending", "Expired", "Canceled"].includes(updateData.SUBSCRIPTION_STATUS)) {
+      return res.status(400).json({
+        success: false,
+        message: "Statut d'abonnement invalide"
+      });
+    }
+    
+    const hospital = await getHospitalById(ID);
+    if (!hospital) {
+      return res.status(404).json({
+        success: false,
+        message: "Hôpital non trouvé"
+      });
+    }
+    
+    const updatedHospital = await updateHospital(ID, updateData);
+    
     res.status(200).json({
       success: true,
-      message: "Hospital updated successfully",
-      result,
+      message: "Hôpital mis à jour avec succès",
+      hospital: updatedHospital
     });
   } catch (error) {
-    console.error("Error updating hospital:", error);
+    console.error("Erreur lors de la mise à jour de l'hôpital:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to update hospital",
-      error: error.message,
+      message: "Échec de la mise à jour de l'hôpital",
+      error: error.message
+    });
+  }
+};
+
+export const updateHospitalStatusController = async (req, res) => {
+  try {
+    const { ID } = req.params;
+    const { status } = req.body;
+    
+    console.log("Requête de mise à jour de statut reçue:");
+    console.log("ID:", ID);
+    console.log("Corps de la requête:", req.body);
+    
+    // Vérifier que l'ID et le statut sont fournis
+    if (!ID) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de l'hôpital est requis"
+      });
+    }
+    
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: "Le statut d'abonnement est requis"
+      });
+    }
+    
+    try {
+      // Appeler la fonction du modèle
+      const updatedHospital = await updateHospitalStatus(ID, status);
+      
+      res.status(200).json({
+        success: true,
+        message: "Statut de l'hôpital mis à jour avec succès",
+        hospital: updatedHospital
+      });
+    } catch (modelError) {
+      console.error("Erreur du modèle:", modelError.message);
+      // Déterminer le code de statut approprié en fonction du message d'erreur
+      const statusCode = modelError.message.includes("non trouvé") ? 404 : 400;
+      return res.status(statusCode).json({
+        success: false,
+        message: modelError.message
+      });
+    }
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour du statut:", error);
+    res.status(500).json({
+      success: false,
+      message: "Échec de la mise à jour du statut",
+      error: error.message
     });
   }
 };

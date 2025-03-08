@@ -75,7 +75,7 @@ const EditHospital = () => {
         EMAIL,
         ADDRESS,
         PHONE_NUMBER,
-        TOTAL_BEDS: TOTAL_BEDS || 0,
+        TOTAL_BEDS: TOTAL_BEDS === '' ? 0 : parseInt(TOTAL_BEDS) || 0,
         SUBSCRIPTION_STATUS,
         SUBSCRIPTION_ID: SUBSCRIPTION_ID || ""
       };
@@ -93,7 +93,7 @@ const EditHospital = () => {
 
       if (data && data.success) {
         toast.success(data.message || "Hôpital mis à jour avec succès");
-        navigate("/hospitals");
+        navigate("/hospital_list");
       } else {
         toast.error(data.message || "Échec de la mise à jour de l'hôpital");
       }

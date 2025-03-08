@@ -1,4 +1,7 @@
 import { createContext, useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
+
+
 
 export const superAdminContext = createContext();
 
@@ -6,9 +9,11 @@ const SuperAdminContextProvider = (props) => {
     // Récupération du token depuis localStorage à l'initialisation
     const [saToken, setSAToken] = useState('');
     const [hospitals, setHospitals] = useState([]);
+    const navigate = useNavigate();
+
     
     // Définition de l'URL backend
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
     // Charger le token depuis localStorage au chargement du composant
     useEffect(() => {

@@ -56,9 +56,14 @@ export const getAllHospitals = async () => {
     return executeQuery(query);
 };
 
-export const getHospitalById = async (id) => {
-    const query = `SELECT * FROM HOSPITALS WHERE ID = ?`;
-    return executeQuery(query, [id]);
+export const getHospitalById = async (ID) => {
+  const query = `
+    SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.HOSPITALS
+    WHERE ID = ?
+  `;
+  
+  const result = await executeQuery(query, [ID]);
+  return result[0]; 
 };
 
 export const deleteHospital = async (id) => {
@@ -67,37 +72,71 @@ export const deleteHospital = async (id) => {
 };
 
 export const updateHospital = async (id, hospitalData) => {
-    const { NAME, ADDRESS, PHONE_NUMBER, EMAIL, TOTAL_BEDS, SUBSCRIPTION_STATUS } = hospitalData;
-  
-    // Vérifier que l'ID est bien défini
-    if (!id) {
-      throw new Error("Hospital ID is required for update.");
+  const { NAME, ADDRESS, PHONE_NUMBER, EMAIL, TOTAL_BEDS, SUBSCRIPTION_STATUS } = hospitalData;
+
+  // Vérifier que l'ID est bien défini
+  if (!id) {
+    throw new Error("Hospital ID is required for update.");
+  }
+
+  // Vérifier que les champs obligatoires ne sont pas vides
+  if (!NAME || !EMAIL) {
+    throw new Error("Hospital name and email are required.");
+  }
+
+  const query = `
+    UPDATE MEDICAL_DB.MEDICAL_SCHEMA.HOSPITALS
+    SET 
+      NAME = ?,
+      ADDRESS = ?,
+      PHONE_NUMBER = ?,
+      EMAIL = ?,
+      TOTAL_BEDS = ?,
+      SUBSCRIPTION_STATUS = ?
+    WHERE ID = ?
+  `;
+
+  const params = [NAME, ADDRESS || null, PHONE_NUMBER || null, EMAIL, TOTAL_BEDS || 0, SUBSCRIPTION_STATUS || null, id];
+
+  try {
+    const result = await executeQuery(query, params);
+    return result;
+  } catch (error) {
+    console.error("Error updating hospital:", error);
+    throw new Error("Failed to update hospital.");
+  }
+};
+
+export const updateHospitalStatus = async (ID, newStatus) => {
+  try {
+    // Vérifier si l'hôpital existe
+    const checkQuery = `SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.HOSPITALS WHERE ID = ?`;
+    const hospital = await executeQuery(checkQuery, [ID]);
+    
+    if (!hospital || hospital.length === 0) {
+      throw new Error("Hôpital non trouvé");
     }
-  
-    // Vérifier que les champs obligatoires ne sont pas vides
-    if (!NAME || !EMAIL) {
-      throw new Error("Hospital name and email are required.");
+    
+    // Vérifier que le statut est valide
+    const validStatuses = ["Active", "Pending", "Expired", "Canceled"];
+    if (!validStatuses.includes(newStatus)) {
+      throw new Error("Statut d'abonnement invalide");
     }
-  
-    const query = `
+    
+    // Mise à jour du statut
+    const updateQuery = `
       UPDATE MEDICAL_DB.MEDICAL_SCHEMA.HOSPITALS
-      SET 
-        NAME = ?,
-        ADDRESS = ?,
-        PHONE_NUMBER = ?,
-        EMAIL = ?,
-        TOTAL_BEDS = ?,
-        SUBSCRIPTION_STATUS = ?
+      SET SUBSCRIPTION_STATUS = ?
       WHERE ID = ?
     `;
-  
-    const params = [NAME, ADDRESS || null, PHONE_NUMBER || null, EMAIL, TOTAL_BEDS || 0, SUBSCRIPTION_STATUS || null, id];
-  
-    try {
-      const result = await executeQuery(query, params);
-      return result;
-    } catch (error) {
-      console.error("Error updating hospital:", error);
-      throw new Error("Failed to update hospital.");
-    }
-  };
+    
+    await executeQuery(updateQuery, [newStatus, ID]);
+    
+    // Récupérer l'hôpital mis à jour
+    const result = await executeQuery(checkQuery, [ID]);
+    return result[0];
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour du statut:", error);
+    throw error;
+  }
+};
