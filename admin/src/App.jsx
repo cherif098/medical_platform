@@ -2,10 +2,9 @@ import React, { useContext } from "react";
 import { Routes, Route } from "react-router-dom";
 import { AdminContext } from "./context/AdminContext";
 import { DoctorContext } from "./context/DoctorContext";
-import{NurseContext} from "./context/NurseContext";
+import { NurseContext } from "./context/NurseContext";
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
-
 
 import Login from "./pages/Login";
 import { ToastContainer } from "react-toastify";
@@ -16,6 +15,8 @@ import Dashboard from "./pages/Admin/Dashboard";
 import AllAppointments from "./pages/Admin/AllAppointments";
 import AddDoctor from "./pages/Admin/AddDoctor";
 import DoctorsList from "./pages/Admin/DoctorsList";
+import AddNurse from "./pages/Admin/AddNurse";
+import NursesList from "./pages/Admin/NursesList";
 
 // Pages Doctor
 import DoctorDashboard from "./pages/Doctors/DoctorDashboard";
@@ -42,7 +43,7 @@ const App = () => {
   const { dToken } = useContext(DoctorContext);
   const { nToken } = useContext(NurseContext);
 
-  return aToken || dToken || nToken ? ( 
+  return aToken || dToken || nToken ? (
     <div className="min-h-screen bg-[#F8F9FD]">
       <ToastContainer />
       {/* Navbar fixe en haut */}
@@ -67,6 +68,8 @@ const App = () => {
               <Route path="/all-apointments" element={<AllAppointments />} />
               <Route path="/add-doctors" element={<AddDoctor />} />
               <Route path="/doctors-list" element={<DoctorsList />} />
+              <Route path="/add-nurse" element={<AddNurse />} />
+              <Route path="/nurses-list" element={<NursesList />} />
 
               {/* Doctor Routes */}
               <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
@@ -104,12 +107,14 @@ const App = () => {
               {/* Nurse Routes */}
               {/* <Route path="/nurse-dashboard" element={<NurseDashboard />} /> */}
               <Route path="/nurse-profile" element={<NurseProfile />} />
-              <Route path="/medicalreports-list" element={<MedicalReportsList />} />
-              <Route path="/view-report/:reportId" element={<ViewMedicalReport />} />
-  
-
-
-            
+              <Route
+                path="/medicalreports-list"
+                element={<MedicalReportsList />}
+              />
+              <Route
+                path="/view-report/:reportId"
+                element={<ViewMedicalReport />}
+              />
             </Routes>
           </main>
         </div>

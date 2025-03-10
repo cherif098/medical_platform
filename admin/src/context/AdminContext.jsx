@@ -11,6 +11,7 @@ const AdminContextProvider = (props) => {
   const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [dashData, setDashData] = useState(false);
+  const [nurses, setNurses] = useState([]);
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const getAllDoctors = async () => {
@@ -125,6 +126,45 @@ const AdminContextProvider = (props) => {
     }
   };
 
+  const getAllNurses = async () => {
+    try {
+      console.log("Token from getAllNurses:", aToken);
+
+      const { data } = await axios.get(backendUrl + "/api/admin/all-nurses", {
+        headers: { aToken },
+      });
+
+      console.log("API Response (nurses):", data);
+
+      if (data.success) {
+        setNurses(data.data);
+      } else {
+        toast.error(data.message || "Failed to fetch nurses");
+      }
+    } catch (error) {
+      console.error("Error fetching nurses:", error);
+      toast.error(error.message || "An error occurred");
+    }
+  };
+
+  const deleteNurse = async (nurseId) => {
+    try {
+      const { data } = await axios.delete(
+        `${backendUrl}/api/admin/delete-nurse/${nurseId}`,
+        { headers: { aToken } }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        getAllNurses(); // Refresh the list
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Error deleting nurse");
+    }
+  };
+
   const value = {
     aToken,
     setAToken,
@@ -139,6 +179,9 @@ const AdminContextProvider = (props) => {
     dashData,
     getDashData,
     deleteDoctor,
+    nurses,
+    getAllNurses,
+    deleteNurse,
   };
   return (
     <AdminContext.Provider value={value}>
