@@ -12,6 +12,8 @@ const AdminContextProvider = (props) => {
   const [appointments, setAppointments] = useState([]);
   const [dashData, setDashData] = useState(false);
   const [nurses, setNurses] = useState([]);
+  const [secretaries, setSecretaries] = useState([]);
+  const [managers, setManagers] = useState([]);
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const getAllDoctors = async () => {
@@ -164,6 +166,87 @@ const AdminContextProvider = (props) => {
       toast.error(error.response?.data?.message || "Error deleting nurse");
     }
   };
+  const getAllSecretaries = async () => {
+    try {
+      console.log("Token from getAllSecretaries:", aToken);
+
+      const { data } = await axios.get(
+        backendUrl + "/api/admin/all-secretaries",
+        {
+          headers: { aToken },
+        }
+      );
+
+      console.log("API Response (secretaries):", data);
+
+      if (data.success) {
+        setSecretaries(data.data);
+      } else {
+        toast.error(data.message || "Failed to fetch secretaries");
+      }
+    } catch (error) {
+      console.error("Error fetching secretaries:", error);
+      toast.error(error.message || "An error occurred");
+    }
+  };
+
+  const deleteSecretary = async (secretaryId) => {
+    try {
+      const { data } = await axios.delete(
+        `${backendUrl}/api/admin/delete-secretary/${secretaryId}`,
+        { headers: { aToken } }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        getAllSecretaries(); // Refresh the list
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Error deleting secretary");
+    }
+  };
+
+  // Manager functions
+  const getAllManagers = async () => {
+    try {
+      console.log("Token from getAllManagers:", aToken);
+
+      const { data } = await axios.get(backendUrl + "/api/admin/all-managers", {
+        headers: { aToken },
+      });
+
+      console.log("API Response (managers):", data);
+
+      if (data.success) {
+        setManagers(data.data);
+      } else {
+        toast.error(data.message || "Failed to fetch managers");
+      }
+    } catch (error) {
+      console.error("Error fetching managers:", error);
+      toast.error(error.message || "An error occurred");
+    }
+  };
+
+  const deleteManager = async (managerId) => {
+    try {
+      const { data } = await axios.delete(
+        `${backendUrl}/api/admin/delete-manager/${managerId}`,
+        { headers: { aToken } }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        getAllManagers(); // Refresh the list
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Error deleting manager");
+    }
+  };
 
   const value = {
     aToken,
@@ -182,6 +265,12 @@ const AdminContextProvider = (props) => {
     nurses,
     getAllNurses,
     deleteNurse,
+    secretaries,
+    getAllSecretaries,
+    deleteSecretary,
+    managers,
+    getAllManagers,
+    deleteManager,
   };
   return (
     <AdminContext.Provider value={value}>

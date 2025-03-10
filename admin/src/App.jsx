@@ -17,6 +17,10 @@ import AddDoctor from "./pages/Admin/AddDoctor";
 import DoctorsList from "./pages/Admin/DoctorsList";
 import AddNurse from "./pages/Admin/AddNurse";
 import NursesList from "./pages/Admin/NursesList";
+import AddManager from "./pages/Admin/AddManager";
+import AddSecretary from "./pages/Admin/AddSecretary";
+import ManagersList from "./pages/Admin/ManagersList";
+import SecretariesList from "./pages/Admin/SecretariesList";
 
 // Pages Doctor
 import DoctorDashboard from "./pages/Doctors/DoctorDashboard";
@@ -70,6 +74,10 @@ const App = () => {
               <Route path="/doctors-list" element={<DoctorsList />} />
               <Route path="/add-nurse" element={<AddNurse />} />
               <Route path="/nurses-list" element={<NursesList />} />
+              <Route path="/add-secretary" element={<AddSecretary />} />
+              <Route path="/secretaries-list" element={<SecretariesList />} />
+              <Route path="/add-manager" element={<AddManager />} />
+              <Route path="/managers-list" element={<ManagersList />} />
 
               {/* Doctor Routes */}
               <Route path="/doctor-dashboard" element={<DoctorDashboard />} />

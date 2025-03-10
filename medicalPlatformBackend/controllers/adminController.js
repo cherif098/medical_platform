@@ -1,5 +1,22 @@
+import {
+  insertSecretary,
+  deleteSecretary,
+  getSecretariesWithoutPassword,
+  checkSecretaryEmailExists,
+} from "../models/secretaryModel.js";
+
+import {
+  insertManager,
+  deleteManager,
+  getManagersWithoutPassword,
+  checkManagerEmailExists,
+} from "../models/managerModel.js";
 import { insertDoctor, deleteDoctor } from "../models/doctorModel.js";
-import { insertNurse, deleteNurse , getNursesWithoutPassword} from "../models/nurseModel.js";
+import {
+  insertNurse,
+  deleteNurse,
+  getNursesWithoutPassword,
+} from "../models/nurseModel.js";
 import validator from "validator";
 import bcrypt from "bcryptjs";
 import { v2 as cloudinary } from "cloudinary";
@@ -141,11 +158,13 @@ export const addNurse = async (req, res) => {
     IS_PASSWORD_TEMPORARY,
   } = req.body;
 
-  const imageFile = req.file; 
-  let imageUrl = "default-nurse-image.jpg"; 
+  const imageFile = req.file;
+  let imageUrl = "default-nurse-image.jpg";
 
   if (!EMAIL || !PASSWORD || !NAME) {
-    return res.status(400).json({ error: "Missing required fields (EMAIL, PASSWORD, NAME)" });
+    return res
+      .status(400)
+      .json({ error: "Missing required fields (EMAIL, PASSWORD, NAME)" });
   }
 
   try {
@@ -160,7 +179,7 @@ export const addNurse = async (req, res) => {
       const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
         resource_type: "image",
       });
-      imageUrl = imageUpload.secure_url; 
+      imageUrl = imageUpload.secure_url;
     }
     const nurseData = {
       EMAIL,
@@ -180,11 +199,11 @@ export const addNurse = async (req, res) => {
     res.status(200).json({ message: "Nurse added successfully" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to add nurse", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Failed to add nurse", details: err.message });
   }
 };
-
-
 
 // Fonction pour gérer l'authentification de l'admin
 export const loginAdmin = async (req, res) => {
@@ -342,7 +361,7 @@ export const AdminDashboard = async (req, res) => {
 // supp un infirmier
 export const deleteNurseAdmin = async (req, res) => {
   try {
-    const { nurseId } = req.params; 
+    const { nurseId } = req.params;
 
     if (!nurseId) {
       return res.status(400).json({
@@ -390,4 +409,254 @@ export const allNurses = async (req, res) => {
     });
   }
 };
+// Add a secretary
+export const addSecretary = async (req, res) => {
+  const {
+    EMAIL,
+    PASSWORD,
+    NAME,
+    PHONE,
+    ADDRESS,
+    STATUS,
+    EXPERIENCE,
+    ABOUT,
+    IS_PASSWORD_TEMPORARY,
+    HOSPITAL_ID,
+  } = req.body;
 
+  const imageFile = req.file;
+  let imageUrl = "default-secretary-image.jpg";
+
+  if (!EMAIL || !PASSWORD || !NAME) {
+    return res
+      .status(400)
+      .json({ error: "Missing required fields (EMAIL, PASSWORD, NAME)" });
+  }
+
+  try {
+    const emailExists = await checkSecretaryEmailExists(EMAIL);
+    if (emailExists) {
+      return res.status(400).json({ error: `Email ${EMAIL} already exists.` });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(PASSWORD, salt);
+
+    if (imageFile) {
+      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+        resource_type: "image",
+      });
+      imageUrl = imageUpload.secure_url;
+    }
+
+    const secretaryData = {
+      EMAIL,
+      PASSWORD: hashedPassword,
+      NAME,
+      PHONE: PHONE || "Not provided",
+      ADDRESS: ADDRESS || "Not provided",
+      IMAGE: imageUrl,
+      STATUS: STATUS ?? true,
+      CREATED_AT: new Date().toISOString(),
+      EXPERIENCE: EXPERIENCE || 0,
+      ABOUT: ABOUT || "No description provided",
+      IS_PASSWORD_TEMPORARY: IS_PASSWORD_TEMPORARY ?? true,
+      HOSPITAL_ID: HOSPITAL_ID || 1, // Default hospital ID
+    };
+
+    await insertSecretary(secretaryData);
+
+    res.status(200).json({
+      success: true,
+      message: "Secretary added successfully",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      error: "Failed to add secretary",
+      details: err.message,
+    });
+  }
+};
+
+// Get all secretaries
+export const allSecretaries = async (req, res) => {
+  try {
+    const secretaries = await getSecretariesWithoutPassword();
+    res.status(200).json({
+      success: true,
+      message: "Secretaries retrieved successfully",
+      data: secretaries,
+    });
+  } catch (error) {
+    console.error("Error retrieving secretaries:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve secretaries",
+      error: error.message,
+    });
+  }
+};
+
+// Delete a secretary
+export const deleteSecretaryAdmin = async (req, res) => {
+  try {
+    const { secretaryId } = req.params;
+
+    if (!secretaryId) {
+      return res.status(400).json({
+        success: false,
+        message: "SECRETARY_ID is required to delete a secretary.",
+      });
+    }
+
+    const result = await deleteSecretary(secretaryId);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Secretary not found or already deleted.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Secretary deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Error in deleteSecretaryAdmin:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to delete secretary.",
+    });
+  }
+};
+
+// --- MANAGER FUNCTIONS ---
+
+// Add a manager
+export const addManager = async (req, res) => {
+  const {
+    EMAIL,
+    PASSWORD,
+    NAME,
+    PHONE,
+    ADDRESS,
+    DEPARTMENT,
+    STATUS,
+    EXPERIENCE,
+    ABOUT,
+    IS_PASSWORD_TEMPORARY,
+    HOSPITAL_ID,
+  } = req.body;
+
+  const imageFile = req.file;
+  let imageUrl = "default-manager-image.jpg";
+
+  if (!EMAIL || !PASSWORD || !NAME) {
+    return res
+      .status(400)
+      .json({ error: "Missing required fields (EMAIL, PASSWORD, NAME)" });
+  }
+
+  try {
+    const emailExists = await checkManagerEmailExists(EMAIL);
+    if (emailExists) {
+      return res.status(400).json({ error: `Email ${EMAIL} already exists.` });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(PASSWORD, salt);
+
+    if (imageFile) {
+      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+        resource_type: "image",
+      });
+      imageUrl = imageUpload.secure_url;
+    }
+
+    const managerData = {
+      EMAIL,
+      PASSWORD: hashedPassword,
+      NAME,
+      PHONE: PHONE || "Not provided",
+      ADDRESS: ADDRESS || "Not provided",
+      IMAGE: imageUrl,
+      DEPARTMENT: DEPARTMENT || "General Administration",
+      STATUS: STATUS ?? true,
+      CREATED_AT: new Date().toISOString(),
+      EXPERIENCE: EXPERIENCE || 0,
+      ABOUT: ABOUT || "No description provided",
+      IS_PASSWORD_TEMPORARY: IS_PASSWORD_TEMPORARY ?? true,
+      HOSPITAL_ID: HOSPITAL_ID || 1, // Default hospital ID
+    };
+
+    await insertManager(managerData);
+
+    res.status(200).json({
+      success: true,
+      message: "Manager added successfully",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      error: "Failed to add manager",
+      details: err.message,
+    });
+  }
+};
+
+// Get all managers
+export const allManagers = async (req, res) => {
+  try {
+    const managers = await getManagersWithoutPassword();
+    res.status(200).json({
+      success: true,
+      message: "Managers retrieved successfully",
+      data: managers,
+    });
+  } catch (error) {
+    console.error("Error retrieving managers:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve managers",
+      error: error.message,
+    });
+  }
+};
+
+// Delete a manager
+export const deleteManagerAdmin = async (req, res) => {
+  try {
+    const { managerId } = req.params;
+
+    if (!managerId) {
+      return res.status(400).json({
+        success: false,
+        message: "MANAGER_ID is required to delete a manager.",
+      });
+    }
+
+    const result = await deleteManager(managerId);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Manager not found or already deleted.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Manager deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Error in deleteManagerAdmin:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to delete manager.",
+    });
+  }
+};
