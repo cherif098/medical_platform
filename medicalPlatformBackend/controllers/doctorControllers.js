@@ -1,18 +1,22 @@
-import { getDoctorById, getDoctorStatus, updateDoctorStatus } from "../models/doctorModel.js";
+import {
+  getDoctorById,
+  getDoctorStatus,
+  updateDoctorStatus,
+} from "../models/doctorModel.js";
 import {
   getDoctorsWithoutPassword,
+  getAllDoctorsWithoutPassword,
   getDoctorByEmail,
   getAppointmentById,
   updateAppointmentById,
   getDoctorAppointmentsQuery,
   updateDoctorProfileModel,
-  updateDoctorOnlineStatus
+  updateDoctorOnlineStatus,
 } from "../models/doctorModel.js";
 import { deleteAppointmentDoctor } from "../models/appointmentModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { executeQuery } from "../config/snowflake.js";
-
 
 export const changeAvailability = async (req, res) => {
   const { DOCTOR_LICENCE } = req.body;
@@ -82,7 +86,7 @@ export const completeAppointment = async (req, res) => {
 };
 export const doctorList = async (req, res) => {
   try {
-    const doctors = await getDoctorsWithoutPassword();
+    const doctors = await getAllDoctorsWithoutPassword();
     res.json({ success: true, doctors });
   } catch (error) {
     console.error(error);
@@ -104,7 +108,7 @@ export const findAvailableDoctor = async (doctorId) => {
 
 export const doctorLogin = async (req, res) => {
   try {
-    const io = req.app.get('io');
+    const io = req.app.get("io");
     const { EMAIL, PASSWORD } = req.body;
     if (!EMAIL || !PASSWORD) {
       return res.status(400).json({
@@ -132,10 +136,10 @@ export const doctorLogin = async (req, res) => {
     // update statut online à TRUE
     await updateDoctorOnlineStatus(doctor.DOCTOR_ID, true);
 
-    io.emit("userStatusUpdate", { 
-      userId: doctor.DOCTOR_ID, 
-      userType: "DOCTOR", 
-      isOnline: true 
+    io.emit("userStatusUpdate", {
+      userId: doctor.DOCTOR_ID,
+      userType: "DOCTOR",
+      isOnline: true,
     });
 
     // Création du token JWT
@@ -152,14 +156,15 @@ export const doctorLogin = async (req, res) => {
   }
 };
 
-
-// logout 
+// logout
 export const doctorLogout = async (req, res) => {
   try {
     const doctorId = req.user.DOCTOR_ID;
 
     if (!doctorId) {
-      return res.status(400).json({ success: false, message: "Doctor ID is missing." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Doctor ID is missing." });
     }
     await updateDoctorOnlineStatus(doctorId, false);
 
@@ -169,8 +174,6 @@ export const doctorLogout = async (req, res) => {
     res.status(500).json({ success: false, message: "Logout failed" });
   }
 };
-
-
 
 //APi to get doctor appointments from doctor panel
 export const getDoctorAppointments = async (req, res) => {
@@ -341,79 +344,77 @@ export const doctorDashboard = async (req, res) => {
 // API to get doctor profile for doctor panel
 export const doctorProfile = async (req, res) => {
   try {
-      const doctorId = req.user.DOCTOR_ID;
+    const doctorId = req.user.DOCTOR_ID;
 
-      if (!doctorId) {
-          return res.status(400).json({
-              success: false,
-              message: "Identifiant du docteur non trouvé"
-          });
-      }
-
-      const profileData = await getDoctorById(doctorId);
-      
-      if (!profileData) {
-          return res.status(404).json({
-              success: false,
-              message: "Profil du docteur non trouvé"
-          });
-      }
-
-      const { PASSWORD, ...safeProfile } = profileData;
-
-      return res.status(200).json({
-          success: true,
-          data: safeProfile
+    if (!doctorId) {
+      return res.status(400).json({
+        success: false,
+        message: "Identifiant du docteur non trouvé",
       });
+    }
 
+    const profileData = await getDoctorById(doctorId);
+
+    if (!profileData) {
+      return res.status(404).json({
+        success: false,
+        message: "Profil du docteur non trouvé",
+      });
+    }
+
+    const { PASSWORD, ...safeProfile } = profileData;
+
+    return res.status(200).json({
+      success: true,
+      data: safeProfile,
+    });
   } catch (error) {
-      console.error("Erreur lors de la récupération du profil:", error);
-      return res.status(500).json({
-          success: false,
-          message: "Erreur lors de la récupération du profil du docteur"
-      });
+    console.error("Erreur lors de la récupération du profil:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Erreur lors de la récupération du profil du docteur",
+    });
   }
 };
-// API to update doctor profile from doctor panel : 
+// API to update doctor profile from doctor panel :
 
 export const updateDoctorProfile = async (req, res) => {
   try {
-      const DOCTOR_ID = req.user.DOCTOR_ID;  
-      
-      if (!DOCTOR_ID) {
-          return res.status(400).json({
-              success: false,
-              message: "Doctor ID is required"
-          });
-      }
+    const DOCTOR_ID = req.user.DOCTOR_ID;
 
-      // Verify doctor exists before attempting update
-      const existingDoctor = await getDoctorById(DOCTOR_ID);
-      if (!existingDoctor) {
-          return res.status(404).json({
-              success: false,
-              message: "Doctor not found"
-          });
-      }
-
-      // Attempt to update the profile
-      await updateDoctorProfileModel(DOCTOR_ID, req.body);
-
-      // Fetch and return updated profile
-      const updatedDoctor = await getDoctorById(DOCTOR_ID);
-      const { PASSWORD, ...safeProfile } = updatedDoctor;
-
-      return res.status(200).json({
-          success: true,
-          message: "Profile updated successfully",
-          data: safeProfile
+    if (!DOCTOR_ID) {
+      return res.status(400).json({
+        success: false,
+        message: "Doctor ID is required",
       });
+    }
 
+    // Verify doctor exists before attempting update
+    const existingDoctor = await getDoctorById(DOCTOR_ID);
+    if (!existingDoctor) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor not found",
+      });
+    }
+
+    // Attempt to update the profile
+    await updateDoctorProfileModel(DOCTOR_ID, req.body);
+
+    // Fetch and return updated profile
+    const updatedDoctor = await getDoctorById(DOCTOR_ID);
+    const { PASSWORD, ...safeProfile } = updatedDoctor;
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: safeProfile,
+    });
   } catch (error) {
-      console.error("Error updating doctor profile:", error);
-      return res.status(500).json({
-          success: false,
-          message: error.message || "Error updating profile"
-      });
+    console.error("Error updating doctor profile:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Error updating profile",
+    });
   }
 };

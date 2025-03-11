@@ -34,13 +34,13 @@ export const insertPatient = async (patientData) => {
     GENDER,
     DATE_OF_BIRTH,
     IMAGE,
-    HOSPITAL_ID, // Ajout du HOSPITAL_ID
   } = patientData;
 
+  // Remove HOSPITAL_ID from the query parameters
   const insertQuery = `
     INSERT INTO MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
-    (NAME, EMAIL, PASSWORD, PHONE, ADRESSE, GENDER, DATE_OF_BIRTH, IMAGE, HOSPITAL_ID)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+    (NAME, EMAIL, PASSWORD, PHONE, ADRESSE, GENDER, DATE_OF_BIRTH, IMAGE)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?);
   `;
   const values = [
     NAME,
@@ -51,14 +51,13 @@ export const insertPatient = async (patientData) => {
     GENDER,
     DATE_OF_BIRTH,
     IMAGE ?? null,
-    HOSPITAL_ID,
   ];
 
   try {
-    // Exécution de la requête d'insertion
+    // Execute the insertion query
     await executeQuery(insertQuery, values);
 
-    // Requête pour récupérer le dernier PATIENT_ID inséré
+    // Query to retrieve the last inserted PATIENT_ID
     const selectQuery = `
       SELECT MAX(PATIENT_ID) AS PATIENT_ID
       FROM MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
@@ -70,7 +69,7 @@ export const insertPatient = async (patientData) => {
       throw new Error("Failed to retrieve PATIENT_ID");
     }
 
-    return result[0].PATIENT_ID; // Retourner l'ID généré
+    return result[0].PATIENT_ID; // Return the generated ID
   } catch (err) {
     console.error("Error inserting patient into the database:", err);
     throw new Error("Error inserting patient into the database");
@@ -97,15 +96,15 @@ export const getPatientById = async (PATIENT_ID) => {
   const values = [PATIENT_ID];
 
   try {
-    // Exécutez la requête avec la fonction de connexion existante
+    // Execute the query with the existing connection function
     const patientData = await executeQuery(query, values);
 
-    // Vérifiez si un patient a été trouvé
+    // Check if a patient was found
     if (patientData.length === 0) {
-      throw new Error("Aucun patient trouvé avec cet ID");
+      throw new Error("No patient found with this ID");
     }
 
-    // Supprimez le mot de passe si nécessaire
+    // Remove the password if necessary
     const patient = patientData[0];
     delete patient.PASSWORD;
 
@@ -123,36 +122,22 @@ export const updatePatientData = async (
   DATE_OF_BIRTH,
   PHONE,
   ADRESSE,
-  GENDER,
-  HOSPITAL_ID = null // Optionnel, pour ne pas casser la compatibilité avec le code existant
+  GENDER
 ) => {
-  let updateQuery;
-  let values;
-
-  if (HOSPITAL_ID) {
-    updateQuery = `
-      UPDATE MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
-      SET EMAIL = ?, NAME = ?, DATE_OF_BIRTH = ?, PHONE = ?, ADRESSE = ?, GENDER = ?, HOSPITAL_ID = ?
-      WHERE PATIENT_ID = ?;
-    `;
-    values = [
-      EMAIL,
-      NAME,
-      DATE_OF_BIRTH,
-      PHONE,
-      ADRESSE,
-      GENDER,
-      HOSPITAL_ID,
-      PATIENT_ID,
-    ];
-  } else {
-    updateQuery = `
-      UPDATE MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
-      SET EMAIL = ?, NAME = ?, DATE_OF_BIRTH = ?, PHONE = ?, ADRESSE = ?, GENDER = ?
-      WHERE PATIENT_ID = ?;
-    `;
-    values = [EMAIL, NAME, DATE_OF_BIRTH, PHONE, ADRESSE, GENDER, PATIENT_ID];
-  }
+  const updateQuery = `
+    UPDATE MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
+    SET EMAIL = ?, NAME = ?, DATE_OF_BIRTH = ?, PHONE = ?, ADRESSE = ?, GENDER = ?
+    WHERE PATIENT_ID = ?;
+  `;
+  const values = [
+    EMAIL,
+    NAME,
+    DATE_OF_BIRTH,
+    PHONE,
+    ADRESSE,
+    GENDER,
+    PATIENT_ID,
+  ];
 
   try {
     await executeQuery(updateQuery, values);
@@ -188,7 +173,7 @@ export const getAllPatients = async () => {
   }
 };
 
-// Récupérer tous les patients d'un hôpital spécifique
+// For future implementation - get patients by hospital
 export const getPatientsByHospital = async (HOSPITAL_ID) => {
   const query = `
     SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
