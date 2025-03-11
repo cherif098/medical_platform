@@ -27,7 +27,7 @@ const Sidebar = () => {
   const [unreadChats, setUnreadChats] = useState(0);
 
 
-  // 📌 Fonction pour récupérer le nombre de discussions non lues
+  // récupérer le nombre de discussions non lues
   const fetchUnreadChats = async () => {
     try {
       const token = dToken || nToken;
@@ -39,11 +39,11 @@ const Sidebar = () => {
 
       setUnreadChats(data.unreadCount);
     } catch (error) {
-      console.error("❌ Erreur lors de la récupération du nombre de discussions non lues :", error);
+      console.error("Erreur lors de la récupération du nombre de discussions non lues :", error);
     }
   };
 
-  // 📌 Auto-refresh toutes les 2 secondes
+  // Auto-refresh 
   useEffect(() => {
     fetchUnreadChats();
     const interval = setInterval(fetchUnreadChats, 2000);
