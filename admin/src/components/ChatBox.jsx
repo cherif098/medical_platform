@@ -19,7 +19,6 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const messagesEndRef = useRef(null);
-  const lastFetchTimeRef = useRef(Date.now());
 
   const userId = doctorProfile?.ID || nurseProfile?.ID;
   const userType = doctorProfile?.ID ? "DOCTOR" : "NURSE";
@@ -134,7 +133,10 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
             (m.SENT_AT === newMessage.sent_at && m.CONTENT === newMessage.content)
           );
           
-          if (exists) return prev;
+          if (!exists) {
+            
+            setTimeout(scrollToBottom, 0);
+          }
           
           return [...prev, {
             MESSAGE_ID: newMessage.message_id,
@@ -167,35 +169,21 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
     };
   }, [conversation, userId]);
 
-  // Marquer les messages comme lus
-  const markMessagesAsRead = async () => {
-    if (!conversation?.contact_id) return;
+ 
   
+  const fetchMessages = async () => {
     try {
-      await axios.get(`${backendUrl}/api/messages/${conversation.contact_id}/${conversation.contact_type}`, {
+      const wasAtBottom = isUserAtBottom(); 
+  
+      const { data } = await axios.get(`${backendUrl}/api/messages/${conversation.contact_id}/${conversation.contact_type}`, {
         headers: { dtoken: dToken || "", ntoken: nToken || "" },
       });
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour des messages lus :", error);
-    }
-  };
-  
-  // Récupérer les messages
-  const fetchMessages = async () => {
-    if (!conversation?.contact_id) return;
-  
-    try {
-      console.log("Récupération des messages pour:", conversation.contact_id, conversation.contact_type);
-      const { data } = await axios.get(
-        `${backendUrl}/api/messages/${conversation.contact_id}/${conversation.contact_type}`,
-        { headers: { dtoken: dToken || "", ntoken: nToken || "" } }
-      );
-      
-      lastFetchTimeRef.current = Date.now();
   
       setMessages(data || []);
-      markMessagesAsRead(); 
-      scrollToBottom();
+  
+      if (wasAtBottom) {
+        scrollToBottom(); 
+      }
     } catch (error) {
       console.error("Erreur lors de la récupération des messages :", error);
     }
@@ -230,9 +218,9 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
         SENDER_ID: userId,
         RECEIVER_ID: conversation.contact_id,
         CONTENT: messageContent,
-        FILE_URL: preview, // Utiliser le preview comme temporaire
+        FILE_URL: preview,
         SENT_AT: new Date().toISOString(),
-        IS_TEMP: true  // Marquer comme temporaire
+        IS_TEMP: true  
       };
       
       setMessages(prev => [...prev, tempMessage]);
@@ -274,23 +262,38 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
     }
   };
   
-  // Faire défiler vers le bas
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({
+        behavior: "instant",
+        block: "end"
+      });
+    }
   };
   
-  // Rafraîchissement périodique comme solution de secours
+  
   useEffect(() => {
     const interval = setInterval(() => {
-      const now = Date.now();
-      // Rafraîchir si plus de 10 secondes se sont écoulées depuis le dernier fetch
-      if (now - lastFetchTimeRef.current > 1000) {
-        fetchMessages();
-      }
-    }, 1000);
-    
+      const wasAtBottom = isUserAtBottom();
+      fetchMessages().then(() => {
+        if (wasAtBottom) scrollToBottom();
+      });
+    }, 10000);
+  
     return () => clearInterval(interval);
   }, [conversation]);
+  
+
+
+  const isUserAtBottom = () => {
+    if (!messagesEndRef.current || !messagesEndRef.current.parentElement) return false;
+  
+    const chatContainer = messagesEndRef.current.parentElement;
+    const threshold = 50; 
+    
+    return chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight < threshold;
+  };
+  
   
   // Rejoindre la conversation et charger les messages quand la conversation change
   useEffect(() => {
@@ -331,7 +334,7 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 relative">
         {messages.map((msg, index) => (
           <div 
             key={msg.MESSAGE_ID || `message-${index}`} 
@@ -382,7 +385,7 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
         </div>
       )}
       
-      <form onSubmit={sendMessage} className="sticky bottom-0 left-0 right-0 bg-white p-4 flex items-center border-t">
+      <form onSubmit={sendMessage} className="sticky bottom-0 z-10 bg-white p-4 flex items-center border-t shadow-lg">
         <label htmlFor="fileInput" className="cursor-pointer p-2 ml-2 rounded-full hover:bg-gray-200">
           <Image size={24} className="text-gray-600" />
           <input
