@@ -225,6 +225,23 @@ export const getDoctorByEmail = async (EMAIL) => {
   }
 };
 
+export const updateDoctorOnlineStatus = async (doctorId, isOnline) => {
+  const query = `
+    UPDATE MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
+    SET IS_ONLINE = ?
+    WHERE DOCTOR_ID = ?;
+  `;
+  const values = [isOnline, doctorId];
+
+  try {
+    await executeQuery(query, values);
+    console.log(`Doctor ${doctorId} online status updated to ${isOnline}`);
+  } catch (error) {
+    console.error("Error updating doctor's online status:", error);
+    throw error;
+  }
+};
+
 export const getDoctorAppointmentsQuery = async (DOCTOR_ID) => {
   try {
     if (!DOCTOR_ID) {

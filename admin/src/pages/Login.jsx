@@ -5,6 +5,8 @@ import { NurseContext } from "../context/NurseContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+
+import { socket } from "../socket"; 
 import {
   ShieldCheck,
   Stethoscope,
@@ -17,6 +19,7 @@ import {
   Lock,
   LogIn,
 } from "lucide-react";
+
 
 const Login = () => {
   const roles = [
@@ -68,6 +71,85 @@ const Login = () => {
   const { setDToken } = useContext(DoctorContext);
   const { setNToken } = useContext(NurseContext);
 
+  const onSubmitHandler = async (event) => {
+    event.preventDefault();
+    setIsLoading(true);
+  
+    try {
+      const currentRole = roles[activeRoleIndex].id;
+      let endpoint, tokenType, setTokenFunc, userType, userIdKey;
+  
+      switch (currentRole) {
+        case "Admin":
+          endpoint = "/api/admin/login";
+          tokenType = "aToken";
+          setTokenFunc = setAToken;
+          break;
+        case "Doctor":
+          endpoint = "/api/doctor/login";
+          tokenType = "dToken";
+          setTokenFunc = setDToken;
+          userType = "DOCTOR";
+          userIdKey = "doctorId";
+          break;
+        case "Nurse":
+          endpoint = "/api/nurse/login";
+          tokenType = "nToken";
+          setTokenFunc = setNToken;
+          userType = "NURSE";
+          userIdKey = "nurseId";
+          break;
+        case "Manager":
+          endpoint = "/api/manager/login";
+          tokenType = "mToken";
+          // setTokenFunc = setMToken; // À implémenter plus tard
+          break;
+        case "Secretary":
+          endpoint = "/api/secretary/login";
+          tokenType = "sToken";
+          // setTokenFunc = setSToken; // À implémenter plus tard
+          break;
+        default:
+          toast.error("Rôle inconnu");
+          setIsLoading(false);
+          return;
+      }
+  
+      if (remember) {
+        localStorage.setItem("remembered_email", EMAIL);
+      } else {
+        localStorage.removeItem("remembered_email");
+      }
+  
+      const { data } = await axios.post(backendUrl + endpoint, { EMAIL, PASSWORD });
+  
+      if (data && data.token) {
+        localStorage.setItem(tokenType, data.token);
+        if (setTokenFunc) setTokenFunc(data.token);
+  
+        navigate(roles[activeRoleIndex].path);
+        toast.success(`Connexion réussie en tant que ${roles[activeRoleIndex].label}`);
+  
+        // 🔥 WebSocket: Émission de l'état en ligne après connexion
+        if (userType && userIdKey && data[userIdKey]) {
+          console.log(`🔹 WebSocket: Émission du statut pour ${data[userIdKey]} (${userType})`);
+          socket.emit("updateUserStatus", {
+            userId: data[userIdKey],
+            userType,
+            isOnline: true,
+          });
+        }
+      } else {
+        toast.error("Réponse du serveur incorrecte");
+      }
+    } catch (error) {
+      console.error("❌ Erreur lors de la connexion :", error);
+      toast.error(error.response?.data?.message || "Identifiants incorrects. Veuillez réessayer.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   // Pré-remplir les champs si stockés localement
   useEffect(() => {
     const savedEmail = localStorage.getItem("remembered_email");
@@ -76,6 +158,7 @@ const Login = () => {
       setRemember(true);
     }
   }, []);
+
 
   const nextRole = () => {
     setActiveRoleIndex((prev) => (prev === roles.length - 1 ? 0 : prev + 1));
@@ -99,76 +182,6 @@ const Login = () => {
       localStorage.removeItem("remembered_email");
     }
   };
-
-  const onSubmitHandler = async (event) => {
-    event.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const currentRole = roles[activeRoleIndex].id;
-      let endpoint, tokenType, setTokenFunc;
-
-      // Configuration basée sur le rôle
-      switch (currentRole) {
-        case "Admin":
-          endpoint = "/api/admin/login";
-          tokenType = "aToken";
-          setTokenFunc = setAToken;
-          break;
-        case "Doctor":
-          endpoint = "/api/doctor/login";
-          tokenType = "dToken";
-          setTokenFunc = setDToken;
-          break;
-        case "Nurse":
-          endpoint = "/api/nurse/login";
-          tokenType = "nToken";
-          setTokenFunc = setNToken;
-          break;
-        case "Manager":
-          endpoint = "/api/manager/login";
-          tokenType = "mToken";
-          // setTokenFunc = setMToken; // À implémenter
-          break;
-        case "Secretary":
-          endpoint = "/api/secretary/login";
-          tokenType = "sToken";
-          // setTokenFunc = setSToken; // À implémenter
-          break;
-      }
-
-      if (remember) {
-        localStorage.setItem("remembered_email", EMAIL);
-      }
-
-      const { data } = await axios.post(backendUrl + endpoint, {
-        EMAIL,
-        PASSWORD,
-      });
-
-      if (data && data.token) {
-        localStorage.setItem(tokenType, data.token);
-        if (setTokenFunc) setTokenFunc(data.token);
-
-        // Rediriger vers le dashboard approprié
-        navigate(roles[activeRoleIndex].path);
-        toast.success(
-          `Connexion réussie en tant que ${roles[activeRoleIndex].label}`
-        );
-      } else {
-        toast.error("Réponse du serveur incorrecte");
-      }
-    } catch (error) {
-      console.error("Erreur lors de la connexion :", error);
-      toast.error(
-        error.response?.data?.message ||
-          "Identifiants incorrects. Veuillez réessayer."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 px-4 py-8">
       <div className="w-full max-w-md relative">

@@ -1,8 +1,9 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { AdminContext } from "../context/AdminContext";
 import { DoctorContext } from "../context/DoctorContext";
 import { NurseContext } from "../context/NurseContext";
 import { NavLink } from "react-router-dom";
+import axios from "axios";
 import {
   LayoutDashboard,
   Calendar,
@@ -12,7 +13,6 @@ import {
   User,
   Bot,
   ImagePlus,
-  CreditCard,
   MessageCircle,
   Bed,
   Bell,
@@ -26,288 +26,81 @@ const Sidebar = () => {
   const { aToken } = useContext(AdminContext);
   const { dToken, subscriptionPlan } = useContext(DoctorContext);
   const { nToken } = useContext(NurseContext);
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const [unreadChats, setUnreadChats] = useState(0);
 
-  // State for managing dropdown toggles
-  const [addDropdownOpen, setAddDropdownOpen] = useState(false);
-  const [listDropdownOpen, setListDropdownOpen] = useState(false);
+  // 📌 Récupérer le nombre de discussions non lues
+  const fetchUnreadChats = async () => {
+    try {
+      const token = dToken || nToken;
+      if (!token) return;
 
-  // Toggle functions
-  const toggleAddDropdown = () => setAddDropdownOpen(!addDropdownOpen);
-  const toggleListDropdown = () => setListDropdownOpen(!listDropdownOpen);
+      const { data } = await axios.get(`${backendUrl}/api/messages/unread-count`, {
+        headers: { dtoken: dToken || "", ntoken: nToken || "" },
+      });
+
+      setUnreadChats(data.unreadCount);
+    } catch (error) {
+      console.error("Erreur récupération des messages non lus :", error);
+    }
+  };
+
+  // 📌 Auto-refresh toutes les 2 secondes
+  useEffect(() => {
+    fetchUnreadChats();
+    const interval = setInterval(fetchUnreadChats, 2000);
+    return () => clearInterval(interval);
+  }, [dToken, nToken]);
 
   return (
     <div className="min-h-screen bg-white border-r border-gray-100">
       {/* Section Admin */}
       {aToken && (
         <ul className="text-gray-600 mt-5">
-          <NavLink
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-            to="/admin-dashboard"
-          >
+          <NavLink to="/admin-dashboard" className="sidebar-link">
             <LayoutDashboard className="w-5 h-5" />
             <p className="hidden md:block">Dashboard</p>
           </NavLink>
-
-          <NavLink
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-            to="/all-apointments"
-          >
+          <NavLink to="/all-apointments" className="sidebar-link">
             <Calendar className="w-5 h-5" />
             <p className="hidden md:block">Appointments</p>
           </NavLink>
-
-          {/* Add Staff Dropdown */}
-          <div className="relative">
-            <div
-              className={`flex items-center justify-between gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors hover:bg-gray-50`}
-              onClick={toggleAddDropdown}
-            >
-              <div className="flex items-center gap-3">
-                <UserPlus className="w-5 h-5" />
-                <p className="hidden md:block">Add Staff</p>
-              </div>
-              {addDropdownOpen ? (
-                <ChevronDown className="w-4 h-4 hidden md:block" />
-              ) : (
-                <ChevronRight className="w-4 h-4 hidden md:block" />
-              )}
-            </div>
-
-            {addDropdownOpen && (
-              <div className="pl-8 bg-gray-50 py-1">
-                <NavLink
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 py-2.5 px-3 md:px-4 cursor-pointer transition-colors ${
-                      isActive
-                        ? "text-primary font-medium"
-                        : "text-gray-600 hover:text-primary"
-                    }`
-                  }
-                  to="/add-doctors"
-                >
-                  <Plus className="w-4 h-4" />
-                  <p className="hidden md:block text-sm">Add Doctor</p>
-                </NavLink>
-
-                <NavLink
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 py-2.5 px-3 md:px-4 cursor-pointer transition-colors ${
-                      isActive
-                        ? "text-primary font-medium"
-                        : "text-gray-600 hover:text-primary"
-                    }`
-                  }
-                  to="/add-nurse"
-                >
-                  <Plus className="w-4 h-4" />
-                  <p className="hidden md:block text-sm">Add Nurse</p>
-                </NavLink>
-
-                <NavLink
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 py-2.5 px-3 md:px-4 cursor-pointer transition-colors ${
-                      isActive
-                        ? "text-primary font-medium"
-                        : "text-gray-600 hover:text-primary"
-                    }`
-                  }
-                  to="/add-secretary"
-                >
-                  <Plus className="w-4 h-4" />
-                  <p className="hidden md:block text-sm">Add Secretary</p>
-                </NavLink>
-
-                <NavLink
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 py-2.5 px-3 md:px-4 cursor-pointer transition-colors ${
-                      isActive
-                        ? "text-primary font-medium"
-                        : "text-gray-600 hover:text-primary"
-                    }`
-                  }
-                  to="/add-manager"
-                >
-                  <Plus className="w-4 h-4" />
-                  <p className="hidden md:block text-sm">Add Manager</p>
-                </NavLink>
-              </div>
-            )}
-          </div>
-
-          {/* List Staff Dropdown */}
-          <div className="relative">
-            <div
-              className={`flex items-center justify-between gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors hover:bg-gray-50`}
-              onClick={toggleListDropdown}
-            >
-              <div className="flex items-center gap-3">
-                <Users className="w-5 h-5" />
-                <p className="hidden md:block">Staff List</p>
-              </div>
-              {listDropdownOpen ? (
-                <ChevronDown className="w-4 h-4 hidden md:block" />
-              ) : (
-                <ChevronRight className="w-4 h-4 hidden md:block" />
-              )}
-            </div>
-
-            {listDropdownOpen && (
-              <div className="pl-8 bg-gray-50 py-1">
-                <NavLink
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 py-2.5 px-3 md:px-4 cursor-pointer transition-colors ${
-                      isActive
-                        ? "text-primary font-medium"
-                        : "text-gray-600 hover:text-primary"
-                    }`
-                  }
-                  to="/doctors-list"
-                >
-                  <List className="w-4 h-4" />
-                  <p className="hidden md:block text-sm">Doctors List</p>
-                </NavLink>
-
-                <NavLink
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 py-2.5 px-3 md:px-4 cursor-pointer transition-colors ${
-                      isActive
-                        ? "text-primary font-medium"
-                        : "text-gray-600 hover:text-primary"
-                    }`
-                  }
-                  to="/nurses-list"
-                >
-                  <List className="w-4 h-4" />
-                  <p className="hidden md:block text-sm">Nurses List</p>
-                </NavLink>
-
-                <NavLink
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 py-2.5 px-3 md:px-4 cursor-pointer transition-colors ${
-                      isActive
-                        ? "text-primary font-medium"
-                        : "text-gray-600 hover:text-primary"
-                    }`
-                  }
-                  to="/secretaries-list"
-                >
-                  <List className="w-4 h-4" />
-                  <p className="hidden md:block text-sm">Secretaries List</p>
-                </NavLink>
-
-                <NavLink
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 py-2.5 px-3 md:px-4 cursor-pointer transition-colors ${
-                      isActive
-                        ? "text-primary font-medium"
-                        : "text-gray-600 hover:text-primary"
-                    }`
-                  }
-                  to="/managers-list"
-                >
-                  <List className="w-4 h-4" />
-                  <p className="hidden md:block text-sm">Managers List</p>
-                </NavLink>
-              </div>
-            )}
-          </div>
         </ul>
       )}
 
       {/* Section Doctor */}
       {dToken && (
         <ul className="text-gray-600 mt-5">
-          <NavLink
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-            to="/doctor-dashboard"
-          >
+          <NavLink to="/doctor-dashboard" className="sidebar-link">
             <LayoutDashboard className="w-5 h-5" />
             <p className="hidden md:block">Dashboard</p>
           </NavLink>
-
-          <NavLink
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-            to="/doctor-appointments"
-          >
+          <NavLink to="/doctor-appointments" className="sidebar-link">
             <Calendar className="w-5 h-5" />
             <p className="hidden md:block">Appointments</p>
           </NavLink>
-
-          <NavLink
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-            to="/medical-reports"
-          >
+          <NavLink to="/medical-reports" className="sidebar-link">
             <FileText className="w-5 h-5" />
             <p className="hidden md:block">Medical Reports</p>
           </NavLink>
-
-          <NavLink
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-            to="/doctor-profile"
-          >
+          <NavLink to="/doctor-profile" className="sidebar-link">
             <User className="w-5 h-5" />
             <p className="hidden md:block">Profile</p>
           </NavLink>
-          <NavLink
-            to="/ai-assistant"
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-          >
+          <NavLink to="/doctor/messages" className="sidebar-link">
+            <MessageCircle className="w-5 h-5" />
+            <p className="hidden md:block">Messages</p>
+            {unreadChats > 0 && (
+              <span className="bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                {unreadChats}
+              </span>
+            )}
+          </NavLink>
+          <NavLink to="/ai-assistant" className="sidebar-link">
             <Bot className="w-5 h-5" />
             <p className="hidden md:block">AI Assistant</p>
           </NavLink>
-
-          <NavLink
-            to="/ai-image-scanner"
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-          >
+          <NavLink to="/ai-image-scanner" className="sidebar-link">
             <ImagePlus className="w-5 h-5" />
             <p className="hidden md:block">AI Image Scanner</p>
           </NavLink>
@@ -317,86 +110,32 @@ const Sidebar = () => {
       {/* Section Nurse */}
       {nToken && (
         <ul className="text-gray-600 mt-5">
-          <NavLink
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-            to="/nurse-dashboard"
-          >
+          <NavLink to="/nurse-dashboard" className="sidebar-link">
             <LayoutDashboard className="w-5 h-5" />
             <p className="hidden md:block">Dashboard</p>
           </NavLink>
-
-          <NavLink
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-            to="/medicalreports-list"
-          >
+          <NavLink to="/medicalreports-list" className="sidebar-link">
             <FileText className="w-5 h-5" />
             <p className="hidden md:block">Medical Reports</p>
           </NavLink>
-
-          <NavLink
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-            to="/bed-status"
-          >
+          <NavLink to="/bed-status" className="sidebar-link">
             <Bed className="w-5 h-5" />
             <p className="hidden md:block">Bed Status</p>
           </NavLink>
-
-          <NavLink
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-            to="/notifications"
-          >
+          <NavLink to="/notifications" className="sidebar-link">
             <Bell className="w-5 h-5" />
             <p className="hidden md:block">Notifications</p>
           </NavLink>
-
-          <NavLink
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-            to="/messaging-service"
-          >
+          <NavLink to="/nurse/messages" className="sidebar-link">
             <MessageCircle className="w-5 h-5" />
-            <p className="hidden md:block">Messaging Service</p>
+            <p className="hidden md:block">Messages</p>
+            {unreadChats > 0 && (
+              <span className="bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+                {unreadChats}
+              </span>
+            )}
           </NavLink>
-
-          <NavLink
-            className={({ isActive }) =>
-              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
-                isActive
-                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
-                  : "hover:bg-gray-50"
-              }`
-            }
-            to="/nurse-profile"
-          >
+          <NavLink to="/nurse-profile" className="sidebar-link">
             <User className="w-5 h-5" />
             <p className="hidden md:block">Profile</p>
           </NavLink>

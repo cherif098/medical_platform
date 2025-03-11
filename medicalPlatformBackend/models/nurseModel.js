@@ -93,6 +93,37 @@ export const getNurseByEmail = async (EMAIL) => {
     throw error;
   }
 };
+export const updateNurseOnlineStatus = async (nurseId, isOnline) => {
+  console.log(`Début de updateNurseOnlineStatus: nurseId = ${nurseId}, isOnline = ${isOnline}`);
+
+  if (!nurseId) {
+    console.error("Erreur: nurseId est undefined ou null !");
+    return;
+  }
+
+  const query = `
+    UPDATE MEDICAL_DB.MEDICAL_SCHEMA.NURSES
+    SET IS_ONLINE = ?
+    WHERE NURSE_ID = ?;
+  `;
+  const values = [isOnline, nurseId];
+
+  try {
+    console.log("Avant exécution de executeQuery");
+    const result = await executeQuery(query, values);
+    console.log("Résultat de la mise à jour IS_ONLINE:", result);
+
+    // Vérification après l'update
+    const checkQuery = `SELECT IS_ONLINE FROM MEDICAL_DB.MEDICAL_SCHEMA.NURSES WHERE NURSE_ID = ?;`;
+    const checkResult = await executeQuery(checkQuery, [nurseId]);
+    console.log(`Vérification en base après mise à jour:`, checkResult);
+    
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour du statut en ligne:", error);
+    throw error;
+  }
+};
+
 
 // Récupérer un infirmier par ID
 export const getNurseById = async (NURSE_ID) => {

@@ -5,12 +5,14 @@ import {
   getAppointmentById,
   updateAppointmentById,
   getDoctorAppointmentsQuery,
-  updateDoctorProfileModel
+  updateDoctorProfileModel,
+  updateDoctorOnlineStatus
 } from "../models/doctorModel.js";
 import { deleteAppointmentDoctor } from "../models/appointmentModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { executeQuery } from "../config/snowflake.js";
+
 
 export const changeAvailability = async (req, res) => {
   const { DOCTOR_LICENCE } = req.body;
@@ -102,6 +104,7 @@ export const findAvailableDoctor = async (doctorId) => {
 
 export const doctorLogin = async (req, res) => {
   try {
+    const io = req.app.get('io');
     const { EMAIL, PASSWORD } = req.body;
     if (!EMAIL || !PASSWORD) {
       return res.status(400).json({
@@ -109,6 +112,7 @@ export const doctorLogin = async (req, res) => {
         message: "Email and password are required",
       });
     }
+
     const doctor = await getDoctorByEmail(EMAIL);
     if (!doctor) {
       return res.status(404).json({
@@ -116,7 +120,8 @@ export const doctorLogin = async (req, res) => {
         message: "Doctor not found",
       });
     }
-    const isPasswordValid = await bcrypt.compare(PASSWORD, doctor.PASSWORD); // Comparaison du mot de passe hashé
+
+    const isPasswordValid = await bcrypt.compare(PASSWORD, doctor.PASSWORD);
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
@@ -124,13 +129,20 @@ export const doctorLogin = async (req, res) => {
       });
     }
 
+    // update statut online à TRUE
+    await updateDoctorOnlineStatus(doctor.DOCTOR_ID, true);
+
+    io.emit("userStatusUpdate", { 
+      userId: doctor.DOCTOR_ID, 
+      userType: "DOCTOR", 
+      isOnline: true 
+    });
+
     // Création du token JWT
     const token = jwt.sign(
       { doctorId: doctor.DOCTOR_ID, email: EMAIL },
       process.env.JWT_SECRET,
-      {
-        expiresIn: "24h",
-      }
+      { expiresIn: "24h" }
     );
 
     res.status(200).json({ success: true, message: "Login successful", token });
@@ -139,6 +151,26 @@ export const doctorLogin = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
+// logout 
+export const doctorLogout = async (req, res) => {
+  try {
+    const doctorId = req.user.DOCTOR_ID;
+
+    if (!doctorId) {
+      return res.status(400).json({ success: false, message: "Doctor ID is missing." });
+    }
+    await updateDoctorOnlineStatus(doctorId, false);
+
+    res.status(200).json({ success: true, message: "Logout successful" });
+  } catch (error) {
+    console.error("Erreur lors du logout médecin:", error);
+    res.status(500).json({ success: false, message: "Logout failed" });
+  }
+};
+
+
 
 //APi to get doctor appointments from doctor panel
 export const getDoctorAppointments = async (req, res) => {
