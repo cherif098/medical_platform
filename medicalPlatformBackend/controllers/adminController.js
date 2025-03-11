@@ -4,6 +4,16 @@ import {
   deleteNurse,
   getNursesWithoutPassword,
 } from "../models/nurseModel.js";
+import {
+  insertSecretary,
+  deleteSecretary,
+  getSecretariesWithoutPassword,
+} from "../models/secretaryModel.js";
+import {
+  insertManager,
+  deleteManager,
+  getManagersWithoutPassword,
+} from "../models/managerModel.js";
 import { getHospitalByEmail } from "../models/hospitalModel.js";
 import validator from "validator";
 import bcrypt from "bcryptjs";
@@ -143,7 +153,7 @@ export const addDoctor = async (req, res) => {
     } = req.body;
 
     // Récupérer l'ID de l'hôpital à partir du token
-    const hospitalId = req.user.hospitalId;
+    const hospitalId = req.user?.hospitalId;
 
     if (!hospitalId) {
       return res.status(400).json({ error: "Hospital ID is required" });
@@ -259,7 +269,7 @@ export const addNurse = async (req, res) => {
   } = req.body;
 
   // Récupérer l'ID de l'hôpital à partir du token
-  const hospitalId = req.user.hospitalId;
+  const hospitalId = req.user?.hospitalId;
 
   if (!hospitalId) {
     return res
@@ -325,11 +335,193 @@ export const addNurse = async (req, res) => {
   }
 };
 
+// Ajout d'un secrétaire (avec HOSPITAL_ID)
+export const addSecretary = async (req, res) => {
+  const {
+    EMAIL,
+    PASSWORD,
+    NAME,
+    PHONE,
+    ADDRESS,
+    STATUS,
+    EXPERIENCE,
+    ABOUT,
+    IS_PASSWORD_TEMPORARY,
+  } = req.body;
+
+  // Récupérer l'ID de l'hôpital à partir du token
+  const hospitalId = req.user?.hospitalId;
+
+  if (!hospitalId) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Hospital ID is required" });
+  }
+
+  const imageFile = req.file;
+  let imageUrl = "default-secretary-image.jpg";
+
+  if (!EMAIL || !PASSWORD || !NAME) {
+    return res.status(400).json({
+      success: false,
+      error: "Missing required fields (EMAIL, PASSWORD, NAME)",
+    });
+  }
+
+  try {
+    // Vérifier si l'email existe déjà
+    const checkEmailQuery = `
+      SELECT COUNT(*) AS count 
+      FROM MEDICAL_DB.MEDICAL_SCHEMA.SECRETARIES 
+      WHERE EMAIL = ?
+    `;
+    const emailExists = await executeQuery(checkEmailQuery, [EMAIL]);
+
+    if (emailExists[0].COUNT > 0) {
+      return res
+        .status(400)
+        .json({ success: false, error: `Email ${EMAIL} already exists.` });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(PASSWORD, salt);
+
+    if (imageFile) {
+      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+        resource_type: "image",
+      });
+      imageUrl = imageUpload.secure_url;
+    }
+
+    const secretaryData = {
+      EMAIL,
+      PASSWORD: hashedPassword,
+      NAME,
+      PHONE: PHONE || "Not provided",
+      ADDRESS: ADDRESS || "Not provided",
+      IMAGE: imageUrl,
+      STATUS: STATUS ?? true,
+      CREATED_AT: new Date().toISOString(),
+      EXPERIENCE: EXPERIENCE || 0,
+      ABOUT: ABOUT || "No description provided",
+      IS_PASSWORD_TEMPORARY: IS_PASSWORD_TEMPORARY ?? true,
+      HOSPITAL_ID: hospitalId,
+    };
+
+    await insertSecretary(secretaryData);
+
+    res.status(200).json({
+      success: true,
+      message: "Secretary added successfully",
+      hospitalId: hospitalId,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      error: "Failed to add secretary",
+      details: err.message,
+    });
+  }
+};
+
+// Ajout d'un manager (avec HOSPITAL_ID)
+export const addManager = async (req, res) => {
+  const {
+    EMAIL,
+    PASSWORD,
+    NAME,
+    PHONE,
+    ADDRESS,
+    DEPARTMENT,
+    STATUS,
+    EXPERIENCE,
+    ABOUT,
+    IS_PASSWORD_TEMPORARY,
+  } = req.body;
+
+  // Récupérer l'ID de l'hôpital à partir du token
+  const hospitalId = req.user?.hospitalId;
+
+  if (!hospitalId) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Hospital ID is required" });
+  }
+
+  const imageFile = req.file;
+  let imageUrl = "default-manager-image.jpg";
+
+  if (!EMAIL || !PASSWORD || !NAME) {
+    return res.status(400).json({
+      success: false,
+      error: "Missing required fields (EMAIL, PASSWORD, NAME)",
+    });
+  }
+
+  try {
+    // Vérifier si l'email existe déjà
+    const checkEmailQuery = `
+      SELECT COUNT(*) AS count 
+      FROM MEDICAL_DB.MEDICAL_SCHEMA.MANAGERS 
+      WHERE EMAIL = ?
+    `;
+    const emailExists = await executeQuery(checkEmailQuery, [EMAIL]);
+
+    if (emailExists[0].COUNT > 0) {
+      return res
+        .status(400)
+        .json({ success: false, error: `Email ${EMAIL} already exists.` });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(PASSWORD, salt);
+
+    if (imageFile) {
+      const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+        resource_type: "image",
+      });
+      imageUrl = imageUpload.secure_url;
+    }
+
+    const managerData = {
+      EMAIL,
+      PASSWORD: hashedPassword,
+      NAME,
+      PHONE: PHONE || "Not provided",
+      ADDRESS: ADDRESS || "Not provided",
+      IMAGE: imageUrl,
+      DEPARTMENT: DEPARTMENT || "General Administration",
+      STATUS: STATUS ?? true,
+      CREATED_AT: new Date().toISOString(),
+      EXPERIENCE: EXPERIENCE || 0,
+      ABOUT: ABOUT || "No description provided",
+      IS_PASSWORD_TEMPORARY: IS_PASSWORD_TEMPORARY ?? true,
+      HOSPITAL_ID: hospitalId,
+    };
+
+    await insertManager(managerData);
+
+    res.status(200).json({
+      success: true,
+      message: "Manager added successfully",
+      hospitalId: hospitalId,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      error: "Failed to add manager",
+      details: err.message,
+    });
+  }
+};
+
 // Récupération des médecins de l'hôpital
 export const allDoctors = async (req, res) => {
   try {
     // Récupérer l'ID de l'hôpital à partir du token
-    const hospitalId = req.user.hospitalId;
+    const hospitalId = req.user?.hospitalId;
 
     if (hospitalId) {
       // Si l'utilisateur est un admin d'hôpital, récupérer seulement ses médecins
@@ -373,7 +565,7 @@ export const allDoctors = async (req, res) => {
 // Récupération des rendez-vous de l'hôpital
 export const getAllAppointmentsAdmin = async (req, res) => {
   try {
-    const hospitalId = req.user.hospitalId;
+    const hospitalId = req.user?.hospitalId;
 
     if (hospitalId) {
       // Si c'est un admin d'hôpital, filtrer les rendez-vous
@@ -420,7 +612,7 @@ export const getAllAppointmentsAdmin = async (req, res) => {
           EMAIL: appointment.PATIENT_EMAIL,
           PHONE: appointment.PATIENT_PHONE,
           DATE_OF_BIRTH: appointment.PATIENT_DATE_OF_BIRTH,
-          ADRESSE: appointment.PATIENT_ADRESS,
+          ADRESSE: appointment.PATIENT_ADRESSE,
           IMAGE: appointment.PATIENT_IMAGE,
         },
       }));
@@ -471,7 +663,7 @@ export const AppointmentCancel = async (req, res) => {
 export const deleteDoctorAdmin = async (req, res) => {
   try {
     const { DOCTOR_ID } = req.params;
-    const hospitalId = req.user.hospitalId;
+    const hospitalId = req.user?.hospitalId;
 
     if (hospitalId) {
       // Vérifier que le médecin appartient bien à cet hôpital
@@ -511,7 +703,7 @@ export const deleteDoctorAdmin = async (req, res) => {
 // Dashboard de l'hôpital
 export const AdminDashboard = async (req, res) => {
   try {
-    const hospitalId = req.user.hospitalId;
+    const hospitalId = req.user?.hospitalId;
 
     if (hospitalId) {
       // Si c'est un admin d'hôpital, afficher uniquement ses données
@@ -577,7 +769,7 @@ export const AdminDashboard = async (req, res) => {
 export const deleteNurseAdmin = async (req, res) => {
   try {
     const { nurseId } = req.params;
-    const hospitalId = req.user.hospitalId;
+    const hospitalId = req.user?.hospitalId;
 
     if (!nurseId) {
       return res.status(400).json({
@@ -628,7 +820,7 @@ export const deleteNurseAdmin = async (req, res) => {
 // Liste des infirmiers de l'hôpital
 export const allNurses = async (req, res) => {
   try {
-    const hospitalId = req.user.hospitalId;
+    const hospitalId = req.user?.hospitalId;
 
     if (hospitalId) {
       // Si c'est un admin d'hôpital, récupérer seulement ses infirmiers
@@ -663,6 +855,200 @@ export const allNurses = async (req, res) => {
       success: false,
       message: "Failed to retrieve nurses",
       error: error.message,
+    });
+  }
+};
+
+// Liste des secrétaires de l'hôpital
+export const allSecretaries = async (req, res) => {
+  try {
+    const hospitalId = req.user?.hospitalId;
+
+    if (hospitalId) {
+      // Si c'est un admin d'hôpital, récupérer seulement ses secrétaires
+      const query = `
+        SELECT 
+          SECRETARY_ID, EMAIL, NAME, PHONE, ADDRESS, IMAGE, STATUS, CREATED_AT, EXPERIENCE, ABOUT, HOSPITAL_ID
+        FROM 
+          MEDICAL_DB.MEDICAL_SCHEMA.SECRETARIES
+        WHERE
+          HOSPITAL_ID = ?;
+      `;
+
+      const secretaries = await executeQuery(query, [hospitalId]);
+
+      res.status(200).json({
+        success: true,
+        message: "Secretaries retrieved successfully",
+        data: secretaries,
+      });
+    } else {
+      // Si c'est le super admin, récupérer tous les secrétaires
+      const secretaries = await getSecretariesWithoutPassword();
+      res.status(200).json({
+        success: true,
+        message: "All secretaries retrieved successfully",
+        data: secretaries,
+      });
+    }
+  } catch (error) {
+    console.error("Error retrieving secretaries:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve secretaries",
+      error: error.message,
+    });
+  }
+};
+
+// Suppression d'un secrétaire
+export const deleteSecretaryAdmin = async (req, res) => {
+  try {
+    const { secretaryId } = req.params;
+    const hospitalId = req.user?.hospitalId;
+
+    if (!secretaryId) {
+      return res.status(400).json({
+        success: false,
+        message: "SECRETARY_ID is required to delete a secretary.",
+      });
+    }
+
+    if (hospitalId) {
+      // Vérifier que le secrétaire appartient bien à cet hôpital
+      const checkQuery = `
+        SELECT COUNT(*) AS count 
+        FROM MEDICAL_DB.MEDICAL_SCHEMA.SECRETARIES 
+        WHERE SECRETARY_ID = ? AND HOSPITAL_ID = ?
+      `;
+      const checkResult = await executeQuery(checkQuery, [
+        secretaryId,
+        hospitalId,
+      ]);
+
+      if (checkResult[0].COUNT === 0) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to delete this secretary",
+        });
+      }
+    }
+
+    const result = await deleteSecretary(secretaryId);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Secretary not found or already deleted.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Secretary deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Error in deleteSecretaryAdmin:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to delete secretary.",
+    });
+  }
+};
+
+// Liste des managers de l'hôpital
+export const allManagers = async (req, res) => {
+  try {
+    const hospitalId = req.user?.hospitalId;
+
+    if (hospitalId) {
+      // Si c'est un admin d'hôpital, récupérer seulement ses managers
+      const query = `
+        SELECT 
+          MANAGER_ID, EMAIL, NAME, PHONE, ADDRESS, DEPARTMENT, IMAGE, STATUS, CREATED_AT, EXPERIENCE, ABOUT, HOSPITAL_ID
+        FROM 
+          MEDICAL_DB.MEDICAL_SCHEMA.MANAGERS
+        WHERE
+          HOSPITAL_ID = ?;
+      `;
+
+      const managers = await executeQuery(query, [hospitalId]);
+
+      res.status(200).json({
+        success: true,
+        message: "Managers retrieved successfully",
+        data: managers,
+      });
+    } else {
+      // Si c'est le super admin, récupérer tous les managers
+      const managers = await getManagersWithoutPassword();
+      res.status(200).json({
+        success: true,
+        message: "All managers retrieved successfully",
+        data: managers,
+      });
+    }
+  } catch (error) {
+    console.error("Error retrieving managers:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve managers",
+      error: error.message,
+    });
+  }
+};
+
+// Suppression d'un manager
+export const deleteManagerAdmin = async (req, res) => {
+  try {
+    const { managerId } = req.params;
+    const hospitalId = req.user?.hospitalId;
+
+    if (!managerId) {
+      return res.status(400).json({
+        success: false,
+        message: "MANAGER_ID is required to delete a manager.",
+      });
+    }
+
+    if (hospitalId) {
+      // Vérifier que le manager appartient bien à cet hôpital
+      const checkQuery = `
+        SELECT COUNT(*) AS count 
+        FROM MEDICAL_DB.MEDICAL_SCHEMA.MANAGERS 
+        WHERE MANAGER_ID = ? AND HOSPITAL_ID = ?
+      `;
+      const checkResult = await executeQuery(checkQuery, [
+        managerId,
+        hospitalId,
+      ]);
+
+      if (checkResult[0].COUNT === 0) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to delete this manager",
+        });
+      }
+    }
+
+    const result = await deleteManager(managerId);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Manager not found or already deleted.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Manager deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Error in deleteManagerAdmin:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to delete manager.",
     });
   }
 };
