@@ -49,7 +49,7 @@ async function initializeSnowflake() {
 
 
 io.on("connection", (socket) => {
-  //console.log(`🟢 Nouveau client WebSocket connecté (${socket.id})`);
+  //console.log(`Nouveau client WebSocket connecté (${socket.id})`);
 const joinConversation = async ({ userId, userType, otherUserId, otherUserType }, callback) => {
   try {
     const formattedSender = `${userType}_${userId}`;
