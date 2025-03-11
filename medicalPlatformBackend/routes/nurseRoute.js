@@ -6,13 +6,14 @@ import {
   updateNurseProfileController,
   getPatientsByHospital,
   getNurseNote, createNurseNote, modifyNurseNote, transcribeNurseNote,
-  deleteNurseNote,
+  deleteNurseNote,  nurseLogout 
 } from "../controllers/nurseController.js";
 import authNurse from "../middlewares/authNurse.js";
 const upload = multer({ dest: "uploads/" });
 
 const nurseRouter = express.Router();
 nurseRouter.post("/login", nurseLogin);
+nurseRouter.post("/logout", authNurse, nurseLogout);
 nurseRouter.get("/profile", authNurse, nurseProfile);
 nurseRouter.post("/update-profile", authNurse, updateNurseProfileController);
 nurseRouter.get("/patients", authNurse, getPatientsByHospital);
