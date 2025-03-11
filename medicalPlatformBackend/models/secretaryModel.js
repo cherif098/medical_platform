@@ -35,7 +35,7 @@ export const insertSecretary = async (secretaryData) => {
     EXPERIENCE,
     ABOUT,
     IS_PASSWORD_TEMPORARY,
-    HOSPITAL_ID || 1, // Default to 1 if not provided
+    HOSPITAL_ID || null, // Default to 1 if not provided
   ];
 
   console.log("Inserting secretary with values:", values);

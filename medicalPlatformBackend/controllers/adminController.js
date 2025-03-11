@@ -155,13 +155,23 @@ export const addDoctor = async (req, res) => {
     // Récupérer l'ID de l'hôpital à partir du token
     const hospitalId = req.user?.hospitalId;
 
-    if (!hospitalId) {
-      return res.status(400).json({ error: "Hospital ID is required" });
+    // Pour le super admin, on peut laisser l'ajout sans hospitalId
+    // Mais pour un admin d'hôpital, on exige un hospitalId
+    if (req.user?.role === "admin" && !hospitalId) {
+      return res.status(400).json({
+        success: false,
+        error: "Hospital ID is required for hospital admin",
+      });
     }
 
     // Récupération du fichier image (si fourni)
     const imageFile = req.file;
-    const IMAGE = imageFile ? imageFile.path : null; // Chemin local de l'image
+    if (!imageFile) {
+      return res.status(400).json({
+        success: false,
+        error: "Image file is required",
+      });
+    }
 
     if (
       !DOCTOR_LICENCE ||
@@ -169,26 +179,28 @@ export const addDoctor = async (req, res) => {
       !PASSWORD ||
       !NAME ||
       !SPECIALTY ||
-      !STATUS ||
-      !FEES ||
-      !ADRESS_1 ||
-      !ADRESS_2 ||
-      !DEGREE ||
-      !EXPERIENCE ||
-      !ABOUT ||
-      !imageFile
+      !FEES
     ) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields",
+      });
     }
 
     const licenceExists = await checkIfExists("DOCTOR_LICENCE", DOCTOR_LICENCE);
     const emailExists = await checkIfExists("EMAIL", EMAIL);
 
     if (licenceExists) {
-      throw new Error(`Doctor Licence ${DOCTOR_LICENCE} already exists.`);
+      return res.status(409).json({
+        success: false,
+        error: `Doctor Licence ${DOCTOR_LICENCE} already exists.`,
+      });
     }
     if (emailExists) {
-      throw new Error(`Email ${EMAIL} already exists.`);
+      return res.status(409).json({
+        success: false,
+        error: `Email ${EMAIL} already exists.`,
+      });
     }
 
     // Hashage du mot de passe
@@ -202,8 +214,8 @@ export const addDoctor = async (req, res) => {
     const imageUrl = imageUpload.secure_url;
 
     // Définition des champs prédéfinis
-    const CREATED_AT = new Date().toISOString(); // Date actuelle
-    const CREATED_BY = "admin"; // Par défaut, créé par "admin"
+    const CREATED_AT = new Date().toISOString();
+    const CREATED_BY = "admin";
 
     // Préparation des données pour l'insertion
     const doctorData = {
@@ -212,18 +224,18 @@ export const addDoctor = async (req, res) => {
       PASSWORD: hashedPassword,
       NAME,
       SPECIALTY,
-      IS_PASSWORD_TEMPORARY,
-      STATUS,
+      IS_PASSWORD_TEMPORARY: IS_PASSWORD_TEMPORARY || true,
+      STATUS: STATUS || true,
       FEES,
-      ADRESS_1,
-      ADRESS_2,
-      DEGREE,
-      EXPERIENCE,
-      ABOUT,
+      ADRESS_1: ADRESS_1 || "",
+      ADRESS_2: ADRESS_2 || "",
+      DEGREE: DEGREE || "",
+      EXPERIENCE: EXPERIENCE || 0,
+      ABOUT: ABOUT || "",
       CREATED_AT,
       CREATED_BY,
       IMAGE: imageUrl,
-      HOSPITAL_ID: hospitalId, // Assignation de l'ID de l'hôpital
+      HOSPITAL_ID: hospitalId,
     };
 
     // Insertion des données dans la base
@@ -236,7 +248,7 @@ export const addDoctor = async (req, res) => {
       hospitalId: hospitalId,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error adding doctor:", err);
 
     // Réponse en cas d'échec
     res.status(500).json({
@@ -256,44 +268,49 @@ export const checkIfEmailExists = async (field, value) => {
 
 // Ajout d'un infirmier (avec HOSPITAL_ID)
 export const addNurse = async (req, res) => {
-  const {
-    EMAIL,
-    PASSWORD,
-    NAME,
-    PHONE,
-    ADRESSE,
-    STATUS,
-    EXPERIENCE,
-    ABOUT,
-    IS_PASSWORD_TEMPORARY,
-  } = req.body;
-
-  // Récupérer l'ID de l'hôpital à partir du token
-  const hospitalId = req.user?.hospitalId;
-
-  if (!hospitalId) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Hospital ID is required" });
-  }
-
-  const imageFile = req.file;
-  let imageUrl = "default-nurse-image.jpg";
-
-  if (!EMAIL || !PASSWORD || !NAME) {
-    return res.status(400).json({
-      success: false,
-      error: "Missing required fields (EMAIL, PASSWORD, NAME)",
-    });
-  }
-
   try {
+    const {
+      EMAIL,
+      PASSWORD,
+      NAME,
+      PHONE,
+      ADRESSE,
+      STATUS,
+      EXPERIENCE,
+      ABOUT,
+      IS_PASSWORD_TEMPORARY,
+    } = req.body;
+
+    // Récupérer l'ID de l'hôpital à partir du token
+    const hospitalId = req.user?.hospitalId;
+
+    // Pour le super admin, on peut laisser l'ajout sans hospitalId
+    // Mais pour un admin d'hôpital, on exige un hospitalId
+    if (req.user?.role === "admin" && !hospitalId) {
+      return res.status(400).json({
+        success: false,
+        error: "Hospital ID is required for hospital admin",
+      });
+    }
+
+    const imageFile = req.file;
+    let imageUrl = "default-nurse-image.jpg";
+
+    if (!EMAIL || !PASSWORD || !NAME) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields (EMAIL, PASSWORD, NAME)",
+      });
+    }
+
     const emailExists = await checkIfEmailExists("EMAIL", EMAIL);
     if (emailExists) {
-      return res
-        .status(400)
-        .json({ success: false, error: `Email ${EMAIL} already exists.` });
+      return res.status(409).json({
+        success: false,
+        error: `Email ${EMAIL} already exists.`,
+      });
     }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(PASSWORD, salt);
 
@@ -303,6 +320,7 @@ export const addNurse = async (req, res) => {
       });
       imageUrl = imageUpload.secure_url;
     }
+
     const nurseData = {
       EMAIL,
       PASSWORD: hashedPassword,
@@ -315,7 +333,7 @@ export const addNurse = async (req, res) => {
       EXPERIENCE: EXPERIENCE || 0,
       ABOUT: ABOUT || "No description provided",
       IS_PASSWORD_TEMPORARY: IS_PASSWORD_TEMPORARY ?? true,
-      HOSPITAL_ID: hospitalId, // Assignation de l'ID de l'hôpital
+      HOSPITAL_ID: hospitalId,
     };
 
     await insertNurse(nurseData);
@@ -326,7 +344,7 @@ export const addNurse = async (req, res) => {
       hospitalId: hospitalId,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error adding nurse:", err);
     res.status(500).json({
       success: false,
       error: "Failed to add nurse",
@@ -337,50 +355,55 @@ export const addNurse = async (req, res) => {
 
 // Ajout d'un secrétaire (avec HOSPITAL_ID)
 export const addSecretary = async (req, res) => {
-  const {
-    EMAIL,
-    PASSWORD,
-    NAME,
-    PHONE,
-    ADDRESS,
-    STATUS,
-    EXPERIENCE,
-    ABOUT,
-    IS_PASSWORD_TEMPORARY,
-  } = req.body;
-
-  // Récupérer l'ID de l'hôpital à partir du token
-  const hospitalId = req.user?.hospitalId;
-
-  if (!hospitalId) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Hospital ID is required" });
-  }
-
-  const imageFile = req.file;
-  let imageUrl = "default-secretary-image.jpg";
-
-  if (!EMAIL || !PASSWORD || !NAME) {
-    return res.status(400).json({
-      success: false,
-      error: "Missing required fields (EMAIL, PASSWORD, NAME)",
-    });
-  }
-
   try {
+    const {
+      EMAIL,
+      PASSWORD,
+      NAME,
+      PHONE,
+      ADDRESS,
+      STATUS,
+      EXPERIENCE,
+      ABOUT,
+      IS_PASSWORD_TEMPORARY,
+    } = req.body;
+
+    // Récupérer l'ID de l'hôpital à partir du token
+    const hospitalId = req.user?.hospitalId;
+
+    // Pour le super admin, on peut laisser l'ajout sans hospitalId
+    // Mais pour un admin d'hôpital, on exige un hospitalId
+    if (req.user?.role === "admin" && !hospitalId) {
+      return res.status(400).json({
+        success: false,
+        error: "Hospital ID is required for hospital admin",
+      });
+    }
+
+    const imageFile = req.file;
+    let imageUrl = "default-secretary-image.jpg";
+
+    if (!EMAIL || !PASSWORD || !NAME) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields (EMAIL, PASSWORD, NAME)",
+      });
+    }
+
     // Vérifier si l'email existe déjà
     const checkEmailQuery = `
       SELECT COUNT(*) AS count 
       FROM MEDICAL_DB.MEDICAL_SCHEMA.SECRETARIES 
       WHERE EMAIL = ?
     `;
-    const emailExists = await executeQuery(checkEmailQuery, [EMAIL]);
+    const emailCheck = await executeQuery(checkEmailQuery, [EMAIL]);
+    const emailExists = emailCheck[0].COUNT > 0;
 
-    if (emailExists[0].COUNT > 0) {
-      return res
-        .status(400)
-        .json({ success: false, error: `Email ${EMAIL} already exists.` });
+    if (emailExists) {
+      return res.status(409).json({
+        success: false,
+        error: `Email ${EMAIL} already exists.`,
+      });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -416,7 +439,7 @@ export const addSecretary = async (req, res) => {
       hospitalId: hospitalId,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error adding secretary:", err);
     res.status(500).json({
       success: false,
       error: "Failed to add secretary",
@@ -427,51 +450,56 @@ export const addSecretary = async (req, res) => {
 
 // Ajout d'un manager (avec HOSPITAL_ID)
 export const addManager = async (req, res) => {
-  const {
-    EMAIL,
-    PASSWORD,
-    NAME,
-    PHONE,
-    ADDRESS,
-    DEPARTMENT,
-    STATUS,
-    EXPERIENCE,
-    ABOUT,
-    IS_PASSWORD_TEMPORARY,
-  } = req.body;
-
-  // Récupérer l'ID de l'hôpital à partir du token
-  const hospitalId = req.user?.hospitalId;
-
-  if (!hospitalId) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Hospital ID is required" });
-  }
-
-  const imageFile = req.file;
-  let imageUrl = "default-manager-image.jpg";
-
-  if (!EMAIL || !PASSWORD || !NAME) {
-    return res.status(400).json({
-      success: false,
-      error: "Missing required fields (EMAIL, PASSWORD, NAME)",
-    });
-  }
-
   try {
+    const {
+      EMAIL,
+      PASSWORD,
+      NAME,
+      PHONE,
+      ADDRESS,
+      DEPARTMENT,
+      STATUS,
+      EXPERIENCE,
+      ABOUT,
+      IS_PASSWORD_TEMPORARY,
+    } = req.body;
+
+    // Récupérer l'ID de l'hôpital à partir du token
+    const hospitalId = req.user?.hospitalId;
+
+    // Pour le super admin, on peut laisser l'ajout sans hospitalId
+    // Mais pour un admin d'hôpital, on exige un hospitalId
+    if (req.user?.role === "admin" && !hospitalId) {
+      return res.status(400).json({
+        success: false,
+        error: "Hospital ID is required for hospital admin",
+      });
+    }
+
+    const imageFile = req.file;
+    let imageUrl = "default-manager-image.jpg";
+
+    if (!EMAIL || !PASSWORD || !NAME) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields (EMAIL, PASSWORD, NAME)",
+      });
+    }
+
     // Vérifier si l'email existe déjà
     const checkEmailQuery = `
       SELECT COUNT(*) AS count 
       FROM MEDICAL_DB.MEDICAL_SCHEMA.MANAGERS 
       WHERE EMAIL = ?
     `;
-    const emailExists = await executeQuery(checkEmailQuery, [EMAIL]);
+    const emailCheck = await executeQuery(checkEmailQuery, [EMAIL]);
+    const emailExists = emailCheck[0].COUNT > 0;
 
-    if (emailExists[0].COUNT > 0) {
-      return res
-        .status(400)
-        .json({ success: false, error: `Email ${EMAIL} already exists.` });
+    if (emailExists) {
+      return res.status(409).json({
+        success: false,
+        error: `Email ${EMAIL} already exists.`,
+      });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -508,7 +536,7 @@ export const addManager = async (req, res) => {
       hospitalId: hospitalId,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error adding manager:", err);
     res.status(500).json({
       success: false,
       error: "Failed to add manager",
@@ -523,35 +551,41 @@ export const allDoctors = async (req, res) => {
     // Récupérer l'ID de l'hôpital à partir du token
     const hospitalId = req.user?.hospitalId;
 
+    console.log("Hospital ID from token:", hospitalId);
+
+    // Requête SQL commune
+    const baseQuery = `
+      SELECT 
+        DOCTOR_ID, DOCTOR_LICENCE, EMAIL, NAME, SPECIALTY, IS_PASSWORD_TEMPORARY, 
+        STATUS, FEES, ADRESS_1, ADRESS_2, DEGREE, EXPERIENCE, ABOUT, 
+        CREATED_AT, CREATED_BY, IMAGE, HOSPITAL_ID
+      FROM 
+        MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
+    `;
+
+    let doctors;
+
+    // Déterminer quelle requête exécuter en fonction de la présence du hospitalId
     if (hospitalId) {
-      // Si l'utilisateur est un admin d'hôpital, récupérer seulement ses médecins
-      const query = `
-        SELECT 
-          DOCTOR_ID, DOCTOR_LICENCE, EMAIL, NAME, SPECIALTY, IS_PASSWORD_TEMPORARY, 
-          STATUS, FEES, ADRESS_1, ADRESS_2, DEGREE, EXPERIENCE, ABOUT, 
-          CREATED_AT, CREATED_BY, IMAGE, HOSPITAL_ID
-        FROM 
-          MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
-        WHERE
-          HOSPITAL_ID = ?;
-      `;
+      const query = `${baseQuery} WHERE HOSPITAL_ID = ?`;
+      doctors = await executeQuery(query, [hospitalId]);
 
-      const doctors = await executeQuery(query, [hospitalId]);
-
-      res.status(200).json({
-        success: true,
-        message: "Doctors retrieved successfully",
-        data: doctors,
-      });
+      console.log(
+        `Found ${doctors.length} doctors for hospital ID ${hospitalId}`
+      );
     } else {
-      // Si c'est le super admin, récupérer tous les médecins
-      const doctors = await getDoctorsWithoutPassword();
-      res.status(200).json({
-        success: true,
-        message: "All doctors retrieved successfully",
-        data: doctors,
-      });
+      // Si c'est le super admin ou si hospitalId n'est pas disponible
+      doctors = await executeQuery(baseQuery);
+      console.log(`Found ${doctors.length} doctors (all hospitals)`);
     }
+
+    res.status(200).json({
+      success: true,
+      message: hospitalId
+        ? "Doctors retrieved successfully"
+        : "All doctors retrieved successfully",
+      data: doctors,
+    });
   } catch (error) {
     console.error("Error retrieving doctors:", error);
     res.status(500).json({
@@ -561,7 +595,6 @@ export const allDoctors = async (req, res) => {
     });
   }
 };
-
 // Récupération des rendez-vous de l'hôpital
 export const getAllAppointmentsAdmin = async (req, res) => {
   try {

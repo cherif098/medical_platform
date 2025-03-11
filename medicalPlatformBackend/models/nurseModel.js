@@ -35,7 +35,7 @@ export const insertNurse = async (nurseData) => {
     EXPERIENCE,
     ABOUT,
     IS_PASSWORD_TEMPORARY,
-    HOSPITAL_ID, // Ajout du HOSPITAL_ID aux valeurs
+    HOSPITAL_ID || null, // Ajout du HOSPITAL_ID aux valeurs
   ];
 
   console.log("Inserting nurse with values:", values); // Log les valeurs pour déboguer
@@ -94,7 +94,9 @@ export const getNurseByEmail = async (EMAIL) => {
   }
 };
 export const updateNurseOnlineStatus = async (nurseId, isOnline) => {
-  console.log(`Début de updateNurseOnlineStatus: nurseId = ${nurseId}, isOnline = ${isOnline}`);
+  console.log(
+    `Début de updateNurseOnlineStatus: nurseId = ${nurseId}, isOnline = ${isOnline}`
+  );
 
   if (!nurseId) {
     console.error("Erreur: nurseId est undefined ou null !");
@@ -117,13 +119,11 @@ export const updateNurseOnlineStatus = async (nurseId, isOnline) => {
     const checkQuery = `SELECT IS_ONLINE FROM MEDICAL_DB.MEDICAL_SCHEMA.NURSES WHERE NURSE_ID = ?;`;
     const checkResult = await executeQuery(checkQuery, [nurseId]);
     console.log(`Vérification en base après mise à jour:`, checkResult);
-    
   } catch (error) {
     console.error("Erreur lors de la mise à jour du statut en ligne:", error);
     throw error;
   }
 };
-
 
 // Récupérer un infirmier par ID
 export const getNurseById = async (NURSE_ID) => {

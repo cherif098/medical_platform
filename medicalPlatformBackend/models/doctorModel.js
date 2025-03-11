@@ -46,7 +46,7 @@ export const insertDoctor = async (doctorData) => {
     CREATED_AT ?? new Date(), // Utilise l'heure actuelle si non fourni
     CREATED_BY ?? null,
     IMAGE ?? null,
-    HOSPITAL_ID, // Ajout du HOSPITAL_ID aux valeurs
+    HOSPITAL_ID ?? null, // Ajout du HOSPITAL_ID aux valeurs
   ];
 
   try {

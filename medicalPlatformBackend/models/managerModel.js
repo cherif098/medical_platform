@@ -37,7 +37,7 @@ export const insertManager = async (managerData) => {
     EXPERIENCE,
     ABOUT,
     IS_PASSWORD_TEMPORARY,
-    HOSPITAL_ID || 1, // Default to 1 if not provided
+    HOSPITAL_ID || null, // Default to 1 if not provided
   ];
 
   console.log("Inserting manager with values:", values);
