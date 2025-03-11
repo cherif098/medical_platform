@@ -12,7 +12,11 @@ const port = process.env.PORT || 4000;
 //Middlewares
 app.use(
   cors({
-    origin: ["http://localhost:5175", "http://localhost:3000"], // Ajoute toutes les origines nécessaires
+    origin: [
+      "http://localhost:5175",
+      "http://localhost:3000",
+      "http://localhost:3001",
+    ], // Ajoute toutes les origines nécessaires
     credentials: true, // Permet l'envoi de cookies et headers d'auth
     methods: ["GET", "POST", "PUT", "DELETE"], // Autoriser les requêtes HTTP spécifiques
   })
