@@ -7,6 +7,7 @@ import {
   getPatientsByHospitalId,
   getNurseNoteByReportId, addNurseNote, updateNurseNote,
   deleteNurseNoteFromDB, checkNurseNoteExists,
+  updateNurseOnlineStatus,
 } from "../models/nurseModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -15,46 +16,78 @@ import fs from "fs";
 // Login pour infirmier
 export const nurseLogin = async (req, res) => {
   try {
-    const nurse = await getNurseByEmail(req.body.EMAIL);
-
+    const io = req.app.get('io');
+    const { EMAIL, PASSWORD } = req.body;
+    if (!EMAIL || !PASSWORD) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+    const nurse = await getNurseByEmail(EMAIL);
+    
     if (!nurse) {
+      console.log("Infirmier non trouvé !");
       return res.status(404).json({
         success: false,
-        message: "Infirmier non trouvé",
+        message: "Nurse not found",
       });
     }
-    const isPasswordValid = await bcrypt.compare(req.body.PASSWORD, nurse.PASSWORD);
 
+    console.log("Vérification du mot de passe...");
+    const isPasswordValid = await bcrypt.compare(PASSWORD, nurse.PASSWORD);
+    
     if (!isPasswordValid) {
+      console.log("Mot de passe invalide !");
       return res.status(401).json({
         success: false,
-        message: "Mot de passe incorrect",
+        message: "Invalid credentials",
       });
     }
 
-    // Retirer le mot de passe de la réponse
-    const { PASSWORD, ...safeNurseData } = nurse;
+    console.log(`Connexion réussie pour l'infirmier ${nurse.NURSE_ID}, mise à jour IS_ONLINE...`);
+    await updateNurseOnlineStatus(nurse.NURSE_ID, true);
+    console.log("Statut IS_ONLINE mis à jour!");
+      io.emit("userStatusUpdate", { 
+        userId: nurse.NURSE_ID, 
+        userType: "NURSE", 
+        isOnline: true 
+      });
 
-    
     const token = jwt.sign(
-      { nurseId: nurse.NURSE_ID },
+      { nurseId: nurse.NURSE_ID, email: EMAIL },
       process.env.JWT_SECRET,
-      { expiresIn: "8h" }
+      { expiresIn: "24h" }
     );
 
-    res.status(200).json({
-      success: true,
-      token,
-      nurse: safeNurseData,
-    });
+    res.status(200).json({ success: true, message: "Login successful", token });
   } catch (error) {
-    console.error("Erreur serveur :", error);
-    res.status(500).json({
-      success: false,
-      message: "Erreur serveur",
-    });
+    console.error("Erreur dans nurseLogin:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
+
+// Déconnexion 
+export const nurseLogout = async (req, res) => {
+  try {
+    const { nurseId } = req.user; 
+    if (!nurseId) {
+      return res.status(400).json({ success: false, message: "Nurse ID is missing." });
+    }
+
+    console.log(`Déconnexion de l'infirmier ${nurseId}, mise à jour IS_ONLINE en FALSE...`);
+    await updateNurseOnlineStatus(nurseId, false);
+
+    res.status(200).json({ success: true, message: "Logout successful" });
+  } catch (error) {
+    console.error("Erreur lors du logout infirmier:", error);
+    res.status(500).json({ success: false, message: "Logout failed" });
+  }
+};
+
+
 
 // profil de l'infirmier
 export const nurseProfile = async (req, res) => {

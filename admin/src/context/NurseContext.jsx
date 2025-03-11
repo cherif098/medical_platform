@@ -9,6 +9,7 @@ const NurseContextProvider = (props) => {
   const [nToken, setNToken] = useState(
     localStorage.getItem("nToken") ? localStorage.getItem("nToken") : ""
   );
+  //console.log("Token récupéré dans le state:", nToken);
   const [dashData, setDashData] = useState(false); 
   const [profileData, setProfileData] = useState(false); 
   const [patients, setPatients] = useState([]);
@@ -23,7 +24,7 @@ const NurseContextProvider = (props) => {
       });
   
       if (data.success) {
-        console.log("Données du profil :", data.data); 
+       // console.log("Données du profil :", data.data); 
         setProfileData(data.data);
       } else {
         toast.error(data.message || "Échec de la récupération du profil");
@@ -290,9 +291,7 @@ const NurseContextProvider = (props) => {
         updateNurseNote,
         transcribeSpeech,
         deleteNurseNote,
-        updateVitalSigns
-        
-        
+        updateVitalSigns,
       
       }}
     >
