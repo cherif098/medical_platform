@@ -13,7 +13,7 @@ const authNurse = async (req, res, next) => {
     }
 
     const token_decode = jwt.verify(nToken, process.env.JWT_SECRET);
-    console.log("Decoded token:", token_decode);
+   // console.log("Decoded token:", token_decode);
 
     if (!token_decode || !token_decode.nurseId) {
       return res.status(401).json({
@@ -22,8 +22,8 @@ const authNurse = async (req, res, next) => {
       });
     }
 
-    req.user = { nurseId: token_decode.nurseId };
-    console.log("Extracted NURSE_ID:", req.user.nurseId);
+    req.user = { nurseId: token_decode.nurseId ,  type: 'NURSE'};
+    //console.log("Extracted NURSE_ID:", req.user.nurseId);
 
     next();
   } catch (error) {
