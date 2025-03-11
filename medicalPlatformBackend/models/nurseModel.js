@@ -1,4 +1,4 @@
-import { executeQuery } from "../config/snowflake.js"; 
+import { executeQuery } from "../config/snowflake.js";
 
 // Fonction pour insérer un infirmier
 export const insertNurse = async (nurseData) => {
@@ -14,12 +14,13 @@ export const insertNurse = async (nurseData) => {
     EXPERIENCE,
     ABOUT,
     IS_PASSWORD_TEMPORARY,
+    HOSPITAL_ID, // Ajout du HOSPITAL_ID
   } = nurseData;
 
   const query = `
     INSERT INTO MEDICAL_DB.MEDICAL_SCHEMA.NURSES 
-    (EMAIL, PASSWORD, NAME, PHONE, ADRESSE, IMAGE, STATUS, CREATED_AT, EXPERIENCE, ABOUT, IS_PASSWORD_TEMPORARY)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    (EMAIL, PASSWORD, NAME, PHONE, ADRESSE, IMAGE, STATUS, CREATED_AT, EXPERIENCE, ABOUT, IS_PASSWORD_TEMPORARY, HOSPITAL_ID)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
   `;
 
   const values = [
@@ -34,6 +35,7 @@ export const insertNurse = async (nurseData) => {
     EXPERIENCE,
     ABOUT,
     IS_PASSWORD_TEMPORARY,
+    HOSPITAL_ID, // Ajout du HOSPITAL_ID aux valeurs
   ];
 
   console.log("Inserting nurse with values:", values); // Log les valeurs pour déboguer
@@ -47,7 +49,27 @@ export const insertNurse = async (nurseData) => {
   }
 };
 
-// Récupérer tous les infirmiers
+// Récupérer tous les infirmiers d'un hôpital spécifique
+export const getNursesByHospital = async (HOSPITAL_ID) => {
+  const query = `
+    SELECT *
+    FROM MEDICAL_DB.MEDICAL_SCHEMA.NURSES
+    WHERE HOSPITAL_ID = ?;
+  `;
+
+  try {
+    const result = await executeQuery(query, [HOSPITAL_ID]);
+    return result;
+  } catch (error) {
+    console.error(
+      `Error retrieving nurses for hospital ${HOSPITAL_ID}:`,
+      error
+    );
+    throw error;
+  }
+};
+
+// Récupérer tous les infirmiers (pour compatibilité avec le code existant)
 export const getAllNurses = async () => {
   const query = `
     SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.NURSES;
@@ -118,6 +140,7 @@ export const getNurseById = async (NURSE_ID) => {
       IMAGE,
       EXPERIENCE,
       ABOUT,
+      HOSPITAL_ID
     FROM MEDICAL_DB.MEDICAL_SCHEMA.NURSES 
     WHERE NURSE_ID = ?;
   `;
@@ -132,7 +155,7 @@ export const getNurseById = async (NURSE_ID) => {
 
 // Mettre à jour le profil d'un infirmier
 export const updateNurseProfile = async (NURSE_ID, updatedData) => {
-  const allowedFields = ["EMAIL", "PHONE", "ADRESSE", "ABOUT"];
+  const allowedFields = ["EMAIL", "PHONE", "ADRESSE", "ABOUT", "HOSPITAL_ID"]; // Ajout de HOSPITAL_ID
 
   const updates = Object.entries(updatedData)
     .filter(([key]) => allowedFields.includes(key))
@@ -156,7 +179,9 @@ export const updateNurseProfile = async (NURSE_ID, updatedData) => {
   try {
     const result = await executeQuery(query, [...values, NURSE_ID]);
     if (result.affectedRows === 0) {
-      throw new Error("No nurse found with the provided ID or no changes were made.");
+      throw new Error(
+        "No nurse found with the provided ID or no changes were made."
+      );
     }
     return result;
   } catch (error) {
@@ -187,24 +212,50 @@ export const deleteNurse = async (nurseId) => {
 };
 
 // Récupérer tous les infirmiers sans mot de passe
-export const getNursesWithoutPassword = async () => {
-  const query = `
-    SELECT 
-      NURSE_ID,
-      EMAIL,
-      NAME,
-      PHONE,
-      ADRESSE,
-      IMAGE,
-      STATUS,
-      CREATED_AT,
-      EXPERIENCE,
-      ABOUT
-    FROM MEDICAL_DB.MEDICAL_SCHEMA.NURSES;
-  `;
+export const getNursesWithoutPassword = async (HOSPITAL_ID = null) => {
+  let query;
+  let params = [];
+
+  if (HOSPITAL_ID) {
+    // Si un HOSPITAL_ID est fourni, filtrer par cet hôpital
+    query = `
+      SELECT 
+        NURSE_ID,
+        EMAIL,
+        NAME,
+        PHONE,
+        ADRESSE,
+        IMAGE,
+        STATUS,
+        CREATED_AT,
+        EXPERIENCE,
+        ABOUT,
+        HOSPITAL_ID
+      FROM MEDICAL_DB.MEDICAL_SCHEMA.NURSES
+      WHERE HOSPITAL_ID = ?;
+    `;
+    params.push(HOSPITAL_ID);
+  } else {
+    // Sinon, récupérer tous les infirmiers
+    query = `
+      SELECT 
+        NURSE_ID,
+        EMAIL,
+        NAME,
+        PHONE,
+        ADRESSE,
+        IMAGE,
+        STATUS,
+        CREATED_AT,
+        EXPERIENCE,
+        ABOUT,
+        HOSPITAL_ID
+      FROM MEDICAL_DB.MEDICAL_SCHEMA.NURSES;
+    `;
+  }
 
   try {
-    const nurses = await executeQuery(query);
+    const nurses = await executeQuery(query, params);
     return nurses;
   } catch (error) {
     console.error("Error retrieving nurses without password:", error);
@@ -223,7 +274,6 @@ export const getHospitalIdByNurseId = async (nurseId) => {
   return result.length > 0 ? result[0].HOSPITAL_ID : null;
 };
 
-
 // Récupérer les patients par l'ID d'un hôpital
 export const getPatientsByHospitalId = async (hospitalId) => {
   const query = `
@@ -233,8 +283,6 @@ export const getPatientsByHospitalId = async (hospitalId) => {
   `;
   return await executeQuery(query, [hospitalId]);
 };
-
-
 
 // Récupérer la note associée à un rapport
 export const getNurseNoteByReportId = async (reportId) => {
@@ -253,7 +301,7 @@ export const getNurseNoteByReportId = async (reportId) => {
   }
 };
 
-// Ajouter une nouvelle note 
+// Ajouter une nouvelle note
 export const addNurseNote = async (nurseId, reportId, noteText) => {
   try {
     const query = `
@@ -285,7 +333,11 @@ export const updateNurseNote = async (nurseId, reportId, noteText) => {
   console.log("Executing Query:", query);
   console.log("With values:", [noteText, nurseId, numericReportId]);
 
-  const result = await executeQuery(query, [noteText, nurseId, numericReportId]);
+  const result = await executeQuery(query, [
+    noteText,
+    nurseId,
+    numericReportId,
+  ]);
 
   console.log("Query Result:", result);
 
@@ -309,5 +361,3 @@ export const deleteNurseNoteFromDB = async (reportId) => {
   `;
   await executeQuery(query, [reportId]);
 };
-
-

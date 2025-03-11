@@ -1,5 +1,10 @@
 import { insertDoctor, deleteDoctor } from "../models/doctorModel.js";
-import { insertNurse, deleteNurse , getNursesWithoutPassword} from "../models/nurseModel.js";
+import {
+  insertNurse,
+  deleteNurse,
+  getNursesWithoutPassword,
+} from "../models/nurseModel.js";
+import { getHospitalByEmail } from "../models/hospitalModel.js";
 import validator from "validator";
 import bcrypt from "bcryptjs";
 import { v2 as cloudinary } from "cloudinary";
@@ -14,7 +19,10 @@ import {
   deleteAppointmentByAdmin,
   getAllAppointments,
 } from "../models/appointmentModel.js";
-import { getAllPatients } from "../models/patientModel.js";
+import {
+  getAllPatients,
+  getPatientsByHospital,
+} from "../models/patientModel.js";
 
 // Fonction pour vérifier si un champ existe déjà dans la base de données
 export const checkIfExists = async (field, value) => {
@@ -23,6 +31,99 @@ export const checkIfExists = async (field, value) => {
   return result[0].COUNT > 0; // Retourne true si l'élément existe déjà
 };
 
+// Fonction pour authentifier un administrateur (hôpital)
+export const loginAdmin = async (req, res) => {
+  try {
+    const { EMAIL, PASSWORD } = req.body;
+
+    // Validation des champs requis
+    if (!EMAIL || !PASSWORD) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    // Méthode 1: Vérifie les credentials via les variables d'environnement (pour la compatibilité)
+    if (
+      EMAIL === process.env.ADMIN_EMAIL &&
+      PASSWORD === process.env.ADMIN_PASSWORD
+    ) {
+      // Création du token JWT pour le super admin
+      const token = jwt.sign(
+        { email: EMAIL, role: "superadmin" },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "8h",
+        }
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Login successful",
+        token,
+        isSuperAdmin: true,
+      });
+    }
+
+    // Méthode 2: Vérifie les credentials via la table HOSPITALS
+    try {
+      const hospital = await getHospitalByEmail(EMAIL);
+
+      if (hospital) {
+        // Vérifier le mot de passe
+        const isPasswordValid = await bcrypt.compare(
+          PASSWORD,
+          hospital.PASSWORD
+        );
+
+        if (isPasswordValid) {
+          // Création du token JWT pour l'admin d'hôpital
+          const token = jwt.sign(
+            {
+              hospitalId: hospital.ID,
+              email: EMAIL,
+              role: "admin",
+            },
+            process.env.JWT_SECRET,
+            {
+              expiresIn: "8h",
+            }
+          );
+
+          return res.status(200).json({
+            success: true,
+            message: "Login successful",
+            token,
+            hospitalName: hospital.NAME,
+            hospitalId: hospital.ID,
+          });
+        }
+      }
+    } catch (dbError) {
+      console.error("Database error during login:", dbError);
+      // Si l'erreur est liée à la base de données, on continue vers l'échec d'authentification
+    }
+
+    // Si aucune des méthodes n'a réussi
+    res.status(401).json({
+      success: false,
+      message: "Invalid credentials",
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Login failed",
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
+    });
+  }
+};
+
+// Ajout d'un médecin (avec HOSPITAL_ID)
 export const addDoctor = async (req, res) => {
   try {
     const {
@@ -40,6 +141,13 @@ export const addDoctor = async (req, res) => {
       EXPERIENCE,
       ABOUT,
     } = req.body;
+
+    // Récupérer l'ID de l'hôpital à partir du token
+    const hospitalId = req.user.hospitalId;
+
+    if (!hospitalId) {
+      return res.status(400).json({ error: "Hospital ID is required" });
+    }
 
     // Récupération du fichier image (si fourni)
     const imageFile = req.file;
@@ -105,29 +213,38 @@ export const addDoctor = async (req, res) => {
       CREATED_AT,
       CREATED_BY,
       IMAGE: imageUrl,
+      HOSPITAL_ID: hospitalId, // Assignation de l'ID de l'hôpital
     };
+
     // Insertion des données dans la base
     await insertDoctor(doctorData);
 
     // Réponse en cas de succès
-    res.status(200).json({ message: "Doctor added successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Doctor added successfully",
+      hospitalId: hospitalId,
+    });
   } catch (err) {
     console.error(err);
 
     // Réponse en cas d'échec
-    res
-      .status(500)
-      .json({ error: "Failed to add doctor", details: err.message });
+    res.status(500).json({
+      success: false,
+      error: "Failed to add doctor",
+      details: err.message,
+    });
   }
 };
 
-// Fonction pour vérifier si un champ existe déjà dans la base de données
+// Fonction pour vérifier si un email d'infirmier existe déjà
 export const checkIfEmailExists = async (field, value) => {
   const query = `SELECT COUNT(*) AS count FROM MEDICAL_DB.MEDICAL_SCHEMA.Nurses WHERE ${field} = ?`;
   const result = await executeQuery(query, [value]);
   return result[0].COUNT > 0; // Retourne true si l'élément existe déjà
 };
 
+// Ajout d'un infirmier (avec HOSPITAL_ID)
 export const addNurse = async (req, res) => {
   const {
     EMAIL,
@@ -141,17 +258,31 @@ export const addNurse = async (req, res) => {
     IS_PASSWORD_TEMPORARY,
   } = req.body;
 
-  const imageFile = req.file; 
-  let imageUrl = "default-nurse-image.jpg"; 
+  // Récupérer l'ID de l'hôpital à partir du token
+  const hospitalId = req.user.hospitalId;
+
+  if (!hospitalId) {
+    return res
+      .status(400)
+      .json({ success: false, error: "Hospital ID is required" });
+  }
+
+  const imageFile = req.file;
+  let imageUrl = "default-nurse-image.jpg";
 
   if (!EMAIL || !PASSWORD || !NAME) {
-    return res.status(400).json({ error: "Missing required fields (EMAIL, PASSWORD, NAME)" });
+    return res.status(400).json({
+      success: false,
+      error: "Missing required fields (EMAIL, PASSWORD, NAME)",
+    });
   }
 
   try {
     const emailExists = await checkIfEmailExists("EMAIL", EMAIL);
     if (emailExists) {
-      return res.status(400).json({ error: `Email ${EMAIL} already exists.` });
+      return res
+        .status(400)
+        .json({ success: false, error: `Email ${EMAIL} already exists.` });
     }
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(PASSWORD, salt);
@@ -160,7 +291,7 @@ export const addNurse = async (req, res) => {
       const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
         resource_type: "image",
       });
-      imageUrl = imageUpload.secure_url; 
+      imageUrl = imageUpload.secure_url;
     }
     const nurseData = {
       EMAIL,
@@ -174,77 +305,61 @@ export const addNurse = async (req, res) => {
       EXPERIENCE: EXPERIENCE || 0,
       ABOUT: ABOUT || "No description provided",
       IS_PASSWORD_TEMPORARY: IS_PASSWORD_TEMPORARY ?? true,
+      HOSPITAL_ID: hospitalId, // Assignation de l'ID de l'hôpital
     };
+
     await insertNurse(nurseData);
 
-    res.status(200).json({ message: "Nurse added successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Nurse added successfully",
+      hospitalId: hospitalId,
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to add nurse", details: err.message });
+    res.status(500).json({
+      success: false,
+      error: "Failed to add nurse",
+      details: err.message,
+    });
   }
 };
 
-
-
-// Fonction pour gérer l'authentification de l'admin
-export const loginAdmin = async (req, res) => {
+// Récupération des médecins de l'hôpital
+export const allDoctors = async (req, res) => {
   try {
-    const { EMAIL, PASSWORD } = req.body;
+    // Récupérer l'ID de l'hôpital à partir du token
+    const hospitalId = req.user.hospitalId;
 
-    // Validation des champs requis
-    if (!EMAIL || !PASSWORD) {
-      return res.status(400).json({
-        success: false,
-        message: "Email and password are required",
-      });
-    }
+    if (hospitalId) {
+      // Si l'utilisateur est un admin d'hôpital, récupérer seulement ses médecins
+      const query = `
+        SELECT 
+          DOCTOR_ID, DOCTOR_LICENCE, EMAIL, NAME, SPECIALTY, IS_PASSWORD_TEMPORARY, 
+          STATUS, FEES, ADRESS_1, ADRESS_2, DEGREE, EXPERIENCE, ABOUT, 
+          CREATED_AT, CREATED_BY, IMAGE, HOSPITAL_ID
+        FROM 
+          MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
+        WHERE
+          HOSPITAL_ID = ?;
+      `;
 
-    // Vérification des credentials
-    if (
-      EMAIL === process.env.ADMIN_EMAIL &&
-      PASSWORD === process.env.ADMIN_PASSWORD
-    ) {
-      // Création du token JWT
-      const token = jwt.sign(
-        { email: EMAIL, role: "admin" },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: "1h",
-        }
-      );
+      const doctors = await executeQuery(query, [hospitalId]);
 
       res.status(200).json({
         success: true,
-        message: "Login successful",
-        token,
+        message: "Doctors retrieved successfully",
+        data: doctors,
       });
     } else {
-      res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
+      // Si c'est le super admin, récupérer tous les médecins
+      const doctors = await getDoctorsWithoutPassword();
+      res.status(200).json({
+        success: true,
+        message: "All doctors retrieved successfully",
+        data: doctors,
       });
     }
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Login failed",
-      error:
-        process.env.NODE_ENV === "development"
-          ? error.message
-          : "Internal server error",
-    });
-  }
-};
-
-export const allDoctors = async (req, res) => {
-  try {
-    const doctors = await getDoctorsWithoutPassword();
-    res.status(200).json({
-      success: true,
-      message: "Doctors retrieved successfully",
-      data: doctors,
-    });
   } catch (error) {
     console.error("Error retrieving doctors:", error);
     res.status(500).json({
@@ -255,15 +370,75 @@ export const allDoctors = async (req, res) => {
   }
 };
 
-//API to get all appointments list
+// Récupération des rendez-vous de l'hôpital
 export const getAllAppointmentsAdmin = async (req, res) => {
   try {
-    const appointments = await getAllAppointmentsForAdmin();
-    res.status(200).json({
-      success: true,
-      message: "Appointments retrieved successfully",
-      data: appointments,
-    });
+    const hospitalId = req.user.hospitalId;
+
+    if (hospitalId) {
+      // Si c'est un admin d'hôpital, filtrer les rendez-vous
+      const query = `
+        SELECT 
+          a.APPOINTMENT_ID, a.CREATED_AT, a.SLOT_DATE, a.SLOT_TIME, a.USER_ID, a.DOCTOR_ID, a.STATUS,
+          d.NAME AS DOCTOR_NAME, d.EMAIL AS DOCTOR_EMAIL, d.EXPERIENCE AS DOCTOR_EXPERIENCE, 
+          d.IMAGE AS DOCTOR_IMAGE, d.SPECIALTY AS DOCTOR_SPECIALTY, d.FEES AS DOCTOR_FEES,
+          p.NAME AS PATIENT_NAME, p.EMAIL AS PATIENT_EMAIL, p.PHONE AS PATIENT_PHONE, 
+          p.DATE_OF_BIRTH AS PATIENT_DATE_OF_BIRTH, p.ADRESSE AS PATIENT_ADRESSE, p.IMAGE AS PATIENT_IMAGE
+        FROM 
+          MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS a
+        JOIN 
+          MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS d ON a.DOCTOR_ID = d.DOCTOR_ID
+        JOIN 
+          MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS p ON a.USER_ID = p.PATIENT_ID
+        WHERE
+          d.HOSPITAL_ID = ?
+        ORDER BY 
+          a.SLOT_DATE DESC, a.SLOT_TIME DESC
+      `;
+
+      const appointments = await executeQuery(query, [hospitalId]);
+
+      // Organiser les données en un objet par table
+      const result = appointments.map((appointment) => ({
+        APPOINTMENT: {
+          APPOINTMENT_ID: appointment.APPOINTMENT_ID,
+          CREATED_AT: appointment.CREATED_AT,
+          SLOT_DATE: appointment.SLOT_DATE,
+          SLOT_TIME: appointment.SLOT_TIME,
+          STATUS: appointment.STATUS,
+        },
+        DOCTOR: {
+          NAME: appointment.DOCTOR_NAME,
+          EMAIL: appointment.DOCTOR_EMAIL,
+          EXPERIENCE: appointment.DOCTOR_EXPERIENCE,
+          IMAGE: appointment.DOCTOR_IMAGE,
+          SPECIALTY: appointment.DOCTOR_SPECIALTY,
+          FEES: appointment.DOCTOR_FEES,
+        },
+        PATIENT: {
+          NAME: appointment.PATIENT_NAME,
+          EMAIL: appointment.PATIENT_EMAIL,
+          PHONE: appointment.PATIENT_PHONE,
+          DATE_OF_BIRTH: appointment.PATIENT_DATE_OF_BIRTH,
+          ADRESSE: appointment.PATIENT_ADRESS,
+          IMAGE: appointment.PATIENT_IMAGE,
+        },
+      }));
+
+      res.status(200).json({
+        success: true,
+        message: "Appointments retrieved successfully",
+        data: result,
+      });
+    } else {
+      // Si c'est le super admin, récupérer tous les rendez-vous
+      const appointments = await getAllAppointmentsForAdmin();
+      res.status(200).json({
+        success: true,
+        message: "All appointments retrieved successfully",
+        data: appointments,
+      });
+    }
   } catch (error) {
     console.log(error);
     res
@@ -272,7 +447,6 @@ export const getAllAppointmentsAdmin = async (req, res) => {
   }
 };
 
-//API to cancel an appointment from admin panel
 export const AppointmentCancel = async (req, res) => {
   try {
     const { APPOINTMENT_ID } = req.params;
@@ -297,6 +471,27 @@ export const AppointmentCancel = async (req, res) => {
 export const deleteDoctorAdmin = async (req, res) => {
   try {
     const { DOCTOR_ID } = req.params;
+    const hospitalId = req.user.hospitalId;
+
+    if (hospitalId) {
+      // Vérifier que le médecin appartient bien à cet hôpital
+      const checkQuery = `
+        SELECT COUNT(*) AS count 
+        FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS 
+        WHERE DOCTOR_ID = ? AND HOSPITAL_ID = ?
+      `;
+      const checkResult = await executeQuery(checkQuery, [
+        DOCTOR_ID,
+        hospitalId,
+      ]);
+
+      if (checkResult[0].COUNT === 0) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to delete this doctor",
+        });
+      }
+    }
 
     await deleteDoctor(DOCTOR_ID);
 
@@ -313,42 +508,99 @@ export const deleteDoctorAdmin = async (req, res) => {
   }
 };
 
-//API to get dashbord data for admin panel
+// Dashboard de l'hôpital
 export const AdminDashboard = async (req, res) => {
   try {
-    const doctors = await getAllDoctors();
-    const appointments = await getAllAppointments();
-    const patient = await getAllPatients();
+    const hospitalId = req.user.hospitalId;
 
-    const dashData = {
-      doctors: doctors.length,
-      appointments: appointments.length,
-      patients: patient.length,
-      latestAppointments: appointments.reverse().slice(0, 5),
-      doctorName: appointments.doctorName,
-      doctorImage: appointments.doctorImage,
-    };
-    res.status(200).json({
-      success: true,
-      message: "Dashboard data retrieved successfully",
-      data: dashData,
-    });
+    if (hospitalId) {
+      // Si c'est un admin d'hôpital, afficher uniquement ses données
+      // Récupérer les médecins de cet hôpital
+      const doctorsQuery = `
+        SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
+        WHERE HOSPITAL_ID = ?
+      `;
+      const doctors = await executeQuery(doctorsQuery, [hospitalId]);
+
+      // Récupérer les patients de cet hôpital
+      const patients = await getPatientsByHospital(hospitalId);
+
+      // Récupérer les rendez-vous des médecins de cet hôpital
+      const appointmentsQuery = `
+        SELECT a.*, d.NAME as doctorName, d.IMAGE as doctorImage
+        FROM MEDICAL_DB.MEDICAL_SCHEMA.APPOINTMENTS a
+        JOIN MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS d ON a.DOCTOR_ID = d.DOCTOR_ID
+        WHERE d.HOSPITAL_ID = ?
+      `;
+      const appointments = await executeQuery(appointmentsQuery, [hospitalId]);
+
+      const dashData = {
+        doctors: doctors.length,
+        appointments: appointments.length,
+        patients: patients.length,
+        latestAppointments: appointments.slice(0, 5),
+        hospitalId: hospitalId,
+      };
+
+      res.status(200).json({
+        success: true,
+        message: "Dashboard data retrieved successfully",
+        data: dashData,
+      });
+    } else {
+      // Si c'est le super admin, récupérer les statistiques globales
+      const doctors = await getAllDoctors();
+      const appointments = await getAllAppointments();
+      const patient = await getAllPatients();
+
+      const dashData = {
+        doctors: doctors.length,
+        appointments: appointments.length,
+        patients: patient.length,
+        latestAppointments: appointments.slice(0, 5),
+        isSuperAdmin: true,
+      };
+
+      res.status(200).json({
+        success: true,
+        message: "Dashboard data retrieved successfully",
+        data: dashData,
+      });
+    }
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// supp un infirmier
+// Suppression d'un infirmier
 export const deleteNurseAdmin = async (req, res) => {
   try {
-    const { nurseId } = req.params; 
+    const { nurseId } = req.params;
+    const hospitalId = req.user.hospitalId;
 
     if (!nurseId) {
       return res.status(400).json({
         success: false,
         message: "NURSE_ID is required to delete a nurse.",
       });
+    }
+
+    if (hospitalId) {
+      // Vérifier que l'infirmier appartient bien à cet hôpital
+      const checkQuery = `
+        SELECT COUNT(*) AS count 
+        FROM MEDICAL_DB.MEDICAL_SCHEMA.NURSES 
+        WHERE NURSE_ID = ? AND HOSPITAL_ID = ?
+      `;
+      const checkResult = await executeQuery(checkQuery, [nurseId, hospitalId]);
+
+      if (checkResult[0].COUNT === 0) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to delete this nurse",
+        });
+      }
     }
 
     const result = await deleteNurse(nurseId);
@@ -372,15 +624,39 @@ export const deleteNurseAdmin = async (req, res) => {
     });
   }
 };
-// liste des infimiers
+
+// Liste des infirmiers de l'hôpital
 export const allNurses = async (req, res) => {
   try {
-    const nurses = await getNursesWithoutPassword();
-    res.status(200).json({
-      success: true,
-      message: "Nurses retrieved successfully",
-      data: nurses,
-    });
+    const hospitalId = req.user.hospitalId;
+
+    if (hospitalId) {
+      // Si c'est un admin d'hôpital, récupérer seulement ses infirmiers
+      const query = `
+        SELECT 
+          NURSE_ID, EMAIL, NAME, PHONE, ADRESSE, IMAGE, STATUS, CREATED_AT, EXPERIENCE, ABOUT, HOSPITAL_ID
+        FROM 
+          MEDICAL_DB.MEDICAL_SCHEMA.NURSES
+        WHERE
+          HOSPITAL_ID = ?;
+      `;
+
+      const nurses = await executeQuery(query, [hospitalId]);
+
+      res.status(200).json({
+        success: true,
+        message: "Nurses retrieved successfully",
+        data: nurses,
+      });
+    } else {
+      // Si c'est le super admin, récupérer tous les infirmiers
+      const nurses = await getNursesWithoutPassword();
+      res.status(200).json({
+        success: true,
+        message: "All nurses retrieved successfully",
+        data: nurses,
+      });
+    }
   } catch (error) {
     console.error("Error retrieving nurses:", error);
     res.status(500).json({
@@ -390,4 +666,3 @@ export const allNurses = async (req, res) => {
     });
   }
 };
-

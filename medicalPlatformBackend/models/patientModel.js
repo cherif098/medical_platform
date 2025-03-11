@@ -34,12 +34,13 @@ export const insertPatient = async (patientData) => {
     GENDER,
     DATE_OF_BIRTH,
     IMAGE,
+    HOSPITAL_ID, // Ajout du HOSPITAL_ID
   } = patientData;
 
   const insertQuery = `
     INSERT INTO MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
-    (NAME, EMAIL, PASSWORD, PHONE, ADRESSE, GENDER, DATE_OF_BIRTH, IMAGE)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+    (NAME, EMAIL, PASSWORD, PHONE, ADRESSE, GENDER, DATE_OF_BIRTH, IMAGE, HOSPITAL_ID)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
   `;
   const values = [
     NAME,
@@ -50,6 +51,7 @@ export const insertPatient = async (patientData) => {
     GENDER,
     DATE_OF_BIRTH,
     IMAGE ?? null,
+    HOSPITAL_ID,
   ];
 
   try {
@@ -121,22 +123,36 @@ export const updatePatientData = async (
   DATE_OF_BIRTH,
   PHONE,
   ADRESSE,
-  GENDER
+  GENDER,
+  HOSPITAL_ID = null // Optionnel, pour ne pas casser la compatibilité avec le code existant
 ) => {
-  const updateQuery = `
+  let updateQuery;
+  let values;
+
+  if (HOSPITAL_ID) {
+    updateQuery = `
+      UPDATE MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
+      SET EMAIL = ?, NAME = ?, DATE_OF_BIRTH = ?, PHONE = ?, ADRESSE = ?, GENDER = ?, HOSPITAL_ID = ?
+      WHERE PATIENT_ID = ?;
+    `;
+    values = [
+      EMAIL,
+      NAME,
+      DATE_OF_BIRTH,
+      PHONE,
+      ADRESSE,
+      GENDER,
+      HOSPITAL_ID,
+      PATIENT_ID,
+    ];
+  } else {
+    updateQuery = `
       UPDATE MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
       SET EMAIL = ?, NAME = ?, DATE_OF_BIRTH = ?, PHONE = ?, ADRESSE = ?, GENDER = ?
       WHERE PATIENT_ID = ?;
     `;
-  const values = [
-    EMAIL,
-    NAME,
-    DATE_OF_BIRTH,
-    PHONE,
-    ADRESSE,
-    GENDER,
-    PATIENT_ID,
-  ];
+    values = [EMAIL, NAME, DATE_OF_BIRTH, PHONE, ADRESSE, GENDER, PATIENT_ID];
+  }
 
   try {
     await executeQuery(updateQuery, values);
@@ -172,3 +188,20 @@ export const getAllPatients = async () => {
   }
 };
 
+// Récupérer tous les patients d'un hôpital spécifique
+export const getPatientsByHospital = async (HOSPITAL_ID) => {
+  const query = `
+    SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.PATIENTS
+    WHERE HOSPITAL_ID = ?;
+  `;
+  try {
+    const result = await executeQuery(query, [HOSPITAL_ID]);
+    return result;
+  } catch (error) {
+    console.error(
+      `Error retrieving patients for hospital ${HOSPITAL_ID}:`,
+      error
+    );
+    throw error;
+  }
+};

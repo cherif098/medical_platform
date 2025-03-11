@@ -19,12 +19,14 @@ export const insertDoctor = async (doctorData) => {
     CREATED_AT,
     CREATED_BY,
     IMAGE,
+    HOSPITAL_ID, // Ajout du HOSPITAL_ID
   } = doctorData;
 
   const query = `
         INSERT INTO MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS 
-        (DOCTOR_LICENCE, EMAIL, PASSWORD, NAME, SPECIALTY, IS_PASSWORD_TEMPORARY, STATUS, FEES, ADRESS_1, ADRESS_2, DEGREE, EXPERIENCE, ABOUT, CREATED_AT, CREATED_BY, IMAGE)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        (DOCTOR_LICENCE, EMAIL, PASSWORD, NAME, SPECIALTY, IS_PASSWORD_TEMPORARY, STATUS, FEES, ADRESS_1, 
+        ADRESS_2, DEGREE, EXPERIENCE, ABOUT, CREATED_AT, CREATED_BY, IMAGE, HOSPITAL_ID)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
 
   const values = [
@@ -44,6 +46,7 @@ export const insertDoctor = async (doctorData) => {
     CREATED_AT ?? new Date(), // Utilise l'heure actuelle si non fourni
     CREATED_BY ?? null,
     IMAGE ?? null,
+    HOSPITAL_ID, // Ajout du HOSPITAL_ID aux valeurs
   ];
 
   try {
@@ -54,6 +57,7 @@ export const insertDoctor = async (doctorData) => {
     throw err;
   }
 };
+
 export const deleteDoctor = async (DOCTOR_ID) => {
   const query = `
     DELETE FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
@@ -72,12 +76,35 @@ export const deleteDoctor = async (DOCTOR_ID) => {
   }
 };
 
-export const getDoctorsWithoutPassword = async () => {
+// Mise à jour pour filtrer par HOSPITAL_ID
+export const getDoctorsWithoutPassword = async (HOSPITAL_ID) => {
   const query = `
         SELECT 
-        DOCTOR_ID,DOCTOR_LICENCE, EMAIL, NAME, SPECIALTY, IS_PASSWORD_TEMPORARY, 
+        DOCTOR_ID, DOCTOR_LICENCE, EMAIL, NAME, SPECIALTY, IS_PASSWORD_TEMPORARY, 
         STATUS, FEES, ADRESS_1, ADRESS_2, DEGREE, EXPERIENCE, ABOUT, 
-        CREATED_AT, CREATED_BY, IMAGE
+        CREATED_AT, CREATED_BY, IMAGE, HOSPITAL_ID
+        FROM 
+          MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
+        WHERE 
+          HOSPITAL_ID = ?;
+    `;
+
+  try {
+    const doctors = await executeQuery(query, [HOSPITAL_ID]);
+    return doctors;
+  } catch (err) {
+    console.error("Error retrieving doctors:", err);
+    throw err;
+  }
+};
+
+// Version sans filtrage par hôpital (pour la compatibilité avec le code existant)
+export const getAllDoctorsWithoutPassword = async () => {
+  const query = `
+        SELECT 
+        DOCTOR_ID, DOCTOR_LICENCE, EMAIL, NAME, SPECIALTY, IS_PASSWORD_TEMPORARY, 
+        STATUS, FEES, ADRESS_1, ADRESS_2, DEGREE, EXPERIENCE, ABOUT, 
+        CREATED_AT, CREATED_BY, IMAGE, HOSPITAL_ID
         FROM 
           MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS;
     `;
@@ -86,10 +113,11 @@ export const getDoctorsWithoutPassword = async () => {
     const doctors = await executeQuery(query);
     return doctors;
   } catch (err) {
-    console.error("Error retrieving doctors:", err);
+    console.error("Error retrieving all doctors:", err);
     throw err;
   }
 };
+
 export const getDoctorStatus = async (DOCTOR_LICENCE) => {
   const query = `
     SELECT STATUS
@@ -107,7 +135,16 @@ export const getDoctorStatus = async (DOCTOR_LICENCE) => {
 };
 
 // Mettre à jour le statut du médecin
-export const updateDoctorStatus = async (DOCTOR_LICENCE, newStatus) => {
+export const updateDoctorStatus = async (DOCTOR_LICENCE) => {
+  // D'abord, obtenez le statut actuel
+  const currentStatus = await getDoctorStatus(DOCTOR_LICENCE);
+  if (!currentStatus || currentStatus.length === 0) {
+    throw new Error("Doctor not found");
+  }
+
+  // Inversez le statut actuel
+  const newStatus = !currentStatus[0].STATUS;
+
   const query = `
     UPDATE MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
     SET STATUS = ?
@@ -116,11 +153,13 @@ export const updateDoctorStatus = async (DOCTOR_LICENCE, newStatus) => {
 
   try {
     await executeQuery(query, [newStatus, DOCTOR_LICENCE]);
+    return newStatus;
   } catch (error) {
     console.error("Error updating doctor status:", error);
     throw error;
   }
 };
+
 export const findAvailableDoctor = async (DOCTOR_ID) => {
   const query = `
     SELECT 
@@ -142,6 +181,25 @@ export const findAvailableDoctor = async (DOCTOR_ID) => {
   }
 };
 
+// Récupérer tous les docteurs d'un hôpital spécifique
+export const getDoctorsByHospital = async (HOSPITAL_ID) => {
+  const query = `
+    SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS
+    WHERE HOSPITAL_ID = ?;
+  `;
+  try {
+    const result = await executeQuery(query, [HOSPITAL_ID]);
+    return result;
+  } catch (error) {
+    console.error(
+      `Error retrieving doctors for hospital ${HOSPITAL_ID}:`,
+      error
+    );
+    throw error;
+  }
+};
+
+// Version existante, maintenue pour compatibilité
 export const getAllDoctors = async () => {
   const query = `SELECT * FROM MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS;`;
   try {
@@ -254,7 +312,7 @@ export const getDoctorAppointmentsQuery = async (DOCTOR_ID) => {
     throw error;
   }
 };
-// Fonction pour récupérer un rendez-vous spécifique par APPOINTMENT_ID
+
 export const getAppointmentById = async (APPOINTMENT_ID) => {
   try {
     // Requête SQL pour récupérer les informations du rendez-vous
@@ -304,8 +362,6 @@ export const getAppointmentById = async (APPOINTMENT_ID) => {
   }
 };
 
-// Fonction pour mettre à jour le statut d'un rendez-vous
-// doctorModel.js
 export const updateAppointmentById = async (APPOINTMENT_ID, newStatus) => {
   try {
     if (!APPOINTMENT_ID || !newStatus) {
@@ -357,6 +413,7 @@ export const updateDoctorProfileModel = async (DOCTOR_ID, updatedData) => {
     "ABOUT",
     "IMAGE",
     "STATUS",
+    "HOSPITAL_ID", // Ajout de HOSPITAL_ID comme champ autorisé pour la mise à jour
   ];
 
   const updates = Object.entries(updatedData)
@@ -387,6 +444,3 @@ export const updateDoctorProfileModel = async (DOCTOR_ID, updatedData) => {
     throw error;
   }
 };
-
-
-
