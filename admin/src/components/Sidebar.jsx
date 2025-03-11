@@ -436,7 +436,7 @@ const Sidebar = () => {
           >
             <div className="flex items-center gap-3">
               <MessageCircle className="w-5 h-5" />
-              <p className="hidden md:block">Messaging Service</p>
+              <p className="hidden md:block">Messages</p>
             </div>
             {unreadChats > 0 && (
               <span className="bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full ml-auto">

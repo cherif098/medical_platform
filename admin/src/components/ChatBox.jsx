@@ -284,10 +284,10 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
     const interval = setInterval(() => {
       const now = Date.now();
       // Rafraîchir si plus de 10 secondes se sont écoulées depuis le dernier fetch
-      if (now - lastFetchTimeRef.current > 10000) {
+      if (now - lastFetchTimeRef.current > 1000) {
         fetchMessages();
       }
-    }, 5000);
+    }, 1000);
     
     return () => clearInterval(interval);
   }, [conversation]);
