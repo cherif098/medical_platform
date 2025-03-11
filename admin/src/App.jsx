@@ -30,6 +30,8 @@ import AIAssistant from "./pages/Doctors/AIAssistant";
 import PaymentSuccess from "./pages/Doctors/PaymentSuccess";
 import PaymentCancel from "./pages/Doctors/PaymentCancel";
 import AIImageScanner from "./pages/Doctors/AIImageScanner";
+import ChatPage from "./pages/ChatPage";
+
 
 // page infimier
 import NurseProfile from "./pages/Nurses/NurseProfile";
@@ -75,6 +77,8 @@ const App = () => {
                 element={<DoctorAppointments />}
               />
               <Route path="/doctor-profile" element={<DoctorProfile />} />
+              <Route path="/doctor/messages" element={<ChatPage />} />
+             
 
               {/* Medical Reports Routes */}
               <Route path="/medical-reports" element={<MedicalReports />} />
@@ -106,6 +110,11 @@ const App = () => {
               <Route path="/nurse-profile" element={<NurseProfile />} />
               <Route path="/medicalreports-list" element={<MedicalReportsList />} />
               <Route path="/view-report/:reportId" element={<ViewMedicalReport />} />
+              <Route path="/nurse/messages" element={<ChatPage />} />
+
+              
+              
+
   
 
 
