@@ -5,6 +5,7 @@ import { NurseContext } from "../context/NurseContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { socket } from "../socket"; 
 
 const Login = () => {
   const [state, setState] = useState("Admin");
@@ -17,54 +18,62 @@ const Login = () => {
   const { setNToken } = useContext(NurseContext);
 
   const onSubmitHandler = async (event) => {
-  event.preventDefault();
-  try {
-    if (state === "Admin") {
-      const { data } = await axios.post(backendUrl + "/api/admin/login", {
-        EMAIL,
-        PASSWORD,
-      });
-      if (data && data.token) {
-        localStorage.setItem("aToken", data.token);
-        setAToken(data.token);
-        toast.success("Connexion réussie");
+    event.preventDefault();
+    try {
+      let apiUrl = "";
+      let tokenKey = "";
+      let userType = "";
+      let userIdKey = "";
+   
+      if (state === "Admin") {
+        apiUrl = `${backendUrl}/api/admin/login`;
+        tokenKey = "aToken";
+      } else if (state === "Doctor") {
+        apiUrl = `${backendUrl}/api/doctor/login`;
+        tokenKey = "dToken";
+        userType = "DOCTOR";
+        userIdKey = "doctorId";
+      } else if (state === "Nurse") {
+        apiUrl = `${backendUrl}/api/nurse/login`;
+        tokenKey = "nToken";
+        userType = "NURSE";
+        userIdKey = "nurseId";
       }
-    } else if (state === "Doctor") {
-      const { data } = await axios.post(backendUrl + "/api/doctor/login", {
-        EMAIL,
-        PASSWORD,
-      });
-      if (data && data.token) {
-        localStorage.setItem("dToken", data.token);
-        setDToken(data.token);
-        navigate("/doctor-dashboard");
-        toast.success("Connexion réussie");
-      }
-    } else if (state === "Nurse") {
-      try {
-        console.log("Données envoyées :", { EMAIL, PASSWORD });
-    
-        const { data } = await axios.post(backendUrl + "/api/nurse/login", {
-          EMAIL,
-          PASSWORD,
-        });
-        console.log("Réponse reçue :", data);
-    
+   
+      if (apiUrl) {
+        const { data } = await axios.post(apiUrl, { EMAIL, PASSWORD });
+   
         if (data && data.token) {
-          localStorage.setItem("nToken", data.token);
-          setNToken(data.token);
+          localStorage.setItem(tokenKey, data.token);
+          if (state === "Doctor") setDToken(data.token);
+          else if (state === "Nurse") setNToken(data.token);
+          else setAToken(data.token);
+   
+          navigate(
+            state === "Doctor"
+              ? "/doctor-dashboard"
+              : state === "Nurse"
+              ? "/nurse-dashboard"
+              : "/admin-dashboard"
+          );
           toast.success("Connexion réussie");
-          navigate("/nurse-dashboard");
+   
+          //  WebSocket
+          if (data[userIdKey]) {
+            console.log(`🔹 Émission du statut pour ${data[userIdKey]} (${userType})`);
+            socket.emit("updateUserStatus", { 
+              userId: data[userIdKey], 
+              userType,
+              isOnline: true 
+            });
+          }
         }
-      } catch (error) {
-        console.error("Erreur lors de la connexion :", error);
-        toast.error("Erreur de connexion. Veuillez vérifier vos identifiants.");
-      }}
-  } catch (error) {
-    console.error("Erreur lors de la connexion :", error);
-    toast.error("Erreur de connexion. Veuillez vérifier vos identifiants.");
-  }
-};
+      }
+    } catch (error) {
+      console.error("Erreur lors de la connexion :", error);
+      toast.error(error.response?.data?.message || "Erreur de connexion");
+    }
+  };
 
 
   return (
