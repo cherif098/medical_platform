@@ -37,10 +37,8 @@ import PaymentCancel from "./pages/Doctors/PaymentCancel";
 import AIImageScanner from "./pages/Doctors/AIImageScanner";
 import ChatPage from "./pages/ChatPage";
 
-
 // page infimier
 import NurseProfile from "./pages/Nurses/NurseProfile";
-//import NurseDashboard from "./pages/Nurses/NurseDashboard";
 import MedicalReportsList from "./pages/Nurses/MedicalReportsList";
 import ViewMedicalReport from "./pages/Nurses/ViewMedicalReport";
 
@@ -49,24 +47,46 @@ const App = () => {
   const { dToken } = useContext(DoctorContext);
   const { nToken } = useContext(NurseContext);
 
+  // Déterminer si la page actuelle est ChatPage pour appliquer un style différent
+  const isChatPage = () => {
+    const path = window.location.pathname;
+    return path === "/doctor/messages" || path === "/nurse/messages";
+  };
+
+  // Hauteur estimée de votre Navbar - ajustez selon la hauteur réelle
+  const navbarHeight = 64; // px
+
   return aToken || dToken || nToken ? (
-    <div className="min-h-screen bg-[#F8F9FD]">
+    <div className="min-h-screen bg-[#F8F9FD] flex flex-col">
       <ToastContainer />
+
       {/* Navbar fixe en haut */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-[#F8F9FD]">
+      <div className="fixed top-0 left-0 right-0 z-50 h-[64px]">
         <Navbar />
       </div>
 
-      <div className="flex pt-[42px]">
-        {" "}
-        {/* Ajustez pt-[64px] selon la hauteur de votre Navbar */}
-        {/* Sidebar fixe */}
-        <div className="fixed left-0 h-[calc(100vh-64px)] w-64 overflow-y-auto">
+      {/* Conteneur flex pour le reste du contenu */}
+      <div className="flex flex-1 pt-[64px]">
+        {/* Sidebar fixe - collée directement à la navbar */}
+        <div className="fixed left-0 top-[44px] h-[calc(100vh-44px)] w-64 overflow-y-auto z-40">
           <Sidebar />
         </div>
-        {/* Zone de contenu principal défilante */}
-        <div className="flex-1 ml-64">
-          <main className="h-[calc(100vh-64px)] overflow-y-auto">
+
+        {/* Zone de contenu principal avec style adapté pour ChatPage */}
+        <div
+          className={`transition-all duration-200 ${
+            isChatPage()
+              ? "ml-64 flex-1 overflow-hidden h-[calc(100vh-64px)]"
+              : "ml-64 flex-1"
+          }`}
+        >
+          <main
+            className={
+              isChatPage()
+                ? "h-full w-full overflow-hidden" // Pour ChatPage
+                : "h-[calc(100vh-64px)] overflow-y-auto" // Pour les autres pages
+            }
+          >
             <Routes>
               {/* Admin Routes */}
               <Route path="/" element={<></>} />
@@ -89,7 +109,6 @@ const App = () => {
               />
               <Route path="/doctor-profile" element={<DoctorProfile />} />
               <Route path="/doctor/messages" element={<ChatPage />} />
-             
 
               {/* Medical Reports Routes */}
               <Route path="/medical-reports" element={<MedicalReports />} />
@@ -117,21 +136,7 @@ const App = () => {
               <Route path="/payment/cancel" element={<PaymentCancel />} />
 
               {/* Nurse Routes */}
-              {/* <Route path="/nurse-dashboard" element={<NurseDashboard />} /> */}
               <Route path="/nurse-profile" element={<NurseProfile />} />
-
-              <Route path="/medicalreports-list" element={<MedicalReportsList />} />
-              <Route path="/view-report/:reportId" element={<ViewMedicalReport />} />
-              <Route path="/nurse/messages" element={<ChatPage />} />
-
-              
-              
-
-  
-
-
-            
-
               <Route
                 path="/medicalreports-list"
                 element={<MedicalReportsList />}
@@ -140,7 +145,7 @@ const App = () => {
                 path="/view-report/:reportId"
                 element={<ViewMedicalReport />}
               />
-
+              <Route path="/nurse/messages" element={<ChatPage />} />
             </Routes>
           </main>
         </div>
