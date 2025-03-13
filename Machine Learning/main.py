@@ -1,51 +1,130 @@
 from fastapi import FastAPI, File, UploadFile
-import numpy as np
-import cv2
-import tensorflow as tf
+from fastapi.responses import JSONResponse
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
-import io
+from PIL import Image
+import numpy as np
+import subprocess
+import os
 
+# Désactiver les optimisations oneDNN pour supprimer les avertissements
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
-MODEL_PATH = "model.h5"
-model = load_model(MODEL_PATH)
-
-# Paramètres d'image
-IMAGE_HEIGHT = 96
-IMAGE_WIDTH = 96
-
-CLASS_NAMES = ['Normal', 'Tuberculosis']
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+# Ajouter le middleware CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"],  
+)
 
+# Charger le modèle et le compiler
+MODEL_PATH = "modelTB.h5"
+model = load_model(MODEL_PATH)
+model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+
+# Classes définies par le modèle
+CLASSES = ["Normal", "Tuberculosis"]
+
+# Fonction de prétraitement d'image
+def preprocess_image(image: Image.Image, target_size=(150, 150)):
+    image = image.resize(target_size)
+    image = img_to_array(image) / 255.0  # Normaliser
+    return np.expand_dims(image, axis=0)
+
+# Fonction pour exécuter Ollama
+def run_ollama(prompt: str) -> str:
+    try:
+        process = subprocess.run(
+            ["C:\\Users\\aziz\\AppData\\Local\\Programs\\Ollama\\ollama.exe", "run", "llama3.2"],
+            input=prompt,
+            text=True,
+            encoding="utf-8",  
+            capture_output=True,
+            check=True
+        )
+        # Traiter la sortie brute directement
+        raw_output = process.stdout.strip()
+        if raw_output:
+            return raw_output
+        else:
+            return "Erreur : aucune sortie d'Ollama."
+    except subprocess.CalledProcessError as e:
+        print(f"Erreur lors de l'exécution d'Ollama : {e}")
+        return f"Erreur lors de l'exécution : {e.output}"
+    except Exception as e:
+        print(f"Erreur générale : {e}")
+        return str(e)
+
+# Endpoint pour analyser une image
 @app.post("/predict/")
 async def predict(file: UploadFile = File(...)):
     try:
-        # Lire l'image en bytes et la convertir en numpy array 
-        contents = await file.read()
-        image = np.asarray(bytearray(contents), dtype=np.uint8)
-        image = cv2.imdecode(image, cv2.IMREAD_COLOR)
-        
-        # vérifier si l'image a été chargée correctement
-        if image is None:
-            return {"error": "Impossible de charger l'image"}
-
-        # prétraitement de l'image
-        image = cv2.resize(image, (IMAGE_HEIGHT, IMAGE_WIDTH))
-        image = img_to_array(image) / 255.0  # normalisation
-        image = np.expand_dims(image, axis=0)  # dimension batch
-
-        # prédiction
-        predictions = model.predict(image)
-        class_index = np.argmax(predictions, axis=1)[0]
-        confidence = float(np.max(predictions))
-
+        image = Image.open(file.file).convert("RGB")
+        processed_image = preprocess_image(image)
+        predictions = model.predict(processed_image)
+        predicted_class_index = np.argmax(predictions)
         return {
-            "class": CLASS_NAMES[class_index],
-            "confidence": confidence
+            "class": CLASSES[predicted_class_index],
+            "confidence": float(np.max(predictions))
         }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/ollama_query/")
+async def query_ollama(data: dict):
+    """
+    Interroge Ollama avec les résultats de l'analyse pour des explications détaillées.
+    """
+    try:
+        class_name = data.get("class", "unknown")
+        confidence = data.get("confidence", 0)
+
+        prompt = (
+    f"L'analyse de la radiographie pulmonaire indique une condition classée comme '{class_name}' avec une confiance de {confidence * 100:.2f}%. "
+    f"Explique précisément ce que signifie cette classification dans le contexte de la tuberculose. "
+    f"Si le résultat est 'Normal', explique ce que cela implique en termes de santé pulmonaire. "
+    f"Si le résultat est 'Tuberculosis', décris la maladie, ses causes potentielles, son mode de transmission et ses effets sur les poumons. "
+    "Ne donne pas de recommandations générales comme 'consultez un médecin', car cette analyse est destinée à un professionnel de santé."
+)
+
+
+        # Appeler la fonction pour exécuter Ollama
+        response = run_ollama(prompt)
+
+        return {"response": response}
 
     except Exception as e:
-        return {"error": str(e)}
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
+@app.post("/follow_up/")
+async def follow_up(data: dict):
+    """
+    Traite les questions de suivi posées par l'utilisateur à Ollama.
+    """
+    try:
+        user_question = data.get("question", "Aucune question posée.")
+        previous_context = data.get("context", "")
+
+        # Vérifier si la question est en lien avec le contexte
+        if not any(keyword in user_question.lower() for keyword in previous_context.lower().split()):
+            return {"response": "Sorry, I have no clue."}
+        prompt = (
+            f"{previous_context}\n\nQuestion de suivi : {user_question}\n"
+            "Réponds uniquement si la question est en lien direct avec le contexte fourni ci-dessus. "
+            "Si la question n'est pas liée au contexte ou à l'analyse précédente, réponds uniquement par : 'Sorry, I have no clue.' "
+            "Structure ta réponse de manière concise et professionnelle."
+        )
+
+        # Appeler Ollama pour répondre à la question
+        response = run_ollama(prompt)
+
+        return {"response": response}
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
