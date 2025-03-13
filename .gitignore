@@ -142,3 +142,5 @@ env/
 __pycache__/
 *.py[cod]
 *$py.class
+Machine Learning/model.h5
+Machine Learning/model.keras
