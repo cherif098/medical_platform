@@ -85,15 +85,15 @@ async def query_ollama(data: dict):
         confidence = data.get("confidence", 0)
 
         prompt = (
-    f"L'analyse de la radiographie pulmonaire indique une condition classée comme '{class_name}' avec une confiance de {confidence * 100:.2f}%. "
-    f"Explique précisément ce que signifie cette classification dans le contexte de la tuberculose. "
-    f"Si le résultat est 'Normal', explique ce que cela implique en termes de santé pulmonaire. "
-    f"Si le résultat est 'Tuberculosis', décris la maladie, ses causes potentielles, son mode de transmission et ses effets sur les poumons. "
-    "Ne donne pas de recommandations générales comme 'consultez un médecin', car cette analyse est destinée à un professionnel de santé."
-)
-
-
-        
+        f"La radiographie pulmonaire analysée est classée comme {class_name} avec une confiance de {confidence * 100:.2f}%. "
+        "Décrivez en 3 parties sans recommandations : "
+        "1. Interprétation radiologique - Décrire les caractéristiques techniques "
+        "2. Facteurs différentiels - Causes/risques uniquement si pathologie "
+        "3. Valeur diagnostique - Limites et corrélations cliniques nécessaires "
+        "Langage strictement technique pour médecin. "
+        f"Adaptation obligatoire : {('Aucune mention de pathologie' if class_name == 'normal' else 'Focus sur marqueurs tuberculeux')}."
+    )
+  
         response = run_ollama(prompt)
 
         return {"response": response}
