@@ -7,14 +7,13 @@ import numpy as np
 import subprocess
 import os
 
-# Désactiver les optimisations oneDNN pour supprimer les avertissements
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# Ajouter le middleware CORS
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  
@@ -94,7 +93,7 @@ async def query_ollama(data: dict):
 )
 
 
-        # Appeler la fonction pour exécuter Ollama
+        
         response = run_ollama(prompt)
 
         return {"response": response}
@@ -121,7 +120,6 @@ async def follow_up(data: dict):
             "Structure ta réponse de manière concise et professionnelle."
         )
 
-        # Appeler Ollama pour répondre à la question
         response = run_ollama(prompt)
 
         return {"response": response}
