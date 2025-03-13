@@ -23,7 +23,7 @@ app.add_middleware(
 )
 
 # Charger le modèle et le compiler
-MODEL_PATH = "modelTB.h5"
+MODEL_PATH = "model.h5"
 model = load_model(MODEL_PATH)
 model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
@@ -47,7 +47,6 @@ def run_ollama(prompt: str) -> str:
             capture_output=True,
             check=True
         )
-        # Traiter la sortie brute directement
         raw_output = process.stdout.strip()
         if raw_output:
             return raw_output
