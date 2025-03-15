@@ -65,7 +65,6 @@ const ChatPage = () => {
         } border-r border-gray-200 h-full`}
       >
         <ChatSidebar
-          conversations={conversations}
           onSelectConversation={handleSelectConversation}
           selectedConversation={selectedConversation}
         />

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from "react";
 import axios from "axios";
 import { DoctorContext } from "../context/DoctorContext";
 import { NurseContext } from "../context/NurseContext";
-import { Image, Send, XCircle, Info, X } from "lucide-react";
+import { Image, Send, XCircle, Info, X, ArrowDown } from "lucide-react";
 import moment from "moment-timezone";
 import { socket } from "../socket";
 
@@ -16,6 +16,7 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
   const [preview, setPreview] = useState(null);
   const [fullImage, setFullImage] = useState(null);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const messagesEndRef = useRef(null);
@@ -91,6 +92,13 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
 
   // Rejoindre la conversation
   const joinConversation = () => {
+    console.log({
+      socket: !!socket,
+      isSocketConnected,
+      userId,
+      userType,
+      contactId: conversation?.contact_id,
+    });
     if (
       !socket ||
       !isSocketConnected ||
@@ -158,20 +166,18 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
             setTimeout(scrollToBottom, 0);
           }
 
-          return exists
-            ? prev
-            : [
-                ...prev,
-                {
-                  MESSAGE_ID: newMessage.message_id,
-                  CONVERSATION_ID: newMessage.conversation_id,
-                  SENDER_ID: newMessage.sender_id,
-                  RECEIVER_ID: newMessage.receiver_id,
-                  CONTENT: newMessage.content,
-                  FILE_URL: newMessage.file_url,
-                  SENT_AT: newMessage.sent_at,
-                },
-              ];
+          return [
+            ...prev,
+            {
+              MESSAGE_ID: newMessage.message_id,
+              CONVERSATION_ID: newMessage.conversation_id,
+              SENDER_ID: newMessage.sender_id,
+              RECEIVER_ID: newMessage.receiver_id,
+              CONTENT: newMessage.content,
+              FILE_URL: newMessage.file_url,
+              SENT_AT: newMessage.sent_at,
+            },
+          ];
         });
 
         // Mettre à jour la liste des conversations
@@ -194,18 +200,6 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
     };
   }, [conversation, userId]);
 
-  const isUserAtBottom = () => {
-    if (!chatContainerRef.current) return true;
-
-    const container = chatContainerRef.current;
-    const threshold = 100; // pixels
-
-    return (
-      container.scrollHeight - container.scrollTop - container.clientHeight <=
-      threshold
-    );
-  };
-
   const fetchMessages = async () => {
     try {
       const wasAtBottom = isUserAtBottom();
@@ -220,7 +214,7 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
       setMessages(data || []);
 
       if (wasAtBottom) {
-        setTimeout(scrollToBottom, 50);
+        scrollToBottom();
       }
     } catch (error) {
       console.error("Erreur lors de la récupération des messages :", error);
@@ -262,7 +256,7 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
       };
 
       setMessages((prev) => [...prev, tempMessage]);
-      setTimeout(scrollToBottom, 0);
+      scrollToBottom();
 
       // Envoyer au serveur
       const response = await axios.post(
@@ -305,24 +299,52 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
   };
 
   const scrollToBottom = () => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop =
-        chatContainerRef.current.scrollHeight;
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
     }
   };
+
+  const handleScroll = () => {
+    if (chatContainerRef.current) {
+      setShowScrollToBottom(!isUserAtBottom());
+    }
+  };
+
+  useEffect(() => {
+    const chatContainer = chatContainerRef.current;
+    if (chatContainer) {
+      chatContainer.addEventListener("scroll", handleScroll);
+      return () => chatContainer.removeEventListener("scroll", handleScroll);
+    }
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
       const wasAtBottom = isUserAtBottom();
       fetchMessages().then(() => {
-        if (wasAtBottom) {
-          setTimeout(scrollToBottom, 50);
-        }
+        if (wasAtBottom) scrollToBottom();
       });
     }, 10000);
 
     return () => clearInterval(interval);
   }, [conversation]);
+
+  const isUserAtBottom = () => {
+    if (!messagesEndRef.current || !chatContainerRef.current) return false;
+
+    const chatContainer = chatContainerRef.current;
+    const threshold = 100;
+
+    return (
+      chatContainer.scrollHeight -
+        chatContainer.scrollTop -
+        chatContainer.clientHeight <
+      threshold
+    );
+  };
 
   // Rejoindre la conversation et charger les messages quand la conversation change
   useEffect(() => {
@@ -332,12 +354,10 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
     }
   }, [conversation]);
 
-  // Faire défiler vers le bas quand les messages sont chargés initialement
+  // Faire défiler vers le bas quand les messages changent
   useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(scrollToBottom, 100);
-    }
-  }, [messages.length]);
+    scrollToBottom();
+  }, [messages]);
 
   // Gérer l'envoi avec Entrée
   const handleKeyDown = (e) => {
@@ -347,205 +367,268 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
     }
   };
 
+  // Fonction pour grouper les messages par date
+  const groupMessagesByDate = () => {
+    const groups = {};
+
+    messages.forEach((msg) => {
+      const date = moment(msg.SENT_AT)
+        .tz("America/Montreal")
+        .format("YYYY-MM-DD");
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(msg);
+    });
+
+    return groups;
+  };
+
+  // Formater la date pour l'affichage
+  const formatDateHeader = (dateStr) => {
+    const today = moment().tz("America/Montreal").format("YYYY-MM-DD");
+    const yesterday = moment()
+      .subtract(1, "days")
+      .tz("America/Montreal")
+      .format("YYYY-MM-DD");
+
+    if (dateStr === today) return "Aujourd'hui";
+    if (dateStr === yesterday) return "Hier";
+    return moment(dateStr).tz("America/Montreal").format("DD MMMM YYYY");
+  };
+
+  // Obtenir les groupes de messages
+  const messageGroups = groupMessagesByDate();
+
   return (
-    <div className="flex flex-col h-full bg-slate-50 relative">
-      {/* Chat Header */}
-      <div className="px-4 py-3 flex items-center justify-between border-b bg-white shadow-sm z-10">
-        <div className="flex items-center gap-3">
-          <div className="relative">
+    <div className="h-full flex flex-col bg-gray-50">
+      <div className="px-4 py-3 flex items-center justify-between border-b bg-white shadow-sm">
+        <div className="flex items-center">
+          <div className="w-10 h-10 rounded-full flex-shrink-0 bg-blue-100 overflow-hidden border border-blue-200">
             <img
               src={conversation.image || "/default-avatar.png"}
               alt="Avatar"
-              className="w-10 h-10 rounded-full object-cover border-2 border-blue-100"
+              className="w-full h-full object-cover"
             />
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
           </div>
-          <div>
-            <p className="font-medium text-gray-800">{conversation.name}</p>
-            <p className="text-xs text-gray-500">En ligne</p>
+          <div className="ml-3">
+            <p className="text-lg font-semibold text-gray-800">
+              {conversation.name}
+            </p>
+            {isSocketConnected && (
+              <p className="text-xs text-green-500 flex items-center">
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+                En ligne
+              </p>
+            )}
           </div>
         </div>
         <button
           onClick={onOpenSidebar}
-          className="p-2 rounded-full hover:bg-blue-50 text-blue-600 transition-colors"
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
         >
-          <Info size={20} />
+          <Info size={22} className="text-gray-600" />
         </button>
       </div>
 
-      {/* Messages Container */}
       <div
         ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
-        style={{ overscrollBehavior: "contain" }}
+        className="flex-1 overflow-y-auto p-4 relative bg-gradient-to-b from-blue-50 to-gray-50"
       >
-        <div className="space-y-4">
-          {messages.map((msg, index) => (
-            <div
-              key={msg.MESSAGE_ID || `message-${index}`}
-              className={`flex flex-col ${
-                msg.SENDER_ID === conversation.contact_id
-                  ? "items-start"
-                  : "items-end"
-              }`}
-            >
-              <div className="flex items-end gap-2 max-w-[75%]">
-                {msg.SENDER_ID === conversation.contact_id && (
-                  <img
-                    src={conversation.image || "/default-avatar.png"}
-                    alt="Avatar"
-                    className="w-8 h-8 rounded-full mb-1 object-cover"
-                  />
-                )}
-
-                <div className="flex flex-col">
-                  {msg.CONTENT && (
-                    <div
-                      className={`p-3 rounded-2xl shadow-sm 
-                        ${
-                          msg.SENDER_ID === conversation.contact_id
-                            ? "bg-white text-gray-800 rounded-bl-none"
-                            : "bg-blue-600 text-white rounded-br-none"
-                        }
-                        ${msg.FAILED ? "opacity-60" : ""}`}
-                    >
-                      <p className="text-sm">{msg.CONTENT}</p>
-                      {msg.FAILED && (
-                        <div className="text-xs mt-1 text-red-300 flex items-center gap-1">
-                          <XCircle size={12} />
-                          Échec de l'envoi
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {msg.FILE_URL && (
-                    <div
-                      className={`mt-1 rounded-lg overflow-hidden ${
-                        msg.FAILED ? "opacity-60" : ""
-                      }`}
-                    >
-                      <img
-                        src={msg.FILE_URL}
-                        alt="Image envoyée"
-                        className="max-w-full cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => setFullImage(msg.FILE_URL)}
-                      />
-                    </div>
-                  )}
-
-                  <span className="text-[10px] text-gray-500 mt-1 self-end">
-                    {moment(msg.SENT_AT).tz("America/Montreal").format("HH:mm")}
-                  </span>
-                </div>
-
-                {msg.SENDER_ID !== conversation.contact_id && (
-                  <img
-                    src={
-                      doctorProfile?.IMAGE ||
-                      nurseProfile?.IMAGE ||
-                      "/default-avatar.png"
-                    }
-                    alt="Avatar"
-                    className="w-8 h-8 rounded-full mb-1 object-cover"
-                  />
-                )}
+        {Object.keys(messageGroups).map((date) => (
+          <div key={date} className="mb-6">
+            <div className="flex justify-center mb-4">
+              <div className="bg-gray-200 rounded-full px-4 py-1 text-xs text-gray-600 font-medium">
+                {formatDateHeader(date)}
               </div>
             </div>
-          ))}
-          <div ref={messagesEndRef}></div>
-        </div>
+
+            {messageGroups[date].map((msg, index) => {
+              const isSender = msg.SENDER_ID !== conversation.contact_id;
+              const isFirstInGroup =
+                index === 0 ||
+                messageGroups[date][index - 1].SENDER_ID !== msg.SENDER_ID;
+              const isLastInGroup =
+                index === messageGroups[date].length - 1 ||
+                messageGroups[date][index + 1].SENDER_ID !== msg.SENDER_ID;
+
+              return (
+                <div
+                  key={msg.MESSAGE_ID || `message-${date}-${index}`}
+                  className={`flex flex-col mb-1 ${
+                    isSender ? "items-end" : "items-start"
+                  }`}
+                >
+                  <div className="flex max-w-xs md:max-w-md">
+                    {!isSender && isFirstInGroup && (
+                      <div className="w-8 h-8 rounded-full bg-gray-200 mr-2 self-end mb-1 overflow-hidden flex-shrink-0">
+                        <img
+                          src={conversation.image || "/default-avatar.png"}
+                          alt="Avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    {!isSender && !isFirstInGroup && (
+                      <div className="w-8 mr-2"></div>
+                    )}
+
+                    <div className="flex flex-col">
+                      {msg.CONTENT && (
+                        <div
+                          className={`p-3 text-sm rounded-2xl shadow-sm
+                            ${
+                              isSender
+                                ? "bg-blue-600 text-white rounded-br-none"
+                                : "bg-white text-gray-800 rounded-bl-none border border-gray-200"
+                            }
+                            ${isFirstInGroup ? "mt-2" : ""}
+                            ${msg.FAILED ? "opacity-60" : ""}
+                            ${!isLastInGroup ? "mb-1" : "mb-0"}`}
+                        >
+                          {msg.CONTENT}
+                          {msg.FAILED && (
+                            <div className="text-xs mt-1 flex items-center text-red-200">
+                              <XCircle size={12} className="mr-1" />
+                              Échec de l'envoi
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {msg.FILE_URL && (
+                        <div
+                          className={`mt-1 mb-1 overflow-hidden ${
+                            isSender ? "rounded-lg" : "rounded-lg"
+                          } shadow-sm border ${
+                            isSender ? "border-blue-400" : "border-gray-200"
+                          }`}
+                        >
+                          <img
+                            src={msg.FILE_URL}
+                            alt="Image envoyée"
+                            className={`w-48 h-auto cursor-pointer ${
+                              msg.FAILED ? "opacity-60" : ""
+                            }`}
+                            onClick={() => setFullImage(msg.FILE_URL)}
+                          />
+                        </div>
+                      )}
+
+                      {isLastInGroup && (
+                        <p
+                          className={`text-xs text-gray-400 ${
+                            isSender ? "text-right" : "text-left"
+                          } mt-1`}
+                        >
+                          {moment(msg.SENT_AT)
+                            .tz("America/Montreal")
+                            .format("HH:mm")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+
+        <div ref={messagesEndRef}></div>
+
+        {showScrollToBottom && (
+          <button
+            onClick={scrollToBottom}
+            className="absolute bottom-4 right-4 bg-white p-2 rounded-full shadow-lg flex items-center justify-center border border-gray-200 hover:bg-gray-100 transition-colors duration-200"
+          >
+            <ArrowDown size={20} className="text-gray-600" />
+          </button>
+        )}
       </div>
 
-      {/* Full Image Preview */}
       {fullImage && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 flex justify-center items-center z-50 backdrop-blur-sm">
-          <div className="relative max-w-4xl max-h-[90vh]">
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex justify-center items-center z-50">
+          <img
+            src={fullImage}
+            alt="Image agrandie"
+            className="max-w-[90%] max-h-[90%] object-contain"
+          />
+          <button
+            className="absolute top-5 right-5 text-white bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-70 transition-colors duration-200"
+            onClick={() => setFullImage(null)}
+          >
+            <X size={24} />
+          </button>
+        </div>
+      )}
+
+      {preview && (
+        <div className="px-4 py-2 flex items-center bg-gray-100 border-t">
+          <div className="relative">
             <img
-              src={fullImage}
-              alt="Image agrandie"
-              className="max-w-full max-h-[90vh] object-contain"
+              src={preview}
+              alt="Preview"
+              className="w-16 h-16 object-cover rounded-md"
             />
             <button
-              className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors"
-              onClick={() => setFullImage(null)}
+              onClick={() => {
+                setFile(null);
+                setPreview(null);
+              }}
+              className="absolute -top-2 -right-2 text-red-500 bg-white rounded-full shadow-md border border-gray-200"
             >
-              <X size={28} />
+              <XCircle size={20} />
             </button>
           </div>
         </div>
       )}
 
-      {/* Message Input Area */}
-      <div className="px-4 py-3 bg-white border-t">
-        {preview && (
-          <div className="mb-3 p-2 bg-gray-50 rounded-lg flex items-center">
-            <div className="relative">
-              <img
-                src={preview}
-                alt="Preview"
-                className="w-16 h-16 object-cover rounded-md"
-              />
-              <button
-                onClick={() => {
-                  setFile(null);
-                  setPreview(null);
-                }}
-                className="absolute -top-2 -right-2 bg-white rounded-full shadow-md text-red-500 hover:text-red-700"
-              >
-                <XCircle size={18} />
-              </button>
-            </div>
-          </div>
-        )}
+      <form
+        onSubmit={sendMessage}
+        className="bg-white p-3 flex items-end gap-2 border-t"
+      >
+        <label
+          htmlFor="fileInput"
+          className="cursor-pointer p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+        >
+          <Image size={22} className="text-gray-600" />
+          <input
+            id="fileInput"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const selectedFile = e.target.files[0];
+              if (selectedFile) {
+                setFile(selectedFile);
+                setPreview(URL.createObjectURL(selectedFile));
+              }
+            }}
+          />
+        </label>
 
-        <form onSubmit={sendMessage} className="flex items-end gap-2">
-          <label
-            htmlFor="fileInput"
-            className="cursor-pointer p-2 rounded-full hover:bg-gray-100 text-gray-600 self-end"
-          >
-            <Image size={20} />
-            <input
-              id="fileInput"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const selectedFile = e.target.files[0];
-                if (selectedFile) {
-                  setFile(selectedFile);
-                  setPreview(URL.createObjectURL(selectedFile));
-                }
-              }}
-            />
-          </label>
+        <div className="flex-1 border rounded-2xl bg-gray-50 focus-within:bg-white focus-within:border-blue-300 transition-all duration-200 overflow-hidden">
+          <textarea
+            placeholder="Écrire un message..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="w-full p-3 bg-transparent resize-none focus:outline-none min-h-[40px] max-h-[120px] text-gray-800"
+          />
+        </div>
 
-          <div className="flex-1 relative">
-            <textarea
-              placeholder="Écrire un message..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="w-full p-3 pr-10 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent min-h-[44px] max-h-[120px] text-sm"
-              style={{
-                overflowY: message.split("\n").length > 2 ? "auto" : "hidden",
-              }}
-            />
-          </div>
-
-          <button
-            type="submit"
-            className={`p-3 rounded-full ${
-              message.trim() || file
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-500"
-            } hover:shadow-md transition-all`}
-            disabled={!message.trim() && !file}
-          >
-            <Send size={20} />
-          </button>
-        </form>
-      </div>
+        <button
+          type="submit"
+          className={`p-3 rounded-full ${
+            message.trim() || file
+              ? "bg-blue-600 text-white hover:bg-blue-700"
+              : "bg-gray-200 text-gray-400"
+          } transition-colors duration-200`}
+          disabled={!message.trim() && !file}
+        >
+          <Send size={20} />
+        </button>
+      </form>
     </div>
   );
 };

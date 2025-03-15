@@ -36,6 +36,7 @@ import PaymentSuccess from "./pages/Doctors/PaymentSuccess";
 import PaymentCancel from "./pages/Doctors/PaymentCancel";
 import AIImageScanner from "./pages/Doctors/AIImageScanner";
 import ChatPage from "./pages/ChatPage";
+import MedicalAIScanner from "./pages/Doctors/MedicalAIScanner";
 
 // page infimier
 import NurseProfile from "./pages/Nurses/NurseProfile";
@@ -68,7 +69,7 @@ const App = () => {
       {/* Conteneur flex pour le reste du contenu */}
       <div className="flex flex-1 pt-[64px]">
         {/* Sidebar fixe - collée directement à la navbar */}
-        <div className="fixed left-0 top-[44px] h-[calc(100vh-44px)] w-64 overflow-y-auto z-40">
+        <div className="fixed left-0 top-[4px] h-[calc(100vh-4px)] w-64 overflow-y-auto z-40">
           <Sidebar />
         </div>
 
@@ -132,6 +133,10 @@ const App = () => {
               />
               <Route path="/ai-assistant" element={<AIAssistant />} />
               <Route path="//ai-image-scanner" element={<AIImageScanner />} />
+              <Route
+                path="/medical-ai-scanner"
+                element={<MedicalAIScanner />}
+              />
               <Route path="/payment/success" element={<PaymentSuccess />} />
               <Route path="/payment/cancel" element={<PaymentCancel />} />
 

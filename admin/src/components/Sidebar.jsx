@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Plus,
   List,
+  Cpu,
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -361,6 +362,20 @@ const Sidebar = () => {
           >
             <ImagePlus className="w-5 h-5" />
             <p className="hidden md:block">AI Image Scanner</p>
+          </NavLink>
+
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 py-3.5 px-3 md:px-6 cursor-pointer transition-colors ${
+                isActive
+                  ? "bg-primary/10 border-r-4 border-primary text-primary font-medium"
+                  : "hover:bg-gray-50"
+              }`
+            }
+            to="/medical-ai-scanner"
+          >
+            <Cpu className="w-5 h-5" />
+            <p className="hidden md:block">Medical X-Ray Analysis</p>
           </NavLink>
         </ul>
       )}
