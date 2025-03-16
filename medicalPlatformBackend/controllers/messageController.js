@@ -37,7 +37,8 @@ export const sendMessage = async (req, res) => {
       }
     }
 
-    const sentAt = moment().utc().format();
+    const sentAt = moment().utc().toISOString();
+
     
     // enregistrement du message
     const result = await Message.send({ 
@@ -75,7 +76,7 @@ export const sendMessage = async (req, res) => {
     console.log("Expéditeur :", senderId, "| Destinataire :", receiverId);
 
     
-    res.status(201).json({ success: true, fileUrl });
+    res.status(201).json({ success: true, fileUrl, messageId: result.insertId });
   } catch (error) {
     console.error("❌ Erreur lors de l'envoi du message :", error);
     res.status(500).json({ error: error.message });
@@ -122,10 +123,18 @@ export const getRecentChats = async (req, res) => {
     const userId = req.user.DOCTOR_ID || req.user.nurseId;
     const userType = req.user.DOCTOR_ID ? "DOCTOR" : "NURSE";
 
+    // Récupérer les discussions récentes
     const chats = await Message.getRecentChats(userId, userType);
 
-    res.json(chats);
+    // Ajouter le nombre de messages non lus pour chaque conversation
+    const enhancedChats = await Promise.all(
+      chats.map(async (chat) => {
+        const unreadCount = await Message.getUnreadMessagesCount(chat.CONVERSATION_ID, userId, userType);
+        return { ...chat, UNREAD_COUNT: unreadCount };
+      })
+    );
 
+    res.json(enhancedChats);
   } catch (error) {
     console.error("Erreur lors de la récupération des conversations :", error);
     res.status(500).json({ error: error.message });

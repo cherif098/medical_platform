@@ -5,9 +5,8 @@ import { NurseContext } from "../context/NurseContext";
 import { Search, User, Clock, MessageCircle, Plus } from "lucide-react";
 import moment from "moment-timezone";
 
+
 const ChatSidebar = ({ onSelectConversation, activeConversationId }) => {
-  const { dToken, profileData: doctorProfile } = useContext(DoctorContext);
-  const { nToken, profileData: nurseProfile } = useContext(NurseContext);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -17,9 +16,10 @@ const ChatSidebar = ({ onSelectConversation, activeConversationId }) => {
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  // Obtenir l'ID et le type d'utilisateur courant
-  const userId = doctorProfile?.ID || nurseProfile?.ID;
-  const userType = doctorProfile?.ID ? "DOCTOR" : "NURSE";
+  const { dToken, doctorId } = useContext(DoctorContext);
+  const { nToken, nurseId } = useContext(NurseContext);
+
+  const userId = doctorId || nurseId; 
 
   const fetchRecentChats = async () => {
     try {
@@ -38,7 +38,7 @@ const ChatSidebar = ({ onSelectConversation, activeConversationId }) => {
           if (!uniqueConversations[normalizedId]) {
             uniqueConversations[normalizedId] = {
               ...chat,
-              last_message: chat.LAST_MESSAGE || "Aucun message",
+              last_message: chat.LAST_MESSAGE || "No message",
               last_message_time:
                 chat.LAST_MESSAGE_TIME || new Date().toISOString(),
               last_sender: chat.LAST_SENDER,
@@ -87,7 +87,7 @@ const ChatSidebar = ({ onSelectConversation, activeConversationId }) => {
           ...user,
           CONTACT_ID: user.ID,
           CONTACT_TYPE: user.TYPE,
-          ROLE: user.TYPE === "DOCTOR" ? user.DETAIL : "Infirmier(ère)",
+          ROLE: user.TYPE === "DOCTOR" ? user.DETAIL : "Nurse",
         }))
       );
     } catch (error) {
@@ -129,26 +129,41 @@ const ChatSidebar = ({ onSelectConversation, activeConversationId }) => {
 
   const handleSelectUser = (user) => {
     console.log("Utilisateur sélectionné :", user);
-    const senderType = userType;
+  
+    // Récupérer le token pour déterminer le type de l'utilisateur connecté
+    const currentUserType = dToken ? "DOCTOR" : nToken ? "NURSE" : null;
+    const currentUserId = userId; // userId est défini à partir du profil récupéré
+  
+    if (!currentUserType || !currentUserId) {
+      console.error("⚠️ Impossible de déterminer l'utilisateur connecté !");
+      return;
+    }
+  
+    console.log("Utilisateur courant :", { currentUserId, currentUserType });
+  
+    const senderType = currentUserType;
     const receiverType = user.CONTACT_TYPE.toUpperCase();
-
-    // Utiliser les IDs corrects extraits des profils
-    const formattedSender = `${senderType}_${userId}`;
+  
+    // Générer l'ID de la conversation
+    const formattedSender = `${senderType}_${currentUserId}`;
     const formattedReceiver = `${receiverType}_${user.CONTACT_ID || user.ID}`;
-
+  
     const generatedConversationId = [formattedSender, formattedReceiver]
       .sort()
       .join("-");
-
+  
+    // Envoyer `currentUserId` et `currentUserType` à `ChatBox`
     onSelectConversation({
       contact_id: user.CONTACT_ID || user.ID,
       contact_type: user.CONTACT_TYPE || user.TYPE,
       name: user.NAME,
       image: user.IMAGE,
       conversation_id: user.CONVERSATION_ID || generatedConversationId,
+      current_user_id: currentUserId, // ID de l'utilisateur connecté
+      current_user_type: currentUserType, // Type de l'utilisateur connecté
     });
   };
-
+  
   // Format time or date based on recency
   const formatTime = (timestamp) => {
     if (!timestamp) return "";
@@ -176,7 +191,7 @@ const ChatSidebar = ({ onSelectConversation, activeConversationId }) => {
   return (
     <div className="w-80 h-full bg-white border-r border-gray-200 flex flex-col shadow-md">
       <div className="p-4 border-b border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Messagerie</h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Messaging</h2>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -201,7 +216,7 @@ const ChatSidebar = ({ onSelectConversation, activeConversationId }) => {
           >
             <div className="flex items-center justify-center">
               <Clock size={16} className="mr-2" />
-              Récents
+              Recents
             </div>
           </button>
           <button
@@ -214,7 +229,7 @@ const ChatSidebar = ({ onSelectConversation, activeConversationId }) => {
           >
             <div className="flex items-center justify-center">
               <MessageCircle size={16} className="mr-2" />
-              Tous
+              All
             </div>
           </button>
         </div>
@@ -234,7 +249,7 @@ const ChatSidebar = ({ onSelectConversation, activeConversationId }) => {
         {searchTerm.length > 1 ? (
           <div className="p-2">
             <h3 className="text-xs font-medium text-gray-500 px-3 pb-2">
-              RÉSULTATS DE RECHERCHE
+              Search Results
             </h3>
             {searchResults.length > 0 ? (
               <ul>
@@ -260,7 +275,7 @@ const ChatSidebar = ({ onSelectConversation, activeConversationId }) => {
               </ul>
             ) : (
               <div className="text-center py-6 text-gray-500">
-                <p>Aucun résultat trouvé</p>
+                <p>No result found</p>
               </div>
             )}
           </div>
@@ -290,7 +305,7 @@ const ChatSidebar = ({ onSelectConversation, activeConversationId }) => {
                     <Avatar
                       image={chat.IMAGE}
                       name={chat.NAME}
-                      status={Math.random() > 0.5 ? "online" : ""}
+                     // status={Math.random() > 0.5 ? "online" : ""}
                     />
 
                     <div className="ml-3 flex-1 min-w-0">
@@ -318,11 +333,11 @@ const ChatSidebar = ({ onSelectConversation, activeConversationId }) => {
                           {truncateMessage(chat.last_message)}
                         </p>
 
-                        {chat.ISUNREAD && (
+                        {/* {chat.ISUNREAD && (
                           <span className="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center ml-1">
                             {chat.unread_count > 9 ? "9+" : chat.unread_count}
                           </span>
-                        )}
+                        )} */}
                       </div>
                     </div>
                   </li>
@@ -333,9 +348,9 @@ const ChatSidebar = ({ onSelectConversation, activeConversationId }) => {
                 <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   <MessageCircle size={28} className="text-gray-400" />
                 </div>
-                <p className="text-gray-600 font-medium">Aucune conversation</p>
+                <p className="text-gray-600 font-medium">No conversation</p>
                 <p className="text-gray-500 text-sm mt-1">
-                  Commencez à discuter avec vos contacts
+                  Start chatting with your contacts
                 </p>
               </div>
             )}

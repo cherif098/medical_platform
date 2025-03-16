@@ -1,6 +1,8 @@
 import axios from "axios";
 import { createContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { jwtDecode } from "jwt-decode";
+
 
 export const NurseContext = createContext();
 
@@ -14,6 +16,28 @@ const NurseContextProvider = (props) => {
   const [profileData, setProfileData] = useState(false); 
   const [patients, setPatients] = useState([]);
   const [patientReports, setPatientReports] = useState([]); 
+
+  const getUserIdFromToken = (token) => {
+    try {
+        if (!token) return null;
+        const decodedToken = jwtDecode(token);
+        console.log("🔍 Token décodé :", decodedToken); 
+        return decodedToken.nurseId || null; 
+    } catch (error) {
+        console.error("❌ Erreur lors du décodage du token :", error);
+        return null;
+    }
+};
+
+
+  const [nurseId, setNurseId] = useState(getUserIdFromToken(nToken));
+
+  useEffect(() => {
+    if (nToken) {
+      setNurseId(getUserIdFromToken(nToken)); 
+    }
+  }, [nToken]);
+  
 
 
   // récupérer le profil de l'infirmier
@@ -275,6 +299,7 @@ const NurseContextProvider = (props) => {
     <NurseContext.Provider
       value={{
         nToken,
+        nurseId,
         setNToken,
         dashData,
         profileData,

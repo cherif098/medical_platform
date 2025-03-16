@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import moment from "moment-timezone";
 
-const ChatRightSidebar = ({ conversation, onClose }) => {
+const ChatRightSidebar = ({ conversation, onClose, onStatusChange }) => {
   const [sharedMedia, setSharedMedia] = useState([]);
   const [specialty, setSpecialty] = useState("");
   const [about, setAbout] = useState("");
@@ -34,6 +34,7 @@ const ChatRightSidebar = ({ conversation, onClose }) => {
     const handleStatusUpdate = ({ userId, isOnline, lastSeen }) => {
       if (userId === conversation.contact_id) {
         setIsOnline(isOnline);
+        if (onStatusChange) onStatusChange(isOnline);
         if (lastSeen) setLastSeen(lastSeen);
       }
     };
@@ -65,9 +66,9 @@ const ChatRightSidebar = ({ conversation, onClose }) => {
       setAbout(data.about || "Aucune description disponible");
 
       if (conversation.contact_type === "DOCTOR") {
-        setSpecialty(data.specialty || "Médecin");
+        setSpecialty(data.specialty || "DOCTOR");
       } else {
-        setSpecialty("Infirmier(ère)");
+        setSpecialty("Nurse");
       }
     } catch (error) {
       console.error("Erreur chargement médias :", error);
@@ -134,8 +135,8 @@ const ChatRightSidebar = ({ conversation, onClose }) => {
     const now = new Date();
     const diffInMinutes = Math.floor((now - date) / (1000 * 60));
 
-    if (diffInMinutes < 1) return "À l'instant";
-    if (diffInMinutes < 60) return `Il y a ${diffInMinutes} min`;
+    if (diffInMinutes < 1) return "Right now";
+    if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
 
     const hours = date.getHours().toString().padStart(2, "0");
     const minutes = date.getMinutes().toString().padStart(2, "0");
@@ -147,8 +148,8 @@ const ChatRightSidebar = ({ conversation, onClose }) => {
     ).getTime();
     const yesterday = today - 86400000;
 
-    if (date.getTime() >= today) return `Aujourd'hui à ${hours}:${minutes}`;
-    if (date.getTime() >= yesterday) return `Hier à ${hours}:${minutes}`;
+    if (date.getTime() >= today) return `Today at ${hours}:${minutes}`;
+    if (date.getTime() >= yesterday) return `Yesterday at ${hours}:${minutes}`;
 
     return `${date.getDate().toString().padStart(2, "0")}/${(
       date.getMonth() + 1
@@ -209,10 +210,10 @@ const ChatRightSidebar = ({ conversation, onClose }) => {
               )}
               <span>
                 {isOnline
-                  ? "En ligne"
+                  ? "Online"
                   : lastSeen
                   ? `Vu ${formatLastSeen(lastSeen)}`
-                  : "Hors ligne"}
+                  : "Offline"}
               </span>
             </div>
           </div>
@@ -232,7 +233,7 @@ const ChatRightSidebar = ({ conversation, onClose }) => {
 
           {/* About Section */}
           <div className="mb-6 bg-gray-50 p-4 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">À propos</h4>
+            <h4 className="text-sm font-medium text-gray-700 mb-2">About</h4>
             <p className="text-sm text-gray-600">{about}</p>
           </div>
 
@@ -240,10 +241,10 @@ const ChatRightSidebar = ({ conversation, onClose }) => {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-medium text-gray-700">
-                Médias partagés
+                shared media
               </h4>
               {sharedMedia.length > 0 && (
-                <button className="text-xs text-blue-600">Voir tout</button>
+                <button className="text-xs text-blue-600">See all</button>
               )}
             </div>
 
@@ -279,7 +280,7 @@ const ChatRightSidebar = ({ conversation, onClose }) => {
             ) : (
               <div className="bg-gray-50 rounded-lg p-6 text-center">
                 <ImageIcon size={28} className="text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">Aucun média partagé</p>
+                <p className="text-sm text-gray-500">No shared media</p>
               </div>
             )}
           </div>

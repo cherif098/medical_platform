@@ -6,9 +6,10 @@ import { Image, Send, XCircle, Info, X, ArrowDown } from "lucide-react";
 import moment from "moment-timezone";
 import { socket } from "../socket";
 
-const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
-  const { dToken, profileData: doctorProfile } = useContext(DoctorContext);
-  const { nToken, profileData: nurseProfile } = useContext(NurseContext);
+
+const ChatBox = ({ conversation, refreshConversations, onOpenSidebar, isOnline }) => {
+  const { dToken } = useContext(DoctorContext);
+  const { nToken } = useContext(NurseContext);
 
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
@@ -22,8 +23,10 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
 
-  const userId = doctorProfile?.ID || nurseProfile?.ID;
-  const userType = doctorProfile?.ID ? "DOCTOR" : "NURSE";
+  const userId = conversation?.current_user_id;
+  const userType = conversation?.current_user_type;
+  
+
 
   // Générer l'ID de conversation
   const generateConversationId = () => {
@@ -99,26 +102,19 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
       userType,
       contactId: conversation?.contact_id,
     });
-    if (
-      !socket ||
-      !isSocketConnected ||
-      !userId ||
-      !userType ||
-      !conversation?.contact_id
-    ) {
-      console.error(
-        "Impossible de rejoindre la conversation - prérequis manquants"
-      );
+  
+    if (!socket || !socket.connected || !userId || !userType || !conversation?.contact_id) {
+      console.error("Impossible de rejoindre la conversation - prérequis manquants");
       return;
     }
-
+  
     console.log("Tentative de rejoindre la conversation:", {
       userId,
       userType,
       otherUserId: conversation.contact_id,
       otherUserType: conversation.contact_type,
     });
-
+  
     socket.emit(
       "joinConversation",
       {
@@ -132,87 +128,67 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
       }
     );
   };
-
-  // Écouter les nouveaux messages
+  
   useEffect(() => {
     if (!socket) return;
 
     const generatedId = generateConversationId();
 
     const handleNewMessage = (newMessage) => {
-      console.log("Message reçu via Socket.io:", newMessage);
+      if (!newMessage || !newMessage.message_id) return;
 
-      // Vérifier si ce message appartient à la conversation actuelle
-      const messageMatches =
-        newMessage.conversation_id === conversation?.conversation_id ||
-        newMessage.conversation_id === generatedId ||
-        (newMessage.sender_id === conversation?.contact_id &&
-          newMessage.receiver_id === userId) ||
-        (newMessage.sender_id === userId &&
-          newMessage.receiver_id === conversation?.contact_id);
+      setMessages((prev) => {
+        const hasTempVersion = prev.some(
+          (msg) => msg.IS_TEMP && msg.CONTENT === newMessage.content && msg.SENDER_ID === userId
+        );
 
-      if (messageMatches) {
-        // Ajouter le message s'il n'existe pas déjà
-        setMessages((prev) => {
-          // Vérifier si le message existe déjà
-          const exists = prev.some(
-            (m) =>
-              (m.MESSAGE_ID && m.MESSAGE_ID === newMessage.message_id) ||
-              (m.SENT_AT === newMessage.sent_at &&
-                m.CONTENT === newMessage.content)
+        if (hasTempVersion) {
+          return prev.map((msg) =>
+            msg.IS_TEMP && msg.CONTENT === newMessage.content && msg.SENDER_ID === userId
+              ? { ...newMessage, IS_TEMP: false }
+              : msg
           );
-
-          if (!exists) {
-            setTimeout(scrollToBottom, 0);
-          }
-
-          return [
-            ...prev,
-            {
-              MESSAGE_ID: newMessage.message_id,
-              CONVERSATION_ID: newMessage.conversation_id,
-              SENDER_ID: newMessage.sender_id,
-              RECEIVER_ID: newMessage.receiver_id,
-              CONTENT: newMessage.content,
-              FILE_URL: newMessage.file_url,
-              SENT_AT: newMessage.sent_at,
-            },
-          ];
-        });
-
-        // Mettre à jour la liste des conversations
-        if (refreshConversations) {
-          refreshConversations({
-            ...conversation,
-            last_message: newMessage.content || "Image",
-          });
         }
-      }
+
+        const exists = prev.some((m) => m.MESSAGE_ID === newMessage.message_id);
+        return exists ? prev : [...prev, { ...newMessage, IS_TEMP: false }];
+      });
+
+      refreshConversations?.({
+        ...conversation,
+        last_message: newMessage.content || "Image",
+        last_message_time: newMessage.sent_at,
+      });
+
+      setTimeout(scrollToBottom, 100);
     };
 
-    // Écouter à la fois les messages spécifiques et globaux
     socket.on("newMessage", handleNewMessage);
-    socket.on("globalMessage", handleNewMessage);
 
     return () => {
       socket.off("newMessage", handleNewMessage);
-      socket.off("globalMessage", handleNewMessage);
     };
-  }, [conversation, userId]);
+  }, [conversation, userId, refreshConversations]);
+
 
   const fetchMessages = async () => {
     try {
       const wasAtBottom = isUserAtBottom();
-
+  
       const { data } = await axios.get(
         `${backendUrl}/api/messages/${conversation.contact_id}/${conversation.contact_type}`,
         {
           headers: { dtoken: dToken || "", ntoken: nToken || "" },
         }
       );
-
-      setMessages(data || []);
-
+  
+      
+      const sortedMessages = (data || []).sort(
+        (a, b) => new Date(a.sent_at) - new Date(b.sent_at)
+      );
+  
+      setMessages(sortedMessages);
+  
       if (wasAtBottom) {
         scrollToBottom();
       }
@@ -220,7 +196,7 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
       console.error("Erreur lors de la récupération des messages :", error);
     }
   };
-
+  
   // Envoyer un message
   const sendMessage = async (e) => {
     e?.preventDefault();
@@ -251,7 +227,7 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
         RECEIVER_ID: conversation.contact_id,
         CONTENT: messageContent,
         FILE_URL: preview,
-        SENT_AT: new Date().toISOString(),
+        SENT_AT: moment().utc().toISOString(),
         IS_TEMP: true,
       };
 
@@ -266,13 +242,12 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
       );
 
       if (response.data.success) {
-        // Si le message a été envoyé avec succès, remplacer le message temporaire
         setMessages((prev) =>
           prev.map((msg) =>
             msg.MESSAGE_ID === tempMessageId
               ? {
                   ...msg,
-                  MESSAGE_ID: response.data.messageId,
+                  MESSAGE_ID: response.data.messageId, 
                   FILE_URL: response.data.fileUrl || msg.FILE_URL,
                   IS_TEMP: false,
                 }
@@ -392,8 +367,8 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
       .tz("America/Montreal")
       .format("YYYY-MM-DD");
 
-    if (dateStr === today) return "Aujourd'hui";
-    if (dateStr === yesterday) return "Hier";
+    if (dateStr === today) return "Today";
+    if (dateStr === yesterday) return "Yesterday";
     return moment(dateStr).tz("America/Montreal").format("DD MMMM YYYY");
   };
 
@@ -415,12 +390,12 @@ const ChatBox = ({ conversation, refreshConversations, onOpenSidebar }) => {
             <p className="text-lg font-semibold text-gray-800">
               {conversation.name}
             </p>
-            {isSocketConnected && (
-              <p className="text-xs text-green-500 flex items-center">
-                <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>
-                En ligne
-              </p>
-            )}
+            {/* {isOnline ? (
+            <span className="ml-2 text-green-500"> En ligne</span>
+          ) : (
+            <span className="ml-2 text-gray-400">Hors ligne</span>
+          )} */}
+
           </div>
         </div>
         <button

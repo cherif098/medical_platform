@@ -2,6 +2,8 @@ import axios from "axios";
 import { createContext, useEffect} from "react";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { jwtDecode } from "jwt-decode";
+
 
 export const DoctorContext = createContext();
 
@@ -16,6 +18,27 @@ const DoctorContextProvider = (props) => {
   const [profileData, setProfileData] = useState(false);
   const [reports, setReports] = useState([]);
   const [patients, setPatients] = useState([]);
+
+  const getUserIdFromToken = (token) => {
+    try {
+        if (!token) return null;
+        const decodedToken = jwtDecode(token);
+        console.log("🔍 Token décodé :", decodedToken); // Debug
+        return decodedToken.doctorId || null; // On récupère l'ID correct
+    } catch (error) {
+        console.error("❌ Erreur lors du décodage du token :", error);
+        return null;
+    }
+};
+
+    const [doctorId, setDoctorId] = useState(getUserIdFromToken(dToken));
+  
+    useEffect(() => {
+      if (dToken) {
+        setDoctorId(getUserIdFromToken(dToken)); 
+      }
+    }, [dToken]);
+  
 
   const getReport = async (reportId) => {
     try {
@@ -447,6 +470,7 @@ const DoctorContextProvider = (props) => {
 
   const value = {
     dToken,
+    doctorId,
     setDToken,
     backendUrl,
     getAppointments,

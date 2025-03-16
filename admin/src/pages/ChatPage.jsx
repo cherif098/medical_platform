@@ -111,11 +111,10 @@ const ChatPage = () => {
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-700 mb-2">
-                Aucune conversation sélectionnée
+                No conversation selected
               </h3>
               <p className="text-gray-500 text-sm">
-                Choisissez une conversation dans la liste pour commencer à
-                discuter
+                choose a conversation from the list to start chatting
               </p>
             </div>
           </div>

@@ -28,68 +28,72 @@ send: async ({ senderId, senderType, receiverId, receiverType, content, fileUrl 
   ]);
 },
 
-  getRecentChats: async (userId) => {
-    const query = `
-      WITH last_messages AS (
-        SELECT 
-          CONVERSATION_ID, 
-          CONTENT AS last_message, 
-          FILE_URL AS last_file_url,
-          SENDER_ID AS last_sender, 
-          READ AS last_read,
-          SENT_AT
-        FROM MEDICAL_DB.MEDICAL_SCHEMA.MESSAGES 
-        WHERE (SENDER_ID = ? OR RECEIVER_ID = ?)
-        QUALIFY ROW_NUMBER() OVER (PARTITION BY CONVERSATION_ID ORDER BY SENT_AT DESC) = 1
-      )
+getRecentChats: async (userId) => {
+  const query = `
+    WITH last_messages AS (
       SELECT 
-        m.CONVERSATION_ID, 
-  
-        CASE 
-            WHEN lm.last_sender = ? THEN CONCAT('You : ', COALESCE(NULLIF(lm.last_message, ''), 'Photo'))
-            ELSE COALESCE(NULLIF(lm.last_message, ''), 'Photo')
-        END AS last_message,
-  
-        lm.last_file_url,  
-        lm.last_sender,
-        lm.last_read,
-        MAX(m.SENT_AT) AS last_message_time,
-  
-        CASE 
-            WHEN m.SENDER_ID = ? THEN m.RECEIVER_ID
-            ELSE m.SENDER_ID
-        END as contact_id,
-  
-        CASE 
-            WHEN m.SENDER_ID = ? THEN m.RECEIVER_TYPE
-            ELSE m.SENDER_TYPE
-        END as contact_type,
-  
-      
-        CASE 
-            WHEN lm.last_sender != ? AND lm.last_read = FALSE THEN TRUE
-            ELSE FALSE
-        END AS isUnread,
-  
-        COALESCE(d.NAME, n.NAME, 'Utilisateur inconnu') as name,
-        COALESCE(d.IMAGE, n.IMAGE, '/default-avatar.png') as image, 
-        COALESCE(d.SPECIALTY, 'Nurse') as specialty
-  
-      FROM MEDICAL_DB.MEDICAL_SCHEMA.MESSAGES m
-      JOIN last_messages lm ON lm.CONVERSATION_ID = m.CONVERSATION_ID
-      LEFT JOIN MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS d 
-          ON (d.DOCTOR_ID = contact_id AND contact_type = 'DOCTOR')
-      LEFT JOIN MEDICAL_DB.MEDICAL_SCHEMA.NURSES n 
-          ON (n.NURSE_ID = contact_id AND contact_type = 'NURSE')
-      WHERE (m.SENDER_ID = ? OR m.RECEIVER_ID = ?)
-      GROUP BY m.CONVERSATION_ID, lm.last_message, lm.last_file_url, lm.last_sender, lm.last_read,
-          contact_id, contact_type, d.NAME, n.NAME, d.SPECIALTY, d.IMAGE, n.IMAGE
-      ORDER BY last_message_time DESC;
-    `;
+        CONVERSATION_ID, 
+        CONTENT AS last_message, 
+        FILE_URL AS last_file_url,
+        SENDER_ID AS last_sender, 
+        READ AS last_read,
+        SENT_AT
+      FROM MEDICAL_DB.MEDICAL_SCHEMA.MESSAGES 
+      WHERE (SENDER_ID = ? OR RECEIVER_ID = ?)
+      QUALIFY ROW_NUMBER() OVER (PARTITION BY CONVERSATION_ID ORDER BY SENT_AT DESC) = 1
+    )
+    SELECT 
+      m.CONVERSATION_ID, 
 
-    const result = await executeQuery(query, [userId, userId, userId, userId, userId, userId, userId, userId]);
-    return result;
-  },
+      CASE 
+          WHEN lm.last_sender = ? THEN CONCAT('You : ', COALESCE(NULLIF(lm.last_message, ''), 'Photo'))
+          ELSE COALESCE(NULLIF(lm.last_message, ''), 'Photo')
+      END AS last_message,
+
+      lm.last_file_url,  
+      lm.last_sender,
+      lm.last_read,
+      MAX(m.SENT_AT) AS last_message_time,
+
+      CASE 
+          WHEN m.SENDER_ID = ? THEN m.RECEIVER_ID
+          ELSE m.SENDER_ID
+      END as contact_id,
+
+      CASE 
+          WHEN m.SENDER_ID = ? THEN m.RECEIVER_TYPE
+          ELSE m.SENDER_TYPE
+      END as contact_type,
+
+        COALESCE((
+    SELECT COUNT(*) 
+    FROM MEDICAL_DB.MEDICAL_SCHEMA.MESSAGES 
+    WHERE CONVERSATION_ID = m.CONVERSATION_ID 
+      AND RECEIVER_ID = ? 
+      AND READ = FALSE
+  ), 0) AS UNREAD_COUNT,
+
+
+      COALESCE(d.NAME, n.NAME, 'Utilisateur inconnu') as name,
+      COALESCE(d.IMAGE, n.IMAGE, '/default-avatar.png') as image, 
+      COALESCE(d.SPECIALTY, 'Nurse') as specialty
+
+    FROM MEDICAL_DB.MEDICAL_SCHEMA.MESSAGES m
+    JOIN last_messages lm ON lm.CONVERSATION_ID = m.CONVERSATION_ID
+    LEFT JOIN MEDICAL_DB.MEDICAL_SCHEMA.DOCTORS d 
+        ON (d.DOCTOR_ID = contact_id AND contact_type = 'DOCTOR')
+    LEFT JOIN MEDICAL_DB.MEDICAL_SCHEMA.NURSES n 
+        ON (n.NURSE_ID = contact_id AND contact_type = 'NURSE')
+    WHERE (m.SENDER_ID = ? OR m.RECEIVER_ID = ?)
+    GROUP BY m.CONVERSATION_ID, lm.last_message, lm.last_file_url, lm.last_sender, lm.last_read,
+        contact_id, contact_type, d.NAME, n.NAME, d.SPECIALTY, d.IMAGE, n.IMAGE
+    ORDER BY last_message_time DESC;
+  `;
+
+  const result = await executeQuery(query, [userId, userId, userId, userId, userId, userId, userId, userId]);
+  return result;
+},
+
 
   getConversation: async (userId, otherUserId, userType, otherUserType) => {
     const senderPrefix = userType.toUpperCase();
@@ -203,6 +207,7 @@ send: async ({ senderId, senderType, receiverId, receiverType, content, fileUrl 
 
     return executeQuery(query, [conversationId, userId]); 
 },
+
 
 
   getUnreadChatCount: async (userId) => {
