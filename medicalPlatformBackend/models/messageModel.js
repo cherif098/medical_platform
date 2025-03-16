@@ -115,6 +115,27 @@ getRecentChats: async (userId) => {
   
     return executeQuery(query, [conversationId]);
   },
+
+
+   getUnreadChatCount : async (req, res) => {
+    try {
+      const userId = req.user.DOCTOR_ID || req.user.nurseId;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "Utilisateur non authentifié." });
+      }
+  
+      console.log(`🔍 Vérification du nombre de discussions non lues pour l'utilisateur: ${userId}`);
+  
+      const unreadCount = await Message.getUnreadChatCount(userId);
+  
+      res.json({ unreadCount });
+    } catch (error) {
+      console.error("❌ Erreur lors de la récupération du nombre de discussions non lues :", error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+  
   
   
   searchUsers: async (searchTerm, excludeId, excludeType) => {
@@ -210,19 +231,31 @@ getRecentChats: async (userId) => {
 
 
 
+  getUnreadMessagesCount: async (conversationId, userId) => {
+    const query = `
+      SELECT COUNT(*) AS unread_count
+      FROM MEDICAL_DB.MEDICAL_SCHEMA.MESSAGES
+      WHERE CONVERSATION_ID = ? 
+        AND RECEIVER_ID = ? 
+        AND READ = FALSE
+    `;
+
+    const result = await executeQuery(query, [conversationId, userId]);
+    return result.length > 0 ? result[0].UNREAD_COUNT : 0;
+  },
+
   getUnreadChatCount: async (userId) => {
     const query = `
-      WITH unread_chats AS (
-        SELECT DISTINCT SENDER_ID, SENDER_TYPE
-        FROM MEDICAL_DB.MEDICAL_SCHEMA.MESSAGES
-        WHERE RECEIVER_ID = ? AND READ = FALSE
-      )
-      SELECT COUNT(*) AS unread_count FROM unread_chats;
+      SELECT COUNT(DISTINCT CONVERSATION_ID) AS unread_count
+      FROM MEDICAL_DB.MEDICAL_SCHEMA.MESSAGES
+      WHERE RECEIVER_ID = ? AND READ = FALSE
     `;
   
     const result = await executeQuery(query, [userId]);
-    return result[0]?.UNREAD_COUNT || 0;
+    return result.length > 0 ? result[0].UNREAD_COUNT : 0;
   },
+  
+
 
   getUserOnlineStatus : async (contact_id, contact_type) => {
     const table = contact_type === "DOCTOR" ? "DOCTORS" : "NURSES";

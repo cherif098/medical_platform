@@ -23,46 +23,38 @@ const ChatSidebar = ({ onSelectConversation, activeConversationId }) => {
 
   const fetchRecentChats = async () => {
     try {
-      setIsLoading(true);
       const token = dToken || nToken;
       if (!token) return;
-
+  
       const { data } = await axios.get(`${backendUrl}/api/messages/recent`, {
         headers: { dtoken: dToken || "", ntoken: nToken || "" },
       });
-
+  
       if (data && Array.isArray(data)) {
-        const uniqueConversations = {};
-        data.forEach((chat) => {
-          const normalizedId = chat.CONVERSATION_ID;
-          if (!uniqueConversations[normalizedId]) {
-            uniqueConversations[normalizedId] = {
-              ...chat,
-              last_message: chat.LAST_MESSAGE || "No message",
-              last_message_time:
-                chat.LAST_MESSAGE_TIME || new Date().toISOString(),
-              last_sender: chat.LAST_SENDER,
-              unread_count: chat.UNREAD_COUNT || 0,
-            };
-          }
-        });
-
-        setConversations(Object.values(uniqueConversations));
+        const updatedConversations = data.map(chat => ({
+          ...chat,
+          last_message: chat.LAST_MESSAGE || "Aucun message",
+          last_sender: chat.LAST_SENDER,
+          unread_count: chat.UNREAD_COUNT || 0,
+          ISUNREAD: chat.UNREAD_COUNT > 0, // ✅ Ajout d'un indicateur de message non lu
+        }));
+  
+        setConversations(updatedConversations);
       }
     } catch (error) {
       console.error("Erreur lors du chargement des conversations :", error);
-    } finally {
-      setIsLoading(false);
     }
   };
-
+  
+ 
   useEffect(() => {
     fetchRecentChats();
     const interval = setInterval(() => {
       fetchRecentChats();
-    }, 10000);
+    }, 2000);
     return () => clearInterval(interval);
   }, [dToken, nToken, backendUrl]);
+ 
 
   const handleSearch = async (e) => {
     const query = e.target.value;
