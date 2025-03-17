@@ -66,7 +66,7 @@ const Sidebar = () => {
   }, [dToken, nToken]);
 
   return (
-    <div className="min-h-screen bg-white border-r border-gray-100">
+    <div className="min-h-screen bg-white border-r border-gray-100 mt-16">
       {/* Section Admin */}
       {aToken && (
         <ul className="text-gray-600 mt-5">
