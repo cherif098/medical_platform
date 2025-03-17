@@ -20,7 +20,7 @@ const authDoctor = async (req, res, next) => {
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
         console.warn("Token expiré, mais on autorise la déconnexion.");
-        const token_decode = jwt.decode(dToken); // Décodage sans vérifier l'expiration
+        const token_decode = jwt.decode(dToken);  
         if (token_decode && token_decode.doctorId) {
           req.user = { DOCTOR_ID: token_decode.doctorId, type: "DOCTOR" };
           next(); // Autoriser la requête
